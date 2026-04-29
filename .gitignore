@@ -1,0 +1,23 @@
+# Local secrets - never commit these
+.env
+.env.*
+!.env.example
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*~
+
+# Language artifacts produced when running examples
+__pycache__/
+*.pyc
+node_modules/
+*.class
+target/
+bin/
+obj/
+
+# Eval run output
+evals/results/
