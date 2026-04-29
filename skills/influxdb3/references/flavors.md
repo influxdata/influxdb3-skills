@@ -1,0 +1,34 @@
+# InfluxDB 3 Flavors
+
+InfluxDB 3 ships in four flavors. Most code is portable across flavors when host and token are env-driven; this reference exists for the cases where they actually differ.
+
+## Comparison table
+
+| Dimension | Core | Enterprise | Cloud Serverless | Cloud Dedicated |
+|---|---|---|---|---|
+| **Default port** | `8181` | `8181` (per node) | 443 (TLS) | 443 (TLS) |
+| **Host pattern** | configurable, often `localhost:8181` | configurable cluster | `https://<region>-<id>.cloud2.influxdata.com` | customer-specific hostname |
+| **Token type** | database / admin token | database / admin token (with RBAC) | management + database tokens | management + database tokens |
+| **Write endpoint** | `POST /api/v3/write_lp` | `POST /api/v3/write_lp` | `POST /api/v2/write` (back-compat) | `POST /api/v3/write_lp` |
+| **Query (SQL)** | `POST /api/v3/query_sql` | `POST /api/v3/query_sql` | `POST /api/v3/query_sql` | `POST /api/v3/query_sql` |
+| **Query (InfluxQL)** | `POST /api/v3/query_influxql` | `POST /api/v3/query_influxql` | `POST /api/v3/query_influxql` | `POST /api/v3/query_influxql` |
+| **Multi-database** | yes | yes | yes (per bucket) | yes |
+| **Database creation** | HTTP API or CLI | HTTP API or CLI | UI / API (cloud-managed) | UI / API (cloud-managed) |
+
+## Notable per-flavor gotchas
+
+### Core
+Single-node, open source. No RBAC. Tokens are scoped per database. Default object-store is local disk; `--object-store=memory` is fine for testing only.
+
+### Enterprise
+Multi-node cluster. RBAC and replication are first-class. Same v3 HTTP API as Core; the differences are operational (cluster, observability) rather than client-facing.
+
+### Cloud Serverless
+The write path is the v2-compatible `/api/v2/write` endpoint for back-compat with v2 tooling, but **queries are v3 SQL** via `/api/v3/query_sql`. Generated code that targets Cloud Serverless should use the v2 write path; the v3 SQL query path is unchanged.
+
+### Cloud Dedicated
+Same v3 API surface as Core/Enterprise, but the host is customer-specific and tokens are managed via the Cloud Dedicated console. Auth is otherwise identical.
+
+## When to ask the developer
+
+Ask explicitly which flavor they're targeting only if `references/flavor-detection.md`'s `/ping` probe returns ambiguous output **and** the answer would change the generated code (e.g., write endpoint differs). For most read code, you can generate flavor-agnostic code via env vars and skip the question.
