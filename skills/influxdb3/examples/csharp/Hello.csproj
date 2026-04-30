@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>InfluxHello</RootNamespace>
+    <StartupObject>InfluxHello.Hello</StartupObject>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="InfluxDB3.Client" Version="1.8.0" />
+    <PackageReference Include="DotNetEnv" Version="3.0.0" />
+  </ItemGroup>
+</Project>
