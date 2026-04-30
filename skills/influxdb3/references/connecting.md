@@ -17,16 +17,46 @@
 | `INFLUXDB_DATABASE` | yes | The database (Core/Enterprise) or bucket (Cloud) name |
 | `INFLUXDB_ORG` | no | Only needed for v2-style endpoints (Cloud Serverless write path); leave unset elsewhere |
 
-## First-time setup checklist (six steps)
+## First-time setup checklist
 
-When the developer is starting fresh in a project (no `.env`, no client imports):
+When the developer is starting fresh in a project (no `.env`, no client imports), **the order matters**: the admin token has to exist before you can create a database, and the database has to exist before your application code can write to it. Don't conflate "create a token" with "create an application token" — they're different operations and they happen at different points.
 
-1. **Pick the flavor** — Core, Enterprise, Cloud Serverless, or Cloud Dedicated. If the developer doesn't know, ask. See `references/flavors.md`.
-2. **Create a token** — instructions vary per flavor; link the developer to the relevant page on `docs.influxdata.com` from `references/doc-urls.md`.
-3. **Verify `.gitignore` excludes `.env`** — `grep -q '^\.env$' .gitignore || echo '.env' >> .gitignore`.
-4. **Create `.env.example`** with the four canonical keys above and stub values.
-5. **Create `.env`** by copying `.env.example` and filling in the real values. Confirm `git status` does NOT show `.env`.
-6. **Pick the client library** — see the language router below; generate the hello-world; run it.
+### Bootstrapping (Core / Enterprise — self-hosted)
+
+These steps happen ONCE, on the server side, before any application code:
+
+1. **Pick the flavor** — Core or Enterprise (self-hosted), or skip to "Cloud" below. See `references/flavors.md`.
+2. **Start the server** — `influxdb3 serve --object-store=...` (Core) or your cluster bootstrap (Enterprise).
+3. **Create the operator/admin token.** For a brand-new server, this is a bootstrap step that does NOT require an existing token:
+   - CLI: `influxdb3 create token --admin --host http://localhost:8181`
+   - Save the token output — it's shown ONCE. Use it for steps 4–5 (server admin), not as your application's token.
+4. **Create the database** using the admin token:
+   - CLI: `influxdb3 create database <name> --token <admin-token> --host http://localhost:8181`
+   - Or HTTP: `POST /api/v3/configure/database` with `Authorization: Bearer <admin-token>` and body `{"db":"<name>"}`.
+5. **(Recommended)** Create a database-scoped token for the application instead of reusing the admin token:
+   - CLI: `influxdb3 create token --permission "db:<name>:read,write" --token <admin-token>`
+   - This is the token the application reads from `INFLUXDB_TOKEN`.
+
+### Bootstrapping (Cloud Serverless / Cloud Dedicated)
+
+The server already exists and the bootstrap admin already happened on InfluxData's side:
+
+1. **Pick the flavor** and confirm the host pattern (`<region>-<id>.cloud2.influxdata.com` for Serverless; customer-specific hostname for Dedicated). See `references/flavors.md`.
+2. **Create the database/bucket** via the Cloud UI or the management API (instructions vary per flavor — see `references/doc-urls.md`).
+3. **Create a database-scoped token** via the Cloud UI or management API.
+
+### Per-project setup (any flavor — happens in the developer's workspace)
+
+Once the server side is bootstrapped and you have `host`, `database`, and `token` values to use:
+
+4. **Verify `.gitignore` excludes `.env`** — `grep -q '^\.env$' .gitignore || echo '.env' >> .gitignore`. Non-negotiable.
+5. **Create `.env.example`** with the four canonical keys above and stub values. Commit it.
+6. **Create `.env`** by copying `.env.example` and filling in the real values. Confirm `git status` does NOT show `.env`.
+7. **Pick the client library** — see the language router; generate the hello-world; run it.
+
+### When the developer says "I just spun up Core/Enterprise"
+
+That means they're at step 2 of bootstrapping, with nothing else done yet. Walk through 3 → 4 → 5 (or 4 if they're fine reusing the admin token for now) before any application code. Don't assume a database already exists.
 
 ## `.env` loaders per language
 

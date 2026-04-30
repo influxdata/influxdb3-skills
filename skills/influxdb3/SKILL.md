@@ -31,14 +31,35 @@ This skill stands alone — it does not require the InfluxDB 3 MCP server. If th
 
 ## 2. First-time setup checklist
 
-If the developer is starting fresh in a project (no `.env`, no client imports), walk through these six steps before generating application code:
+Order matters. The admin token has to exist before you can create a database, and the database has to exist before any application code can write to it. **Do not conflate "create a token" with "create the application's token" — they're different operations.**
 
-1. **Pick the flavor** — Core, Enterprise, Cloud Serverless, or Cloud Dedicated. If unknown, see §3 for `/ping`-based detection or ask. See `references/flavors.md`.
-2. **Create a token** — for the chosen flavor; link the developer to the relevant page on docs.influxdata.com from `references/doc-urls.md`.
-3. **Verify `.gitignore` excludes `.env`** — non-negotiable.
-4. **Create `.env.example`** with `INFLUXDB_HOST`, `INFLUXDB_TOKEN`, `INFLUXDB_DATABASE` (and `INFLUXDB_ORG` only if Cloud Serverless writes).
-5. **Create `.env`** by copying `.env.example` and filling in real values. Confirm `git status` does NOT show `.env`.
-6. **Pick the client library** (§4 router), generate the hello-world, run it.
+### Bootstrapping (Core / Enterprise self-hosted)
+
+Happens once, on the server side, before any application code:
+
+1. **Pick the flavor** — Core or Enterprise (self-hosted), or jump to "Cloud" below.
+2. **Start the server** — e.g., `influxdb3 serve --object-store=...`.
+3. **Create the operator/admin token** (this is a bootstrap step that does NOT require an existing token): `influxdb3 create token --admin --host http://localhost:8181`. Save the output — it's shown once.
+4. **Create the database** using the admin token: `influxdb3 create database <name> --token <admin-token>` or `POST /api/v3/configure/database`.
+5. **(Recommended)** Create a database-scoped token for the application instead of reusing the admin token. This is what the application reads as `INFLUXDB_TOKEN`.
+
+### Bootstrapping (Cloud Serverless / Cloud Dedicated)
+
+The server is already managed by InfluxData. Use the Cloud UI / management API to:
+
+1. Create the database/bucket.
+2. Create a database-scoped token.
+
+### Per-project setup (any flavor)
+
+Once you have `host`, `database`, and a scoped `token`:
+
+6. **Verify `.gitignore` excludes `.env`** — non-negotiable.
+7. **Create `.env.example`** with `INFLUXDB_HOST`, `INFLUXDB_TOKEN`, `INFLUXDB_DATABASE` (and `INFLUXDB_ORG` only if Cloud Serverless writes).
+8. **Create `.env`** by copying `.env.example` and filling in real values. Confirm `git status` does NOT show `.env`.
+9. **Pick the client library** (§4 router), generate the hello-world, run it.
+
+If the developer says *"I just spun up Core/Enterprise"*, they're at step 2 — walk them through 3 → 4 → 5 before any application code. Don't assume a database or token exists.
 
 Full detail: `references/connecting.md`.
 
