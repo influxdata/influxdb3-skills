@@ -1,0 +1,13 @@
+{
+  "name": "influxdb3-hello",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "hello": "node hello.js",
+    "schema": "node schema-example.js"
+  },
+  "dependencies": {
+    "@influxdata/influxdb3-client": "^0.13.0",
+    "dotenv": "^16.4.0"
+  }
+}
