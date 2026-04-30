@@ -68,6 +68,40 @@ That means they're at step 2 of bootstrapping, with nothing else done yet. Walk 
 | Java | `io.github.cdimascio:dotenv-java` | `Dotenv dotenv = Dotenv.load();` then `dotenv.get("INFLUXDB_TOKEN")` |
 | C# | `DotNetEnv` | `DotNetEnv.Env.Load();` at startup, then `Environment.GetEnvironmentVariable(...)` |
 
+## The silent auto-create footgun
+
+> **Important:** InfluxDB 3 (Core, Enterprise, and Cloud, with default config) will **silently auto-create a database on first write**. A typo in `INFLUXDB_DATABASE` won't error — it'll create a brand-new, empty database with the misspelled name and write your data there. The original database keeps growing nothing; your dashboards and queries against the original name return zero rows.
+
+This means: **a script can report `==> Done` while doing the wrong thing.** Always verify the database exists *before* writing.
+
+### Verify a database exists
+
+CLI:
+
+```bash
+influxdb3 show databases --host "$INFLUXDB_HOST" --token "$INFLUXDB_TOKEN"
+```
+
+HTTP:
+
+```bash
+curl -sS "$INFLUXDB_HOST/api/v3/configure/database?format=json" \
+  -H "Authorization: Bearer $INFLUXDB_TOKEN" | jq -r '.[] | ."iox::database"'
+```
+
+If the target name isn't in the list, **create it before writing**:
+
+```bash
+curl -sS -X POST "$INFLUXDB_HOST/api/v3/configure/database" \
+  -H "Authorization: Bearer $INFLUXDB_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d "{\"db\": \"$INFLUXDB_DATABASE\"}"
+```
+
+### When generating new application code
+
+If the developer is starting fresh and you don't have evidence the database already exists, **either create the database explicitly** as part of the setup walkthrough, **or include a startup check** in the generated code that lists databases and aborts with a clear error if the target isn't there. Don't ship code that silently creates a database the developer didn't intend.
+
 ## When the developer pushes back on env vars
 
 If they want a config file or hard-coded constants for "just a quick test":

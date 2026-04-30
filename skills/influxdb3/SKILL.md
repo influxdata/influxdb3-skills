@@ -31,37 +31,35 @@ This skill stands alone — it does not require the InfluxDB 3 MCP server. If th
 
 ## 2. First-time setup checklist
 
-Order matters. The admin token has to exist before you can create a database, and the database has to exist before any application code can write to it. **Do not conflate "create a token" with "create the application's token" — they're different operations.**
+> **STOP and check the prerequisites BEFORE writing any application code.** The most common skill failure is jumping straight to "write me a Python script" without confirming the database and token exist. This produces code that *appears* to work — InfluxDB 3 silently auto-creates databases on first write — but routes data to the wrong DB on a typo, or fails authorization on the wrong host.
 
-### Bootstrapping (Core / Enterprise self-hosted)
+### Required preconditions checklist
 
-Happens once, on the server side, before any application code:
+Before you generate any application code, walk the developer through these and confirm each one is true:
 
-1. **Pick the flavor** — Core or Enterprise (self-hosted), or jump to "Cloud" below.
-2. **Start the server** — e.g., `influxdb3 serve --object-store=...`.
-3. **Create the operator/admin token** (this is a bootstrap step that does NOT require an existing token): `influxdb3 create token --admin --host http://localhost:8181`. Save the output — it's shown once.
-4. **Create the database** using the admin token: `influxdb3 create database <name> --token <admin-token>` or `POST /api/v3/configure/database`.
-5. **(Recommended)** Create a database-scoped token for the application instead of reusing the admin token. This is what the application reads as `INFLUXDB_TOKEN`.
+- [ ] **Server is running and reachable.** `curl <host>/ping` returns 200 with `x-influxdb-build` header.
+- [ ] **Admin token exists.** For Core/Enterprise, this is the operator token shown when the server first started, or one you generated with `influxdb3 create token --admin`. For Cloud, this is your Cloud-Console-generated management token.
+- [ ] **Target database exists.** Confirm with `influxdb3 show databases --token <admin-token>` or `GET /api/v3/configure/database?format=json`. If it doesn't, create it: `influxdb3 create database <name> --token <admin-token>` or `POST /api/v3/configure/database` with body `{"db":"<name>"}`.
+- [ ] **Application token exists** with read+write on that database. Best practice: a *scoped* token, not the admin token. `influxdb3 create token --permission "db:<name>:read,write" --token <admin-token>`.
+- [ ] **`.gitignore` excludes `.env`.**
+- [ ] **`.env.example` is committed**; `.env` is NOT committed.
+- [ ] **Env vars set:** `INFLUXDB_HOST`, `INFLUXDB_TOKEN`, `INFLUXDB_DATABASE` (and `INFLUXDB_ORG` only for Cloud Serverless writes).
 
-### Bootstrapping (Cloud Serverless / Cloud Dedicated)
+If the developer says *"I just spun up Core/Enterprise"*, **none of the above are guaranteed yet** — walk through them before writing any code.
 
-The server is already managed by InfluxData. Use the Cloud UI / management API to:
+### Why this is a hard gate (the silent-success footgun)
 
-1. Create the database/bucket.
-2. Create a database-scoped token.
+InfluxDB 3 will silently **auto-create a database** on the first successful write, with the default config. So a script that targets a misnamed database (e.g. `senor_data` instead of `sensor_data`) will report success — but the data lands in a brand-new, wrong database. The only protection is verifying the database exists explicitly *before* the first write. **Do not skip this step**, even when the developer's prompt is "just write me the script."
 
-### Per-project setup (any flavor)
+### Order of operations (Core / Enterprise self-hosted)
 
-Once you have `host`, `database`, and a scoped `token`:
+1. Start server → 2. Create admin token (bootstrap, no existing token needed) → 3. Create database → 4. (Recommended) Create scoped app token → 5. Set env vars → 6. Generate code.
 
-6. **Verify `.gitignore` excludes `.env`** — non-negotiable.
-7. **Create `.env.example`** with `INFLUXDB_HOST`, `INFLUXDB_TOKEN`, `INFLUXDB_DATABASE` (and `INFLUXDB_ORG` only if Cloud Serverless writes).
-8. **Create `.env`** by copying `.env.example` and filling in real values. Confirm `git status` does NOT show `.env`.
-9. **Pick the client library** (§4 router), generate the hello-world, run it.
+### Order of operations (Cloud Serverless / Cloud Dedicated)
 
-If the developer says *"I just spun up Core/Enterprise"*, they're at step 2 — walk them through 3 → 4 → 5 before any application code. Don't assume a database or token exists.
+The server is managed by InfluxData. Use the Cloud UI / management API to: create the database/bucket → create a scoped token. Then set env vars and generate code.
 
-Full detail: `references/connecting.md`.
+Full detail and copy-paste-ready commands: `references/connecting.md`.
 
 ## 3. Flavor detection
 
@@ -99,12 +97,13 @@ Full auth details and `.env`-loader snippets per language: `references/connectin
 
 ## 5. Writing data
 
-**Three rules:**
+**Four rules:**
+- **Verify the database exists before the first write.** v3 silently auto-creates databases on first write, which masks typos — a misspelled `INFLUXDB_DATABASE` becomes a brand-new empty DB with no error. Either create the DB explicitly during setup (§2) or have generated code list databases at startup and abort with a clear error if the target isn't there.
 - Use line protocol — never invent a "JSON write" path; v3 ingests line protocol.
 - Batch writes — ≥ 1,000 points or 1-second flush, whichever first.
 - Distinguish retriable (5xx, 429) from non-retriable (400, 401, 404) errors.
 
-For depth: `references/writing.md`. For per-language batch-write code: same router as §4.
+For depth: `references/writing.md`. For per-language batch-write code: same router as §4. For the auto-create footgun and the explicit "verify database exists" recipe: `references/connecting.md` → "The silent auto-create footgun".
 
 ## 6. Querying data
 
