@@ -1,13 +1,14 @@
 {
   "name": "claude-influxdb3",
-  "version": "0.1.0",
-  "description": "Teach Claude Code to write correct InfluxDB 3 code (connect, write, query, schema design) across Core, Enterprise, Cloud Serverless, and Cloud Dedicated, in Python, JavaScript, Go, Java, C#, and raw HTTP.",
+  "version": "0.2.0",
+  "description": "Teach Claude Code to write correct InfluxDB 3 code (connect, write, query, schema design) and to develop, install, and test Processing Engine plugins across Core, Enterprise, Cloud Serverless, and Cloud Dedicated, in Python, JavaScript, Go, Java, C#, and raw HTTP.",
   "author": {
     "name": "Gary Fowler",
     "email": "garyfowler2015@gmail.com"
   },
   "license": "MIT",
   "skills": [
-    "skills/influxdb3"
+    "skills/influxdb3",
+    "skills/influxdb3-plugins"
   ]
 }
