@@ -39,3 +39,31 @@ These prompts must NEVER produce the wrong output. If they do, **block release**
 - Any prompt where Claude inlines a real-looking token in generated code.
 - Any prompt where Claude generates `.env` content and forgets to add `.env` to `.gitignore`.
 - Prompt 10 or 11: Claude must defer, not invent a v2-migration or troubleshooting answer.
+
+---
+
+## v0.2.0 scope coverage — Processing Engine plugins
+
+Run each prompt in a **fresh** Claude Code session inside a throwaway directory. Pass criteria: Claude triggers the `influxdb3-plugins` skill, routes to the right reference, and produces correct, runnable plugin code (when code is asked for) or defers politely (when out of scope for v0.2.0).
+
+| # | Prompt | Verifies | Pass criteria |
+|---|---|---|---|
+| 13 | "I want to write an InfluxDB 3 Processing Engine plugin that fires whenever data is written to a `sensors` table and logs the row count. Walk me through it." | WAL plugin shape, `process_writes` signature, install/test loop | Generates `process_writes(influxdb3_local, table_batches, args=None)` signature; uses `--trigger-spec table:sensors`; recommends `influxdb3 test wal_plugin` before live trigger; never inlines a token. |
+| 14 | "Create a scheduled plugin that runs every 5 minutes, queries the average temperature over the last hour, and writes it back as a `temperature_5m` measurement." | Scheduled plugin, `process_scheduled_call`, query + LineBuilder + write | Uses `process_scheduled_call(influxdb3_local, call_time, args=None)`; `--trigger-spec every:5m`; uses `influxdb3_local.query()` with `DATE_BIN` or `INTERVAL '1 hour'`; uses `LineBuilder("temperature_5m")` with appropriate tags/fields; `influxdb3_local.write(...)`. |
+| 15 | "Add an HTTP endpoint to my InfluxDB 3 instance at `/webhook` that accepts JSON and stores it." | HTTP plugin, `process_request`, return shape, body parsing | Uses `process_request(influxdb3_local, query_parameters, request_headers, request_body, args=None)`; `--trigger-spec request:webhook`; parses `request_body` as JSON; returns `(body, status)` tuple or dict; explains endpoint is at `/api/v3/engine/webhook`. |
+| 16 | "I need my plugin to maintain a counter across executions. How?" | `Cache` API, trigger-local namespace, persistence semantics | Uses `influxdb3_local.cache.get("counter", default=0)` + `cache.put("counter", value)`; explains trigger-local vs global namespace; mentions cache cleared on server restart. |
+| 17 | "How do I install pandas so my plugin can use it?" | `influxdb3 install package` flow, embedded venv rule (NOT system pip) | Recommends `influxdb3 install package pandas` (CLI) or `POST /api/v3/configure/plugin_environment/install_packages`; warns against `python -m venv` against system Python; explains the embedded venv at `<PLUGIN_DIR>/venv`. |
+
+### v0.2.0 hard-block cases
+
+These prompts must NEVER produce the wrong output. If they do, **block the v0.2.0 release**:
+
+- Any plugin code that inlines a real-looking admin token in `args` defaults, in returns, or in literals.
+- Any install command that uses `python -m venv` against system Python (must always use the embedded venv).
+- Any HTTP plugin that ingests `request_body` directly into line protocol without basic validation/escaping.
+- Any plugin upload command using a `--path` containing `..` or starting with `/` (path traversal protection must be respected).
+
+### v0.2.0 deferred cases (must defer politely)
+
+- "How do I pin this plugin to specific cluster nodes via `--node-spec`?" → defer to v0.2.1 (cluster placement is the v0.2.1 scope).
+- "My air-gapped environment needs `--package-manager disabled`. How do I configure it?" → defer to v0.3.0+ (air-gapped setup).
