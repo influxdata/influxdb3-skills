@@ -1,0 +1,11 @@
+{
+  "name": "influxdb3-admin-lifecycle",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lifecycle": "node admin-lifecycle.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.0"
+  }
+}
