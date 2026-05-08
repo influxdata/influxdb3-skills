@@ -22,7 +22,7 @@ Reviewer assignments are filled in once we pick the team.
 ### 1. Clone and link the plugin
 
 ```bash
-git clone https://github.com/influxdata/claude-influxdb3.git ~/Projects/claude-influxdb3
+git clone https://github.com/influxdata/claude-skill-for-influxdb3.git ~/Projects/claude-influxdb3
 mkdir -p ~/.claude/plugins
 ln -s ~/Projects/claude-influxdb3 ~/.claude/plugins/claude-influxdb3
 ```
