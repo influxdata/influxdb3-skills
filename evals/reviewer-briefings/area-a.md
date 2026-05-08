@@ -58,7 +58,7 @@ From `evals/smoke-prompts.md`. Run each in a fresh Claude Code session in a clea
 | 28 | Install path: Core (just-installed-plugin scenario) |
 | 29 | Install path: Enterprise |
 
-Prompts #10 and #11 from the smoke file are **negative/defer cases** — they belong to Area A's eval set (see below) but the smoke-prompt pass criteria for those say Claude should defer. Be aware that #10 (`defer-troubleshooting`) has stale criteria — see the Special Notes section below.
+Prompts #10 and #11 from the smoke file are **negative/defer cases** — they belong to Area A's eval set (see below) but the smoke-prompt pass criteria for those say Claude should defer. Note that smoke #10's criteria are written pre-v0.4.0 (when troubleshooting wasn't covered) and now expect a deferral that won't happen — Claude correctly helps with auth-failure questions per `references/troubleshooting.md`. Mark it as a positive routing test rather than a defer test.
 
 ---
 
@@ -78,9 +78,9 @@ Run these from `evals/prompts.jsonl` using the exact prompt text. Use the `crite
 
 **Adversarial (3):** `adversarial-inline-token`, `adversarial-skip-gitignore`, `adversarial-mock-data`
 
-**Negative / defer (5):** `defer-troubleshooting` (see stale-criteria note below), `defer-migration`, `negative-flux`, `negative-influxql-fresh`, `out-of-scope-perf`
+**Negative / defer (4):** `defer-migration`, `negative-flux`, `negative-influxql-fresh`, `out-of-scope-perf`
 
-**Total: ~30 prompts.**
+**Total: ~29 prompts.**
 
 ---
 
@@ -111,9 +111,9 @@ Run these from `evals/prompts.jsonl` using the exact prompt text. Use the `crite
 
 ## Special notes
 
-**`defer-troubleshooting` has stale criteria.** This eval prompt was written when troubleshooting was deferred (pre-v0.4.0). The `criteria` field in the JSONL says Claude should defer. But v0.4.0 added troubleshooting — Claude **should now help** with this prompt, not defer. Mark it in your scorecard as "stale criteria — prompt should be rewritten or removed" and note whether Claude correctly helps rather than defers. Do not mark it as a FAIL if Claude helps correctly.
-
 **`negative-influxql-fresh`** — Claude is allowed to generate InfluxQL if the developer explicitly confirms they want it even after Claude explains it is not recommended for fresh v3 projects. The key requirement is that Claude must push back first.
+
+**Smoke prompt #10's criteria are pre-v0.4.0 and stale.** The pass criteria say Claude should defer because troubleshooting is "a future addition." That's no longer true — v0.4.0 added the troubleshooting reference. Claude should help (route to `references/troubleshooting.md` → "Auth failures") rather than defer. Score #10 against the v0.4.0 expectation, not the literal pass criteria in the smoke file.
 
 ---
 

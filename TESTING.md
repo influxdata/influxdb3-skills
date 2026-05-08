@@ -10,10 +10,10 @@ You're testing whether Claude actually does the right thing when a developer ask
 
 | Area | Topic | Briefing | Reviewer |
 |---|---|---|---|
-| A | Connect / Write / Query / Schema | `evals/reviewer-briefings/area-a.md` | &lt;TBD&gt; |
-| B | Database & Token Management | `evals/reviewer-briefings/area-b.md` | &lt;TBD&gt; |
-| C | Processing Engine Plugins | `evals/reviewer-briefings/area-c.md` | &lt;TBD&gt; |
-| D | Troubleshooting & Debugging | `evals/reviewer-briefings/area-d.md` | &lt;TBD&gt; |
+| A | Connect / Write / Query / Schema | `evals/reviewer-briefings/area-a.md` | Jason Stirnaman |
+| B | Database & Token Management | `evals/reviewer-briefings/area-b.md` | Daniel Campbell |
+| C | Processing Engine Plugins | `evals/reviewer-briefings/area-c.md` | Ryan Cater |
+| D | Troubleshooting & Debugging | `evals/reviewer-briefings/area-d.md` | Scott Anderson |
 
 Reviewer assignments are filled in once we pick the team.
 

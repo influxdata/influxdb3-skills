@@ -4,7 +4,7 @@ A Claude Code plugin that teaches Claude to write correct InfluxDB 3 code, manag
 
 Stands alone — no MCP server required.
 
-**Status:** v0.4.1. Two skills (`influxdb3` v0.4.1, `influxdb3-plugins` v0.4.1). Distributed as a Claude Code plugin from this repo. Version history in [`CHANGELOG.md`](CHANGELOG.md); roadmap in [What it does NOT cover yet](#what-it-does-not-cover-yet).
+**Status:** v0.4.2. Two skills (`influxdb3` v0.4.2, `influxdb3-plugins` v0.4.2). Distributed as a Claude Code plugin from this repo. Version history in [`CHANGELOG.md`](CHANGELOG.md); roadmap in [What it does NOT cover yet](#what-it-does-not-cover-yet).
 
 > **Reviewers:** if you've been invited to review this skill, start with [`TESTING.md`](TESTING.md) and your area-specific briefing under [`evals/reviewer-briefings/`](evals/reviewer-briefings/).
 

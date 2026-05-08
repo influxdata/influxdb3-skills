@@ -19,7 +19,7 @@ description: |
   token, /api/v3/configure/token, and /api/v3/configure/database. Distinct
   from the influxdb3-plugins skill, which covers code that runs INSIDE
   InfluxDB.
-version: 0.4.1
+version: 0.4.2
 last_verified: "2026-05-08"
 verified_against:
   influxdb3_core: "3.8"
