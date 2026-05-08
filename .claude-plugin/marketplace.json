@@ -1,0 +1,15 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "influxdata",
+  "description": "InfluxData plugins for Claude Code",
+  "owner": {
+    "name": "InfluxData"
+  },
+  "plugins": [
+    {
+      "name": "claude-influxdb3",
+      "source": "./",
+      "homepage": "https://github.com/influxdata/claude-skill-for-influxdb3"
+    }
+  ]
+}

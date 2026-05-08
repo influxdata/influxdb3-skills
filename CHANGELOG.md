@@ -4,6 +4,19 @@ All notable changes to this skill will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.4.2] — 2026-05-08
+
+### Changed
+- **Install method**: replaced the `~/.claude/plugins/` symlink approach with the standard Claude Code marketplace flow. Users now run `/plugin marketplace add influxdata/claude-skill-for-influxdb3` and `/plugin install claude-influxdb3@influxdata`. The previous symlink instructions did not register the plugin with Claude Code's plugin system and produced no installed entry.
+- README Install section rewritten; new "Develop locally" subsection covers contributor workflow against a local clone, including the `/plugin marketplace remove` step needed to avoid name collision with the published marketplace.
+- Bumped `.claude-plugin/plugin.json` to `0.4.2`.
+
+### Added
+- `.claude-plugin/marketplace.json` — makes the repo self-installable as a Claude Code marketplace named `influxdata`, with `claude-influxdb3` as its single plugin sourced from `./`.
+
+### Fixed
+- Removed the `skills` array from `.claude-plugin/plugin.json`. The current Claude Code schema rejects it (`Validation errors: skills: Invalid input`), causing `/plugin install` to fail. Skills auto-discover from the `skills/` directory, so the explicit list was redundant as well as invalid.
+
 ## [0.4.1] — 2026-05-08
 
 ### Added
