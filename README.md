@@ -1,6 +1,6 @@
 # claude-influxdb3
 
-A Claude Code plugin that teaches Claude to write correct InfluxDB 3 code, manage databases and tokens, develop Processing Engine plugins, and troubleshoot when things break — across **Core, Enterprise, Cloud Serverless, and Cloud Dedicated**, in **Python, JavaScript/TypeScript, Go, Java, C#**, or **raw HTTP**.
+A Claude Code plugin that teaches Claude to write correct InfluxDB 3 code, manage databases and tokens, develop Processing Engine plugins, and troubleshoot when things break — for **Core and Enterprise**, in **Python, JavaScript/TypeScript, Go, Java, C#**, or **raw HTTP**.
 
 Stands alone — no MCP server required.
 
@@ -16,7 +16,7 @@ The plugin contains two skills. Each loads automatically when its topics come up
 
 - **Get InfluxDB 3 running** — Core and Enterprise install (official script + Docker), operator-token bootstrap, `/ping` verification. For users who don't have a server yet.
 - **Connect & authenticate** — env-var driven, never inlines tokens, `.gitignore` enforcement.
-- **Detect the flavor** — auto-probe `/ping` to identify Core / Enterprise / Cloud Serverless / Cloud Dedicated, with a polite ask-the-user fallback when ambiguous.
+- **Detect Core vs. Enterprise** — auto-probe `/ping` and inspect the `x-influxdb-build` and `x-influxdb-version` response headers, with a polite ask-the-user fallback when ambiguous.
 - **Write data** — line protocol, batching rules, retriable vs. non-retriable error handling, the whole-batch-rejects-on-one-bad-line gotcha.
 - **Query data** — v3 SQL by default, parameterized user input, sensible pagination, time-bucket patterns.
 - **Design schemas** — tag-vs-field decisions, cardinality guidance, naming conventions, type stability.
@@ -103,7 +103,8 @@ When asked about any of the below, the skill defers to the official docs rather 
 - **v1/v2 → v3 migration helper** — v0.6.0.
 - **App-pattern templates** — IoT pipelines, dashboards, alerts/downsampling. v0.7.0.
 - **Cluster placement & multi-node patterns for plugins** — v0.2.1.
-- **Air-gapped setup + Cloud admin verification** — v0.3.1.
+- **Air-gapped setup** — v0.3.1.
+- **Cloud Serverless and Cloud Dedicated support** — these flavors use different APIs for token management, database management, and (in Serverless's case) writes/queries. Needs flavor-specific code paths beyond what's currently built. Roadmap, version TBD.
 
 ## Verifying the skill is fresh
 
