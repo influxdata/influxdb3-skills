@@ -4,6 +4,25 @@ All notable changes to this skill will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.3.0] — 2026-05-08
+
+### Added
+- New SKILL.md sections §10 (Database management) and §11 (Token management) in the `influxdb3` skill.
+- Three new references — `references/admin-http-api.md` (wire-format ground truth, verified live against Enterprise 3.8.4), `references/databases.md`, `references/tokens.md` — covering CLI + HTTP API for both DB and token CRUD plus the safe rotation pattern.
+- Six runnable admin lifecycle examples — `examples/admin-{python,javascript,go,java,csharp,http}/` — each verified end-to-end against the live Enterprise 3.8.4 instance. Lifecycle: list → create DB → create scoped token → write a point → list/filter tokens via SQL on `system.tokens` → rotate → delete original → delete DB → delete rotated → final orphan check.
+- 5 new manual smoke prompts (#18–#22) and 8 new formal eval prompts (4 admin + 2 adversarial + 2 negative).
+- Cross-references in `references/connecting.md` and new rows in `references/flavors.md` for admin APIs.
+
+### Changed
+- Bumped `.claude-plugin/plugin.json` to `0.3.0`; `influxdb3` skill version to `0.3.0`; description field extended with admin keywords.
+- `SKILL.md` §9 deferred-topics list: removed "Database & token management"; added "Air-gapped setup → v0.3.1".
+
+### Known limitations (deferred)
+- Cloud Serverless and Cloud Dedicated admin API runtime verification — planned for v0.3.1 (no live Cloud test instance available; Cloud-flavor request shapes documented as reference shape only).
+- Air-gapped setup (`--package-manager disabled`, custom plugin repos, offline mirrors) — planned for v0.3.1.
+- Resource-token HTTP create endpoint differs between Core (`/api/v3/configure/token`) and Enterprise (`/api/v3/enterprise/configure/token`); examples target Enterprise — README documents the one-line swap for Core.
+- Token CRUD via plugin runtime (admin operations from inside `process_request` / etc.) — explicitly out of scope; plugins use args-based tokens, not admin tokens.
+
 ## [0.2.0] — 2026-05-07
 
 ### Added

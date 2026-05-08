@@ -27,14 +27,25 @@ When this skill is loaded, Claude knows how to:
 
 Single-node only in v0.2.0; cluster patterns are v0.2.1.
 
+### What v0.3.0 adds to the `influxdb3` skill
+
+When this skill is loaded, Claude knows how to:
+
+- **Provision databases** — `create database`, `show databases`, `update database` (retention period), `delete database` via CLI and HTTP API.
+- **Manage tokens** — admin tokens, scoped resource tokens with `db:<name>:read,write` permission strings, listing via `system.tokens`, deletion.
+- **Rotate tokens safely** — the create-new → swap-secret → revoke-old pattern, with explicit guidance against the wrong order.
+- **Automate admin work in any of the 6 client paths** — Python, JavaScript/TypeScript, Go, Java, C#, raw HTTP. Each example exercises a complete 10-step lifecycle (list → create → use → rotate → cleanup → orphan check) and is verified end-to-end against the live Enterprise instance during build.
+
+Cloud Serverless and Cloud Dedicated content ships as reference shape; runtime verification is queued for v0.3.1 (alongside air-gapped setup).
+
 ## Status
 
-**v0.2.0** — local distribution only. Two skills shipping in one plugin:
+**v0.3.0** — local distribution only. Two skills shipping in one plugin:
 
-- **`influxdb3`** (v0.1.0) — connect, write, query, schema design across all four InfluxDB 3 flavors and six client paths.
-- **`influxdb3-plugins`** (v0.2.0) — develop, install, and test InfluxDB 3 Processing Engine plugins (single-node). All three trigger types (WAL, scheduled, HTTP request).
+- **`influxdb3`** (v0.3.0) — connect, write, query, schema design, **plus database & token management** (CLI + HTTP API, all 6 client paths) across all four InfluxDB 3 flavors.
+- **`influxdb3-plugins`** (v0.2.0) — develop, install, and test InfluxDB 3 Processing Engine plugins (single-node). All three trigger types.
 
-Future versions will cover distributed cluster patterns (v0.2.1), database/token management plus air-gapped setup (v0.3.0), troubleshooting (v0.4.0), performance tuning (v0.5.0), v1/v2→v3 migration (v0.6.0), and common app patterns (v0.7.0). See [`CHANGELOG.md`](CHANGELOG.md) and the spec docs under [`docs/superpowers/specs/`](docs/superpowers/specs/).
+Future versions: distributed cluster patterns for plugins (v0.2.1), air-gapped setup + Cloud-instance verification (v0.3.1), troubleshooting (v0.4.0), performance tuning (v0.5.0), v1/v2→v3 migration (v0.6.0), common app patterns (v0.7.0). See [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Install (local dev / preview)
 

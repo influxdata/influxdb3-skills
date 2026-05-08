@@ -85,3 +85,29 @@ When releasing a version that includes plugin-skill changes:
 4. **Re-run the formal eval suite** including the 10 new v0.2.0 prompts. Adversarial pass rate must be 100%.
 
 5. **Update `docs/eval-history.md`** with per-category pass rates including the new categories (`plugins`, plus the new entries in `adversarial` and `negative`).
+
+## v0.3.0+ extras (admin / DB + token management)
+
+When releasing a version that includes `influxdb3` skill admin changes:
+
+1. **Bump versions:**
+   - `.claude-plugin/plugin.json` `version`
+   - `skills/influxdb3/SKILL.md` `version`, `last_verified`
+
+2. **Pre-release orphan check** (mandatory):
+
+   ```bash
+   export PATH="/Users/garyfowler/.influxdb:$PATH"
+   influxdb3 show databases --format json | python3 -c "import json,sys; data=json.load(sys.stdin); print('db orphans:', [d['iox::database'] if isinstance(d, dict) else d for d in data if 'admin_test_' in str(d)])"
+   influxdb3 show tokens --format json | python3 -c "import json,sys; data=json.load(sys.stdin); print('token orphans:', [t['name'] for t in data if 'admin_test_' in t.get('name','')])"
+   ```
+
+   Both lists must be empty before the release lifecycle re-runs. If anything's left over, manually `influxdb3 delete database <name>` and `influxdb3 delete token --token-name <name>` to clean up.
+
+3. **Re-run the six admin lifecycle examples** against the live instance: `examples/admin-http`, `examples/admin-python`, `examples/admin-javascript`, `examples/admin-go`, `examples/admin-java`, `examples/admin-csharp`. Each must reach "Done. Lifecycle completed cleanly."
+
+4. **Post-release orphan check** (mandatory): same as step 2; both lists must again be empty. Failures here block the tag.
+
+5. **Re-run smoke prompts (#18–#22)** in fresh Claude Code sessions per the existing process.
+
+6. **Re-run formal eval suite** including the 8 new admin prompts. Adversarial pass rate must be 100%.
