@@ -97,7 +97,7 @@ When releasing a version that includes `influxdb3` skill admin changes:
 2. **Pre-release orphan check** (mandatory):
 
    ```bash
-   export PATH="/Users/garyfowler/.influxdb:$PATH"
+   export PATH="$HOME/.influxdb:$PATH"
    influxdb3 show databases --format json | python3 -c "import json,sys; data=json.load(sys.stdin); print('db orphans:', [d['iox::database'] if isinstance(d, dict) else d for d in data if 'admin_test_' in str(d)])"
    influxdb3 show tokens --format json | python3 -c "import json,sys; data=json.load(sys.stdin); print('token orphans:', [t['name'] for t in data if 'admin_test_' in t.get('name','')])"
    ```
@@ -124,7 +124,7 @@ When releasing a version that includes troubleshooting changes:
 2. **Pre-release orphan check** (mandatory; broadened to include troubleshooting demo patterns):
 
    ```bash
-   export PATH="/Users/garyfowler/.influxdb:$PATH"
+   export PATH="$HOME/.influxdb:$PATH"
    for pattern in admin_test_ senor_data_ diagnose_; do
      echo "=== orphans matching $pattern ==="
      influxdb3 show databases --format json | python3 -c "
