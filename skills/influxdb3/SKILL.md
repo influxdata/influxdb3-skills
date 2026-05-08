@@ -19,7 +19,7 @@ description: |
   token, /api/v3/configure/token, and /api/v3/configure/database. Distinct
   from the influxdb3-plugins skill, which covers code that runs INSIDE
   InfluxDB.
-version: 0.4.0
+version: 0.4.1
 last_verified: "2026-05-08"
 verified_against:
   influxdb3_core: "3.8"
@@ -40,6 +40,12 @@ This skill teaches Claude to write correct InfluxDB 3 code for **connect & authe
 It is for **InfluxDB 3** specifically — not 1.x or 2.x. If the developer is migrating from v1/v2, defer politely; migration support is on the roadmap.
 
 This skill stands alone — it does not require the InfluxDB 3 MCP server. If the MCP server is also installed, the skill complements it.
+
+## 1.5. Don't have an instance yet?
+
+If the developer says they don't have InfluxDB 3 running anywhere yet, walk them through getting one before §2 — `references/installing.md` covers Core and Enterprise install (script and Docker), bootstrapping the operator token, and verifying with `/ping`.
+
+For Cloud Serverless or Cloud Dedicated, the install path is signing up at https://www.influxdata.com/products/influxdb-cloud/. Claude does not create accounts on the user's behalf — direct them to sign up themselves, then continue with §2 once they have credentials.
 
 ## 2. First-time setup checklist
 

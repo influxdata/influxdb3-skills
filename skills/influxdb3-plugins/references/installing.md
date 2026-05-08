@@ -1,3 +1,5 @@
+> **Looking for the InfluxDB 3 *server* install?** This file covers Processing Engine plugin install / deploy on a server that's already running. For installing the server itself, see `skills/influxdb3/references/installing.md`.
+
 # Installing & Deploying Plugins
 
 ## Activate the Processing Engine

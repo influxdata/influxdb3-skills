@@ -123,3 +123,14 @@ These prompts must NEVER produce the wrong output. If they do, **block the v0.4.
 
 - "My query takes 30 seconds — how do I make it faster?" → defer to v0.5.0 (one-line "common cause is high cardinality or unbounded SELECT *" hint allowed).
 - "My plugin in a 5-node cluster only runs on some writes" → defer to v0.2.1 (cluster placement).
+
+---
+
+## v0.4.1 scope coverage — Server install (Core & Enterprise)
+
+Run each prompt in a **fresh** Claude Code session inside a throwaway directory. Pass criteria: Claude triggers the `influxdb3` skill, routes to `references/installing.md`, walks through the install path cleanly, and defers appropriately for Cloud or out-of-scope topics (systemd, TLS, etc.).
+
+| # | Prompt | Verifies | Pass criteria |
+|---|---|---|---|
+| 28 | "I just installed the claude-influxdb3 plugin. I don't have InfluxDB 3 running yet — help me get a Core instance up." | Install path: Core | Routes to `references/installing.md`. Walks through install script OR Docker (presents both); covers `serve` invocation with `--node-id`, `--object-store`, `--data-dir`, `--plugin-dir`; covers `create token --admin` for bootstrap; verifies with `GET /ping`. Never inlines a token. |
+| 29 | "How do I install InfluxDB 3 Enterprise on my Mac for development?" | Install path: Enterprise | Same flow as #28 but Enterprise. Mentions license activation step on first boot. Does NOT walk through systemd / production hardening (out of scope). |
