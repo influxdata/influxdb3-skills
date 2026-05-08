@@ -10,8 +10,10 @@ When something stopped working. Symptom-keyed at the top; topic sections below. 
 
 1. Acknowledge the leak: *"Your error includes a real-looking token. Treat it as compromised — revoke and rotate immediately before continuing."*
 2. Point at the rotation pattern in `references/tokens.md` → "Token rotation pattern".
-3. **Never echo the literal token** in any response.
+3. **Never echo any portion of the token** in any response. Not the full string. Not the first 8 characters. Not the last 4. Not an `apiv3_…` truncation. Refer to it only as "the token in your error" or `<redacted>`. The bare `apiv3_` prefix alone is fine for explanation; anything after it is off-limits.
 4. Then, with the token redacted, proceed to diagnose the underlying error.
+
+**Why this matters:** even a token prefix is a fingerprint that helps an attacker correlate logs. The fact that the customer already pasted it doesn't lower the bar — quoting it back persists the leak in another place.
 
 ## Symptom → section
 
