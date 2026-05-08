@@ -136,6 +136,7 @@ If the developer asks for any of the following, defer politely and explain it's 
 - **Performance tuning** (deep batching strategies, query plan analysis) — v1.1.
 - **v1/v2 → v3 migration** — v1.2.
 - **App-pattern templates** (IoT pipelines, dashboards, alerts/downsampling) — v1.3.
+- **Processing Engine plugins** (Python code that runs inside InfluxDB 3 — `process_writes`, `process_scheduled_call`, `process_request` triggers, `influxdb3_local` API, `LineBuilder`) — see the sibling `influxdb3-plugins` skill (v0.2.0+).
 
 Sample deferral:
 
