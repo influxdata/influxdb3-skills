@@ -40,6 +40,8 @@ For real-time streams, prefer the client's built-in batch-and-flush helper. For 
 
 A 400 from a single bad line in a batch will reject the **whole batch** in v3. Either pre-validate, or split-and-retry on 400 to find the bad row.
 
+For symptom-by-symptom diagnosis (including the "whole-batch reject" gotcha and the split-and-retry pattern), see `references/troubleshooting.md` → "Write failures".
+
 ## Type stickiness
 
 Once a field is a float, you cannot write a string to that same field name later — the schema infers types per-field on first write. To recover, either pick a different field name (`temperature_f` instead of `temperature`) or drop and recreate the table.

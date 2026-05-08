@@ -65,6 +65,8 @@ There is no offline test command for HTTP plugins. The fastest workflow:
 
 ## Live trigger iteration loop
 
+> If the iteration is happening because something is broken — the trigger isn't firing, the plugin is throwing errors, dependencies aren't loading — the symptom-keyed diagnostic is in `references/troubleshooting.md`. Use this section for the *how* of iterating; use `troubleshooting.md` for the *what does this symptom mean*.
+
 Once `influxdb3 test` (or, for HTTP plugins, the live trigger) validates your plugin works, deploy or refine using `update trigger`:
 
 ```bash

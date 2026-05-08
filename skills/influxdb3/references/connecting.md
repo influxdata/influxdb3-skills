@@ -102,6 +102,8 @@ curl -sS -X POST "$INFLUXDB_HOST/api/v3/configure/database" \
 
 If a typo has already auto-created a wrong-named DB, see `references/databases.md` → "Recovering from the silent auto-create footgun" for the recovery flow.
 
+For symptom-by-symptom diagnostic + recovery flow, see `references/troubleshooting.md` → "Silent auto-create misroute".
+
 ### When generating new application code
 
 If the developer is starting fresh and you don't have evidence the database already exists, **either create the database explicitly** as part of the setup walkthrough, **or include a startup check** in the generated code that lists databases and aborts with a clear error if the target isn't there. Don't ship code that silently creates a database the developer didn't intend.
