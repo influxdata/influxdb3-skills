@@ -1,14 +1,23 @@
 ---
 name: influxdb3
-description: Use when the developer is writing or modifying code that connects
-  to, reads from, writes to, or designs schemas for InfluxDB 3 (Core, Enterprise,
-  Cloud Serverless, or Cloud Dedicated). Triggers on imports of any official
+description: |
+  Use when the developer is writing or modifying code that connects to,
+  reads from, writes to, or designs schemas for InfluxDB 3 (Core, Enterprise,
+  Cloud Serverless, or Cloud Dedicated), OR when provisioning databases,
+  creating, rotating, listing, or deleting auth tokens (admin tokens, operator
+  tokens, scoped resource tokens with permission strings like
+  db:<dbname>:read,write), configuring retention periods, or automating any
+  of the above via CLI or HTTP API. Triggers on imports of any official
   InfluxDB 3 client (influxdb3-python, @influxdata/influxdb3-client,
-  influxdb3-go, influxdb3-java, InfluxDB3.Client), references to line protocol,
-  v3 SQL queries, or .env keys like INFLUXDB_HOST / INFLUXDB_TOKEN /
-  INFLUXDB_DATABASE.
-version: 0.1.0
-last_verified: 2026-04-29
+  influxdb3-go, influxdb3-java, InfluxDB3.Client), references to line
+  protocol, v3 SQL queries, or .env keys like INFLUXDB_HOST / INFLUXDB_TOKEN /
+  INFLUXDB_DATABASE; AND admin keywords like influxdb3 create token,
+  influxdb3 create database, influxdb3 show tokens, regenerate operator
+  token, /api/v3/configure/token, and /api/v3/configure/database. Distinct
+  from the influxdb3-plugins skill, which covers code that runs INSIDE
+  InfluxDB.
+version: 0.3.0
+last_verified: "2026-05-08"
 verified_against:
   influxdb3_core: "3.8"
   influxdb3_enterprise: "3.8"
