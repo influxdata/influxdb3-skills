@@ -1,7 +1,7 @@
 {
   "name": "claude-influxdb3",
-  "version": "0.3.0",
-  "description": "Teach Claude Code to write correct InfluxDB 3 code (connect, write, query, schema design), to develop, install, and test Processing Engine plugins, and to provision and manage databases and auth tokens — across Core, Enterprise, Cloud Serverless, and Cloud Dedicated, in Python, JavaScript, Go, Java, C#, and raw HTTP.",
+  "version": "0.4.0",
+  "description": "Teach Claude Code to write correct InfluxDB 3 code (connect, write, query, schema design), to develop, install, and test Processing Engine plugins, to provision and manage databases and auth tokens, AND to troubleshoot when something stops working — across Core, Enterprise, Cloud Serverless, and Cloud Dedicated, in Python, JavaScript, Go, Java, C#, and raw HTTP.",
   "author": {
     "name": "Gary Fowler",
     "email": "garyfowler2015@gmail.com"
