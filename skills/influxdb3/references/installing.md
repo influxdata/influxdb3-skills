@@ -2,7 +2,7 @@
 
 For users who installed the `claude-influxdb3` plugin but don't have a server yet. Covers Core and Enterprise on macOS / Linux. Two paths: official install script (recommended for first-time / single-machine), or Docker (recommended if you want isolation).
 
-> **Cloud Serverless and Cloud Dedicated** are managed services — they're not installed locally. Sign up at https://www.influxdata.com/products/influxdb-cloud/ for those flavors. Once you have credentials, return to `references/connecting.md`. Claude does not create accounts on your behalf.
+> **Cloud Serverless and Cloud Dedicated** are managed services — they're not installed locally. Sign up at https://www.influxdata.com/products/influxdb-overview/ for those flavors. Once you have credentials, return to `references/connecting.md`. Claude does not create accounts on your behalf.
 
 > **Already have an instance running?** Skip to `SKILL.md` §2 (First-time setup checklist).
 
@@ -53,18 +53,38 @@ docker run -d \
   -v $(pwd)/influxdb3-data:/var/lib/influxdb3 \
   -v $(pwd)/influxdb3-plugins:/plugins \
   influxdb/influxdb3-core \
-  serve --node-id node0 --object-store file --data-dir /var/lib/influxdb3 --plugin-dir /plugins
+  serve \
+    --node-id node0 \
+    --object-store file \
+    --data-dir /var/lib/influxdb3 \
+    --plugin-dir /plugins
 ```
 
-**Enterprise:** same shape, image is `influxdb/influxdb3-enterprise`.
+**Enterprise** (adds `--cluster-id`; license activation happens on first run via container stderr):
+```bash
+docker run -it \
+  --name influxdb3-enterprise \
+  -p 8181:8181 \
+  -v $(pwd)/influxdb3-data:/var/lib/influxdb3 \
+  -v $(pwd)/influxdb3-plugins:/plugins \
+  influxdb/influxdb3-enterprise \
+  serve \
+    --node-id node0 \
+    --cluster-id mycluster \
+    --object-store file \
+    --data-dir /var/lib/influxdb3 \
+    --plugin-dir /plugins \
+    --license-email you@example.com \
+    --license-type home
+```
 
-For Enterprise, you'll need a license activation step on first run — the container's stderr will print the activation URL.
+Use `-it` (not `-d`) for the first Enterprise boot so you can see the email-verification prompt. After the license is cached in the data volume, subsequent boots can run with `-d` (detached).
 
 ## First boot: starting the server
 
 (After install via the script. Docker users — skip; the container started already.)
 
-**Core:**
+**Core** (no cluster-id — that flag is Enterprise-only):
 ```bash
 mkdir -p ~/.influxdb/data ~/.influxdb/plugins
 influxdb3 serve \
@@ -74,7 +94,32 @@ influxdb3 serve \
   --plugin-dir ~/.influxdb/plugins
 ```
 
-**Enterprise:** same flags. First boot will print a license-activation URL — open it in a browser, register, paste the activation token back as prompted.
+**Enterprise** (adds `--cluster-id`, plus license activation on first boot):
+```bash
+mkdir -p ~/.influxdb/data ~/.influxdb/plugins
+influxdb3 serve \
+  --node-id node0 \
+  --cluster-id mycluster \
+  --object-store file \
+  --data-dir ~/.influxdb/data \
+  --plugin-dir ~/.influxdb/plugins \
+  --license-email you@example.com \
+  --license-type home
+```
+
+`--cluster-id` is required on Enterprise — it prefixes the location of the Enterprise Catalog in the object store. Pick any string; it sticks for the lifetime of that deployment.
+
+**Enterprise license activation:** On first boot, Enterprise sends a verification email to `--license-email` and pauses with `Waiting for verification...` until you click the link. After verification, the license is cached in the object store under `<cluster-id>/trial_or_home_license` and subsequent boots are non-interactive. License types:
+
+| `--license-type` | Use it for |
+|---|---|
+| `home` | Personal / non-commercial use. Free. |
+| `trial` | Time-limited evaluation. Free. |
+| `commercial` | Production. Provided via `--license-file` after working with InfluxData sales. |
+
+If you already have a license file, pass `--license-file <path>` and skip `--license-email` / `--license-type`.
+
+> **Quirk:** if you start Enterprise non-interactively (e.g., from a script) without a pre-cached license or `--license-file`, the server will block on the email-verification step indefinitely. Either click the link in the email, pre-cache the license interactively once, or supply `--license-file`.
 
 ## Bootstrap: create the operator/admin token
 

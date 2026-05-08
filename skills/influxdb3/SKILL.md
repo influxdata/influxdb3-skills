@@ -45,7 +45,7 @@ This skill stands alone — it does not require the InfluxDB 3 MCP server. If th
 
 If the developer says they don't have InfluxDB 3 running anywhere yet, walk them through getting one before §2 — `references/installing.md` covers Core and Enterprise install (script and Docker), bootstrapping the operator token, and verifying with `/ping`.
 
-For Cloud Serverless or Cloud Dedicated, the install path is signing up at https://www.influxdata.com/products/influxdb-cloud/. Claude does not create accounts on the user's behalf — direct them to sign up themselves, then continue with §2 once they have credentials.
+For Cloud Serverless or Cloud Dedicated, the install path is signing up at https://www.influxdata.com/products/influxdb-overview/. Claude does not create accounts on the user's behalf — direct them to sign up themselves, then continue with §2 once they have credentials.
 
 ## 2. First-time setup checklist
 
