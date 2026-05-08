@@ -67,7 +67,7 @@ Future versions: distributed cluster patterns (v0.2.1), air-gapped + Cloud-insta
 ## Install (local dev / preview)
 
 ```bash
-git clone <this repo> ~/Projects/claude-influxdb3
+git clone https://github.com/influxdata/claude-influxdb3.git ~/Projects/claude-influxdb3
 mkdir -p ~/.claude/plugins
 ln -s ~/Projects/claude-influxdb3 ~/.claude/plugins/claude-influxdb3
 ```

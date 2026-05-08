@@ -74,7 +74,7 @@ Then create the admin token the same way via `influxdb3 create token --admin` (a
 
 **Option 3: Use Enterprise if you already have a license.** Follow the Enterprise install path in `skills/influxdb3/references/installing.md`. Note the license activation step on first boot.
 
-For Cloud Serverless / Cloud Dedicated reviewing: contact the InfluxData product team for instance access, or sign up for a free Cloud Serverless trial at https://www.influxdata.com/. Most reviewers do not need this.
+For this MVP review pass, we're focusing on **Core and Enterprise self-hosted**. The skill content does describe Cloud Serverless and Cloud Dedicated, but reviewer testing for those flavors is deferred — none of the four review areas require a Cloud instance.
 
 ### 3. Set environment variables
 
