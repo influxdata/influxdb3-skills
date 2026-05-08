@@ -111,3 +111,43 @@ When releasing a version that includes `influxdb3` skill admin changes:
 5. **Re-run smoke prompts (#18–#22)** in fresh Claude Code sessions per the existing process.
 
 6. **Re-run formal eval suite** including the 8 new admin prompts. Adversarial pass rate must be 100%.
+
+## v0.4.0+ extras (troubleshooting)
+
+When releasing a version that includes troubleshooting changes:
+
+1. **Bump versions:**
+   - `.claude-plugin/plugin.json` `version`
+   - `skills/influxdb3/SKILL.md` `version`, `last_verified`
+   - `skills/influxdb3-plugins/SKILL.md` `version`, `last_verified`
+
+2. **Pre-release orphan check** (mandatory; broadened to include troubleshooting demo patterns):
+
+   ```bash
+   export PATH="/Users/garyfowler/.influxdb:$PATH"
+   for pattern in admin_test_ senor_data_ diagnose_; do
+     echo "=== orphans matching $pattern ==="
+     influxdb3 show databases --format json | python3 -c "
+import json, sys
+dbs = [d['iox::database'] for d in json.load(sys.stdin)]
+print([d for d in dbs if d.startswith('$pattern')])
+"
+     influxdb3 show tokens --format json | python3 -c "
+import json, sys
+data = json.load(sys.stdin)
+print([t['name'] for t in data if t.get('name', '').startswith('$pattern')])
+"
+   done
+   ```
+
+   All three lists must be empty before the release lifecycle re-runs. If anything's left over, manually delete via the appropriate CLI command (`influxdb3 delete database <name>` or `influxdb3 delete token --token-name <name>`).
+
+3. **Re-run the diagnostic toolkit** at `examples/diagnose/`. Expected: clean health report, no warnings, ends with "Done. (Full health: OK)".
+
+4. **Re-run the five broken→fix demo pairs** at `examples/troubleshooting/`. For each pair: verify the broken version exhibits the documented wrong-behavior, the fixed version produces the correct behavior, and any test resources are cleaned up. The `silent_auto_create` demo creates a real `senor_data_<ts>` database — manually clean it up after the run.
+
+5. **Post-release orphan check** (mandatory): same as step 2; all three lists must again be empty. Failures here block the tag.
+
+6. **Re-run smoke prompts (#23–#27)** in fresh Claude Code sessions, with special attention to #27 (the customer-pasted token redaction case).
+
+7. **Re-run formal eval suite** including the 6 new troubleshooting prompts. Adversarial pass rate must be 100%.

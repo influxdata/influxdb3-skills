@@ -38,14 +38,27 @@ When this skill is loaded, Claude knows how to:
 
 Cloud Serverless and Cloud Dedicated content ships as reference shape; runtime verification is queued for v0.3.1 (alongside air-gapped setup).
 
+### What v0.4.0 adds
+
+When the troubleshooting skills are loaded, Claude knows how to:
+
+- **Diagnose by symptom** — symptom-keyed router that maps observable errors to topic sections (Auth failures, Write failures, Silent auto-create misroute, Query failures, Admin failures, Plugin runtime).
+- **Redact tokens automatically** — when a customer pastes an error log containing a real-looking token, the skill acknowledges the leak, recommends rotation, and never echoes the literal token.
+- **Walk a diagnostic flow** — symptom → check this in order → if X then Y else Z → fix.
+- **Reference the quirks catalogue** — 12 entries cataloguing the non-obvious behaviors customers will hit (HEAD-on-/ping=404, silent auto-create, table_batches-as-dicts, JSON-string permissions, etc.).
+- **Run the diagnostic toolkit** — a Python script that does a one-page health check (ping, flavor detection, list-DBs, write+query smoke against a throwaway DB).
+- **Recognize the broken patterns** — five broken→fix demo pairs covering silent auto-create, admin-token-at-data-plane, table_batches attribute access, system.tokens permissions parsing, and HEAD-on-/ping.
+
+Performance questions defer to v0.5.0; cluster placement defers to v0.2.1.
+
 ## Status
 
-**v0.3.0** — local distribution only. Two skills shipping in one plugin:
+**v0.4.0** — local distribution only. Two skills shipping in one plugin:
 
-- **`influxdb3`** (v0.3.0) — connect, write, query, schema design, **plus database & token management** (CLI + HTTP API, all 6 client paths) across all four InfluxDB 3 flavors.
-- **`influxdb3-plugins`** (v0.2.0) — develop, install, and test InfluxDB 3 Processing Engine plugins (single-node). All three trigger types.
+- **`influxdb3`** (v0.4.0) — connect, write, query, schema design, database & token management, **plus troubleshooting & debugging**. CLI + HTTP API across all four InfluxDB 3 flavors and 6 client paths.
+- **`influxdb3-plugins`** (v0.4.0) — develop, install, test InfluxDB 3 Processing Engine plugins **plus plugin-runtime troubleshooting**. Single-node; all three trigger types.
 
-Future versions: distributed cluster patterns for plugins (v0.2.1), air-gapped setup + Cloud-instance verification (v0.3.1), troubleshooting (v0.4.0), performance tuning (v0.5.0), v1/v2→v3 migration (v0.6.0), common app patterns (v0.7.0). See [`CHANGELOG.md`](CHANGELOG.md).
+Future versions: distributed cluster patterns (v0.2.1), air-gapped + Cloud-instance verification (v0.3.1), performance tuning (v0.5.0), v1/v2→v3 migration (v0.6.0), common app patterns (v0.7.0). See [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Install (local dev / preview)
 
@@ -61,7 +74,7 @@ Restart Claude Code, then in a fresh session:
 /plugin list
 ```
 
-Expected: `claude-influxdb3 0.1.0`.
+Expected: `claude-influxdb3 0.4.0`.
 
 ## Use it
 
@@ -73,13 +86,15 @@ If you want to test it cleanly:
 
 ## What it does NOT cover (yet)
 
-- Database & token management (create/list/delete DBs)
-- Troubleshooting & debugging
-- Performance tuning
-- v1/v2 → v3 migration helper
-- App-pattern templates (IoT pipelines, dashboards, alerts/downsampling)
+Database & token management shipped in v0.3.0. Troubleshooting & debugging shipped in v0.4.0. Still to come:
 
-These are planned for v1.1+.
+- Performance tuning (slow queries, cardinality remediation) — v0.5.0
+- v1/v2 → v3 migration helper — v0.6.0
+- App-pattern templates (IoT pipelines, dashboards, alerts/downsampling) — v0.7.0
+- Cluster placement & multi-node patterns — v0.2.1
+- Air-gapped setup & Cloud-instance verification — v0.3.1
+
+These are planned for upcoming versions.
 
 ## Verifying the skill is fresh
 

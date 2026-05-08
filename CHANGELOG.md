@@ -4,6 +4,26 @@ All notable changes to this skill will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.4.0] — 2026-05-08
+
+### Added
+- New SKILL.md section §12 "Troubleshooting & debugging" in the `influxdb3` skill; new "Plugin troubleshooting" section in the `influxdb3-plugins` skill.
+- Three new references — `skills/influxdb3/references/quirks.md` (canonical home for non-obvious behaviors, 12 entries from v0.1–v0.3 build evidence), `skills/influxdb3/references/troubleshooting.md` (app + admin), `skills/influxdb3-plugins/references/troubleshooting.md` (plugin runtime).
+- A diagnostic toolkit at `skills/influxdb3/examples/diagnose/` (Python; one-page health report; verified end-to-end against the live Enterprise instance).
+- Five broken→fix demo pairs at `skills/influxdb3/examples/troubleshooting/`: silent_auto_create, admin_token_at_data_plane, table_batches_attr_access, tokens_permissions_parse, ping_head_404. Each verified live.
+- 5 new manual smoke prompts (#23–#27) and 6 new formal eval prompts (3 troubleshooting + 1 adversarial + 2 negative deferrals).
+- Cross-references in `connecting.md`, `writing.md`, and `testing.md` pointing to the new troubleshooting refs.
+
+### Changed
+- Bumped `.claude-plugin/plugin.json` to `0.4.0`; both skill `version` fields to `0.4.0`; both descriptions extended with troubleshooting trigger keywords.
+- `SKILL.md` §9 deferred-topics lists: removed "Troubleshooting & debugging" (now covered); added "Performance tuning → v0.5.0" in the main skill.
+
+### Known limitations (deferred)
+- Performance tuning (slow queries, slow writes, cardinality remediation, batch-size optimization) — planned for v0.5.0.
+- Cluster placement troubleshooting — already deferred to v0.2.1.
+- Air-gapped troubleshooting — already deferred to v0.3.1.
+- Lost operator + admin token simultaneously — documented in `troubleshooting.md` as "contact support" (no purely-client-side recovery).
+
 ## [0.3.0] — 2026-05-08
 
 ### Added
