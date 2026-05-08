@@ -105,11 +105,20 @@ def main() -> int:
     print(f"host: {host}")
     print()
 
-    # 1. HEAD /ping (expected 404 — quirk)
-    print("[1] HEAD /ping (expecting 404 — known quirk; only GET works)")
+    # 1. HEAD /ping — surfaces the "HEAD not supported" quirk
+    # Note: with auth, HEAD returns 404; without auth, HEAD returns 401.
+    # Either way, HEAD is not the right method — only GET works on /ping.
+    print("[1] HEAD /ping (NOT supported — quirk; only GET works)")
     try:
         sc, _ = head_ping(host)
-        print(f"    status: {sc}", "(expected — see references/quirks.md entry 1)" if sc == 404 else "(unexpected)")
+        if sc == 404:
+            print(f"    status: {sc} (HEAD route not registered — see references/quirks.md entry 1)")
+        elif sc == 401:
+            print(f"    status: {sc} (no auth on HEAD; the 404 quirk also applies — see references/quirks.md entry 1)")
+        elif sc == 200:
+            print(f"    status: {sc} (unexpected — HEAD usually fails on /ping)")
+        else:
+            print(f"    status: {sc} (unexpected)")
     except Exception as exc:
         print(f"    FAIL: connection error: {exc}")
         return 1
