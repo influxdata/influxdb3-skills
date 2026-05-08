@@ -33,9 +33,11 @@ These steps happen ONCE, on the server side, before any application code:
 4. **Create the database** using the admin token:
    - CLI: `influxdb3 create database <name> --token <admin-token> --host http://localhost:8181`
    - Or HTTP: `POST /api/v3/configure/database` with `Authorization: Bearer <admin-token>` and body `{"db":"<name>"}`.
+   - Full reference and HTTP API equivalents: `references/databases.md`.
 5. **(Recommended)** Create a database-scoped token for the application instead of reusing the admin token:
    - CLI: `influxdb3 create token --permission "db:<name>:read,write" --token <admin-token>`
    - This is the token the application reads from `INFLUXDB_TOKEN`.
+   - Full reference, including the safe rotation pattern: `references/tokens.md`.
 
 ### Bootstrapping (Cloud Serverless / Cloud Dedicated)
 
@@ -97,6 +99,8 @@ curl -sS -X POST "$INFLUXDB_HOST/api/v3/configure/database" \
   -H "Content-Type: application/json" \
   -d "{\"db\": \"$INFLUXDB_DATABASE\"}"
 ```
+
+If a typo has already auto-created a wrong-named DB, see `references/databases.md` → "Recovering from the silent auto-create footgun" for the recovery flow.
 
 ### When generating new application code
 
