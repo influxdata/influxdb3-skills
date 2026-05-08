@@ -61,3 +61,27 @@ Subscribed to release feeds for the five clients? Good. When a breaking change d
 2. Add a smoke prompt that exercises the changed area.
 3. Bump the patch version (or minor if the skill's behavior visibly changes).
 4. Run the per-release checklist.
+
+## v0.2.0+ extras (Processing Engine plugins skill)
+
+When releasing a version that includes plugin-skill changes:
+
+1. **Bump versions in three places:**
+   - `.claude-plugin/plugin.json` `version` (the plugin's own version)
+   - `skills/influxdb3-plugins/SKILL.md` frontmatter `version` and `last_verified`
+   - `skills/influxdb3-plugins/SKILL.md` frontmatter `verified_against.influxdb3_pe_runtime` to the actual server version tested
+
+2. **Re-run the five plugin example round-trips** against a known-good live instance:
+   - `examples/wal/` — write to `sensors_demo`, check log + `processed_summary`
+   - `examples/scheduled/` — wait one tick, check log + `scheduled_heartbeat`
+   - `examples/request/` — `curl /api/v3/engine/echo` GET + POST + bad-JSON, check log
+   - `examples/cache_counter/` — wait two ticks, check counter increments in log + `plugin_counter`
+   - `examples/multifile_alert/` — write below + above threshold, check `alert` measurement
+
+   For each, `influxdb3 delete trigger --force` after verification to leave the instance clean.
+
+3. **Re-run the new smoke prompts (#13–#17)** in fresh Claude Code sessions per the existing smoke-test process.
+
+4. **Re-run the formal eval suite** including the 10 new v0.2.0 prompts. Adversarial pass rate must be 100%.
+
+5. **Update `docs/eval-history.md`** with per-category pass rates including the new categories (`plugins`, plus the new entries in `adversarial` and `negative`).
