@@ -144,8 +144,7 @@ If a question lands outside what's baked in — for example, a recent client API
 If the developer asks for any of the following, defer politely and explain it's on the roadmap:
 
 - **Air-gapped setup** (`--package-manager disabled`, custom plugin repos via `--plugin-repo`, offline mirrors) — v0.3.1.
-- **Troubleshooting & debugging** ("why isn't my write showing up?") — v1.1.
-- **Performance tuning** (deep batching strategies, query plan analysis) — v1.1.
+- **Performance tuning** (slow queries, slow writes, cardinality remediation, batch-size optimization) — v0.5.0.
 - **v1/v2 → v3 migration** — v1.2.
 - **App-pattern templates** (IoT pipelines, dashboards, alerts/downsampling) — v1.3.
 - **Processing Engine plugins** (Python code that runs inside InfluxDB 3 — `process_writes`, `process_scheduled_call`, `process_request` triggers, `influxdb3_local` API, `LineBuilder`) — see the sibling `influxdb3-plugins` skill (v0.2.0+).
@@ -188,3 +187,27 @@ Full details: `references/databases.md`. HTTP wire format: `references/admin-htt
 | HTTP API wire format (note: Core and Enterprise use different paths for resource tokens) | `references/admin-http-api.md` |
 
 Full details: `references/tokens.md`. The "never inline a token" rule from §4 carries over fully — admin tokens are even more sensitive than scoped ones.
+
+## 12. Troubleshooting & debugging
+
+When something stopped working — connection errors, writes not landing where expected, queries returning 0 rows, token rotation aftermath, admin operations failing.
+
+**Four rules:**
+- **Redact first, diagnose second.** If the customer pasted a real-looking token (regex `apiv3_[A-Za-z0-9_-]{30,}`), acknowledge the leak, recommend immediate rotation via `references/tokens.md`, then proceed without ever echoing the literal token.
+- **Always check for silent auto-create misroute** when a write "succeeded" but the data isn't visible — list databases the token can see and look for typo'd siblings (`references/troubleshooting.md` → "Silent auto-create misroute").
+- **Run the diagnostic toolkit** at `examples/diagnose/` when the symptom is unclear. It produces a one-page health report that's the right thing to paste into Claude.
+- **Defer performance questions** to v0.5.0 — slow query / slow write / cardinality remediation are out of scope here. Quick triage (add a time filter, add a LIMIT, batch in 1k–10k chunks) is fine; deeper analysis defers.
+
+**Symptom → section:**
+
+| Symptom | Read |
+|---|---|
+| 401 / 403 from any operation | `references/troubleshooting.md` → "Auth failures" |
+| Write succeeded but data isn't where I expect | `references/troubleshooting.md` → "Silent auto-create misroute" |
+| Write fails with 400 | `references/troubleshooting.md` → "Write failures" (note: whole batch rejects on one bad line) |
+| Query returns 0 rows / wrong rows | `references/troubleshooting.md` → "Query failures" |
+| Token rotation broke my CI | `references/troubleshooting.md` → "Admin failures" |
+| Plugin trigger never fires / errors in logs | sibling skill `influxdb3-plugins` → its troubleshooting reference |
+| "This behaves weirdly but the docs don't say why" | `references/quirks.md` |
+
+For broken→fix code patterns, see `examples/troubleshooting/`. Full reference: `references/troubleshooting.md`. Quirk catalogue: `references/quirks.md`.

@@ -119,7 +119,29 @@ Trigger-local by default; pass `use_global=True` to share across plugins. Cleare
 
 Patterns (counter, TTL'd API response, lookup table, last-seen timestamp): `references/state-and-cache.md`.
 
-## 10. What this skill does NOT cover (v0.2.0)
+## 10. Plugin troubleshooting
+
+When your plugin isn't behaving — trigger doesn't fire, errors in the logs, dependencies failing, cache not behaving as expected.
+
+**Three rules:**
+- **Read the logs first.** `system.processing_engine_logs` (columns: `event_time`, `trigger_name`, `log_level`, `log_text`) tells you what the plugin actually did. Most "doesn't fire" diagnoses become obvious once you see the log line saying it fired but errored.
+- **Check the trigger spec.** `table:my_table` ≠ `all_tables`. `every:30s` ≠ `every:5m`. `request:foo` ≠ `request:bar`. A spec mismatch silently causes "trigger doesn't fire."
+- **For dependencies, use `influxdb3 install package`** against the embedded venv — never `python -m venv` against system Python (`references/quirks.md` entry 9).
+
+**Symptom → section:**
+
+| Symptom | Read |
+|---|---|
+| Trigger created but never fires | `references/troubleshooting.md` → "Trigger doesn't fire" |
+| Plugin logs show ImportError | `references/troubleshooting.md` → "Dependencies" + `references/quirks.md` entry 9 |
+| `'dict' object has no attribute 'rows'` | `references/quirks.md` entry 3 (cross-link to main skill) |
+| `Schema error: No field named plugin_name` (or similar) on `system.processing_engine_logs` | `references/quirks.md` entry 10 |
+| Cache values disappeared / counter reset | `references/troubleshooting.md` → "Cache lifecycle gotchas" |
+| Plugin runs but writes don't show up | back to main skill: `references/troubleshooting.md` → "Silent auto-create misroute" |
+
+Full reference: `references/troubleshooting.md`.
+
+## 11. What this skill does NOT cover (v0.4.0)
 
 If the developer asks about any of these, defer politely:
 
