@@ -74,14 +74,18 @@ When something stopped working. Symptom-keyed at the top; topic sections below. 
 
 **Why:** v3 silently auto-creates databases on first write (default config). A typo in `INFLUXDB_DATABASE` becomes a brand-new database with that typo'd name; the original keeps growing nothing.
 
-**Diagnose:**
+**Diagnose:** list every database the token can see — there is no SQL `system.databases` table for this; you have to use the admin surface.
 
-```sql
--- Run from any database; this lists all databases the token can see
-SELECT * FROM system.iox_databases;
+```bash
+# CLI
+influxdb3 show databases --token "$INFLUXDB_TOKEN"
+
+# Or HTTP API
+curl -sS -H "Authorization: Bearer $INFLUXDB_TOKEN" \
+  "$INFLUXDB_HOST/api/v3/configure/database?format=json"
 ```
 
-(Or use the HTTP API: `GET /api/v3/configure/database?format=json`.) Look for typo'd siblings of your target name (`sensor_data` next to `sensors`; `senor_data` next to `sensor_data`).
+Look for typo'd siblings of your target name (`sensor_data` next to `sensors`; `senor_data` next to `sensor_data`).
 
 ```bash
 # Find which database has your data
