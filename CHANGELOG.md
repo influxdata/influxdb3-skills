@@ -4,6 +4,27 @@ All notable changes to this skill will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.4.1] — 2026-05-08
+
+### Added
+- New reference `skills/influxdb3/references/installing.md` — covers Core + Enterprise install via the official install script and Docker, first-boot `serve` invocation, operator-token bootstrap, `/ping` verification. Cloud Serverless and Cloud Dedicated explicitly out of scope (managed services — direct users to signup, do not create accounts).
+- New SKILL.md section §1.5 "Don't have an instance yet?" routes onboarding users to `installing.md` before §2 (which still assumes a running instance).
+- Cross-link added at the top of the plugins skill's `installing.md` to disambiguate server-install vs plugin-engine-install.
+- Two new manual smoke prompts (#28 Core install, #29 Enterprise install).
+
+### Fixed
+- Live verification surfaced three install-doc bugs caught and fixed before tag:
+  - Enterprise `serve` example was missing required `--cluster-id` flag (used as Enterprise Catalog prefix in the object store). Cross-checked against the production cmdline and corrected.
+  - Enterprise license-activation flow was undocumented; added a section on `--license-email` / `--license-type` (`home`/`trial`/`commercial`) / `--license-file`, with a quirk note that headless boots block on email verification unless the license is pre-cached or supplied via `--license-file`.
+  - Cloud signup URL `/products/influxdb-cloud/` was a 301 redirect; updated `installing.md` and `SKILL.md` §1.5 to use the canonical `/products/influxdb-overview/` destination.
+
+### Verified
+- All 10 documented Enterprise serve flags exist in `serve --help-all` on Enterprise 3.8.4. Bootstrap command (`influxdb3 create token --admin`) parses correctly. All documented URLs return HTTP 200.
+- Production instance at `localhost:8181` was completely untouched throughout verification: `GET /ping` 200 before+after, 51 databases before+after, port 8281 (test sandbox) left clean. Test sandbox used `--object-store memory`, distinct `--node-id`, temp plugin-dir, trapped cleanup. Verification log: `evals/results/install-verification-v0.4.1-2026-05-08.md`.
+
+### Changed
+- Bumped `.claude-plugin/plugin.json` to `0.4.1`; both skill `version` fields to `0.4.1`.
+
 ## [0.4.0] — 2026-05-08
 
 ### Added

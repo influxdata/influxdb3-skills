@@ -51,12 +51,16 @@ When the troubleshooting skills are loaded, Claude knows how to:
 
 Performance questions defer to v0.5.0; cluster placement defers to v0.2.1.
 
+### What v0.4.1 adds
+
+A patch release closing the user-onboarding gap: a user who installed the plugin but doesn't have InfluxDB 3 running yet can now ask Claude to help them get a Core or Enterprise instance up. New `references/installing.md` covers the official install script and Docker for both flavors, the bootstrap operator-token flow, and Enterprise license activation. Cloud Serverless and Cloud Dedicated stay out of scope — those are managed services, signup is a manual step the user does themselves.
+
 ## Status
 
-**v0.4.0** — local distribution only. Two skills shipping in one plugin:
+**v0.4.1** — local distribution only. Two skills shipping in one plugin:
 
-- **`influxdb3`** (v0.4.0) — connect, write, query, schema design, database & token management, **plus troubleshooting & debugging**. CLI + HTTP API across all four InfluxDB 3 flavors and 6 client paths.
-- **`influxdb3-plugins`** (v0.4.0) — develop, install, test InfluxDB 3 Processing Engine plugins **plus plugin-runtime troubleshooting**. Single-node; all three trigger types.
+- **`influxdb3`** (v0.4.1) — connect, write, query, schema design, database & token management, troubleshooting & debugging, **plus install coverage** for Core and Enterprise (script + Docker). CLI + HTTP API across all four InfluxDB 3 flavors and 6 client paths.
+- **`influxdb3-plugins`** (v0.4.1) — develop, install, test InfluxDB 3 Processing Engine plugins, plus plugin-runtime troubleshooting. Single-node; all three trigger types.
 
 Future versions: distributed cluster patterns (v0.2.1), air-gapped + Cloud-instance verification (v0.3.1), performance tuning (v0.5.0), v1/v2→v3 migration (v0.6.0), common app patterns (v0.7.0). See [`CHANGELOG.md`](CHANGELOG.md).
 
@@ -74,7 +78,7 @@ Restart Claude Code, then in a fresh session:
 /plugin list
 ```
 
-Expected: `claude-influxdb3 0.4.0`.
+Expected: `claude-influxdb3 0.4.1`.
 
 ## Use it
 
