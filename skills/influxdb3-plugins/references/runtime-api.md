@@ -101,22 +101,26 @@ influxdb3_local.cache.put("weather", api_response, ttl=300)
 influxdb3_local.cache.put("config", {"threshold": 90}, use_global=True)
 ```
 
-## `TableBatch` (WAL plugins only)
+## `table_batches` shape (WAL plugins only)
 
-What `process_writes` receives in `table_batches`. Each `TableBatch` represents one table's rows from a WAL flush.
+What `process_writes` receives. Each item is a **dict** (not a class instance) representing one table's rows from a WAL flush.
 
-| Property | Purpose |
-|---|---|
-| `table_name` (str) | The measurement / table name. |
-| `rows` (Sequence[Mapping[str, Any]]) | The rows. Each row is a dict with all columns (tags, fields, time) keyed by column name. Time is a nanosecond integer. |
+| Key | Type | Purpose |
+|---|---|---|
+| `"table_name"` | str | The measurement / table name. |
+| `"rows"` | list of dicts | The rows. Each row dict has all columns (tags, fields, time) keyed by column name. Time is a nanosecond integer. |
+
+> **Important:** access these as dict keys (`batch["table_name"]`, `batch["rows"]`), NOT as attributes. The runtime hands plain dicts even though some upstream type docs describe a `TableBatch` class.
 
 ### Quick example
 
 ```python
 def process_writes(influxdb3_local, table_batches, args=None):
     for batch in table_batches:
-        influxdb3_local.info(f"Got {len(batch.rows)} rows from {batch.table_name}")
-        for row in batch.rows:
+        table_name = batch["table_name"]
+        rows = batch["rows"]
+        influxdb3_local.info(f"Got {len(rows)} rows from {table_name}")
+        for row in rows:
             ts = row["time"]                # nanosecond int
             host = row.get("host")          # tag (string)
             temp = row.get("temperature")   # field (typed)

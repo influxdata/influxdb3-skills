@@ -20,11 +20,12 @@ All three trigger types share the same `influxdb3_local` runtime API (`reference
 def process_writes(influxdb3_local, table_batches, args=None):
     """Fires when the WAL flushes (default ~1s).
 
-    table_batches: Sequence[TableBatch] — one per table, with rows already grouped.
+    table_batches: list of dicts — each with "table_name" (str) and "rows" (list of dicts).
     args: Mapping[str, str] | None — trigger arguments passed at trigger-creation time.
     """
     for batch in table_batches:
-        influxdb3_local.info(f"{batch.table_name}: {len(batch.rows)} rows")
+        # batch is a dict; access via key, NOT attribute
+        influxdb3_local.info(f"{batch['table_name']}: {len(batch['rows'])} rows")
 ```
 
 ### Trigger specs

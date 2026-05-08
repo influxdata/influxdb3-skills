@@ -34,10 +34,10 @@ WAL flushes default to ~1 second. Wait ~2 seconds, then check the logs:
 ```bash
 influxdb3 query \
   -d "$INFLUXDB_DATABASE" --token "$INFLUXDB_TOKEN" \
-  "SELECT time, level, message FROM system.processing_engine_logs WHERE plugin_name='wal_hello' ORDER BY time DESC LIMIT 5"
+  "SELECT event_time, log_level, log_text FROM system.processing_engine_logs WHERE trigger_name='wal_hello' ORDER BY event_time DESC LIMIT 5"
 ```
 
-Expected: a row with `level=info` and a message like `WAL hello: 1 rows from sensors_demo`.
+Expected: rows with `log_level=INFO` and `log_text` lines for "starting execution of wal plugin", "WAL hello: 1 rows from sensors_demo", and "finished execution in …".
 
 Confirm the derived measurement exists:
 

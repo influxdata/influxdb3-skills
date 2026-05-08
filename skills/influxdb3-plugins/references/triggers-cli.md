@@ -68,7 +68,7 @@ influxdb3 query -d _internal --token "$INFLUXDB_TOKEN" "SHOW TABLES"
 Look for tables matching `trigger`, `plugin`, or `engine`. Two known-good ones:
 
 - `system.plugin_files` — installed plugin file metadata (`plugin_name`, `file_name`, `file_path`, `size_bytes`, `last_modified`).
-- `system.processing_engine_logs` — runtime log output from every trigger (`time`, `plugin_name`, `level`, `message`).
+- `system.processing_engine_logs` — runtime log output from every trigger (`event_time`, `trigger_name`, `log_level`, `log_text`). Queryable from any database context.
 
 ```bash
 # List installed plugin files
@@ -76,8 +76,8 @@ influxdb3 query -d _internal --token "$INFLUXDB_TOKEN" \
   "SELECT plugin_name, file_name FROM system.plugin_files ORDER BY plugin_name"
 
 # Recent log activity per trigger
-influxdb3 query -d _internal --token "$INFLUXDB_TOKEN" \
-  "SELECT plugin_name, count(*) AS n FROM system.processing_engine_logs WHERE time > now() - INTERVAL '1 hour' GROUP BY plugin_name"
+influxdb3 query -d "$INFLUXDB_DATABASE" --token "$INFLUXDB_TOKEN" \
+  "SELECT trigger_name, count(*) AS n FROM system.processing_engine_logs WHERE event_time > now() - INTERVAL '1 hour' GROUP BY trigger_name"
 ```
 
 For a CLI shortcut to plugin files (without the SQL): `influxdb3 show plugins`.

@@ -59,7 +59,7 @@ There is no offline test command for HTTP plugins. The fastest workflow:
 
 1. Create the real trigger with `--error-behavior log`.
 2. `curl http://localhost:8181/api/v3/engine/<path>` to exercise it.
-3. `SELECT * FROM system.processing_engine_logs WHERE plugin_name='<name>' ORDER BY time DESC LIMIT 50` to see output.
+3. `SELECT event_time, log_level, log_text FROM system.processing_engine_logs WHERE trigger_name='<name>' ORDER BY event_time DESC LIMIT 50` to see output.
 4. `influxdb3 update trigger ... --path` to push code changes; trigger config is preserved.
 5. Repeat steps 2–4.
 
@@ -95,23 +95,30 @@ The `system.processing_engine_logs` table holds plugin output for every trigger 
 ```bash
 influxdb3 query \
   -d "$INFLUXDB_DATABASE" --token "$INFLUXDB_TOKEN" \
-  "SELECT time, plugin_name, level, message FROM system.processing_engine_logs ORDER BY time DESC LIMIT 50"
+  "SELECT event_time, trigger_name, log_level, log_text FROM system.processing_engine_logs ORDER BY event_time DESC LIMIT 50"
 ```
 
-Columns: `time` (timestamp), `plugin_name` (string — the trigger name), `level` (string: `info` / `warn` / `error`), `message` (string — the space-joined args from `info`/`warn`/`error`).
+Columns (verified against InfluxDB 3 Enterprise 3.8.4):
+
+| Column | Type | Purpose |
+|---|---|---|
+| `event_time` | timestamp | When the log line was emitted. |
+| `trigger_name` | string | Name of the trigger that produced the log. |
+| `log_level` | string | `INFO` / `WARN` / `ERROR` (uppercase). |
+| `log_text` | string | The space-joined args passed to `info`/`warn`/`error`. The runtime also emits framing lines like `starting execution of wal plugin.` and `finished execution in N ms`. |
 
 Common queries:
 
 ```sql
 -- Recent output from one trigger
-SELECT time, level, message FROM system.processing_engine_logs
-WHERE plugin_name = 'my_trigger'
-ORDER BY time DESC LIMIT 50;
+SELECT event_time, log_level, log_text FROM system.processing_engine_logs
+WHERE trigger_name = 'my_trigger'
+ORDER BY event_time DESC LIMIT 50;
 
 -- Errors in the last hour across all triggers
-SELECT plugin_name, time, message FROM system.processing_engine_logs
-WHERE level = 'error' AND time > now() - INTERVAL '1 hour'
-ORDER BY time DESC;
+SELECT trigger_name, event_time, log_text FROM system.processing_engine_logs
+WHERE log_level = 'ERROR' AND event_time > now() - INTERVAL '1 hour'
+ORDER BY event_time DESC;
 ```
 
 ## Error-behavior flags
