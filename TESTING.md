@@ -19,19 +19,34 @@ Reviewer assignments are filled in once we pick the team.
 
 ## Setup (everyone, regardless of area)
 
-### 1. Clone and link the plugin
+### 1. Clone the repo and install the plugin
+
+You'll need a local clone so you can read source files, examine commit history, and open PRs for any fixes you propose. Clone first:
 
 ```bash
 git clone https://github.com/influxdata/claude-skill-for-influxdb3.git ~/Projects/claude-influxdb3
-mkdir -p ~/.claude/plugins
-ln -s ~/Projects/claude-influxdb3 ~/.claude/plugins/claude-influxdb3
 ```
 
-Restart Claude Code, then verify:
+Then in Claude Code, register the local clone as a marketplace and install the plugin:
 
 ```
-/plugin list
-# Should show: claude-influxdb3  0.4.1
+/plugin marketplace add ~/Projects/claude-influxdb3
+/plugin install claude-influxdb3@influxdata
+```
+
+Verify:
+
+```
+/plugin
+```
+
+You should see `claude-influxdb3` listed as installed and enabled. (If you previously installed from the published marketplace, run `/plugin uninstall claude-influxdb3@influxdata` and `/plugin marketplace remove influxdata` first — the marketplace name `influxdata` would otherwise collide. The README "Develop locally" section covers this in more detail.)
+
+After editing files in your local clone, refresh:
+
+```
+/plugin marketplace update influxdata
+/plugin update claude-influxdb3@influxdata
 ```
 
 ### 2. Get an InfluxDB 3 instance running

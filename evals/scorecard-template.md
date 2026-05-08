@@ -2,15 +2,15 @@
 
 **Reviewer:** &lt;your name&gt;
 **Date:** &lt;YYYY-MM-DD&gt;
-**Plugin version:** v0.4.1
+**Plugin version under test:** &lt;e.g., v0.4.2 — check the latest tag&gt;
 **InfluxDB instance flavor + version:** &lt;e.g., Core 3.8 via install script&gt;
 
 ---
 
 ## Setup confirmation
 
-- [ ] Plugin installed at `~/.claude/plugins/claude-influxdb3` (symlink to repo)
-- [ ] `/plugin list` shows `claude-influxdb3  0.4.1`
+- [ ] Plugin installed via `/plugin marketplace add ~/Projects/claude-influxdb3` + `/plugin install claude-influxdb3@influxdata`
+- [ ] `/plugin` shows `claude-influxdb3` as installed and enabled
 - [ ] InfluxDB 3 instance reachable: `curl $INFLUXDB_HOST/ping` returns 200
 - [ ] `$INFLUXDB_TOKEN` set to an operator/admin token
 - [ ] `$INFLUXDB_DATABASE` set to `claude_skill_test` (or equivalent throwaway name)
