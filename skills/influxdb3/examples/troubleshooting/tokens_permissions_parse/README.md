@@ -10,7 +10,7 @@ for perm in row["permissions"]:
         ...
 ```
 
-The filter matches every token in your system, or matches based on character coincidence rather than the expected permission semantics.
+The filter returns ZERO matches even when tokens with those permissions clearly exist. (Or, with shorter test strings, false positives appear from character coincidence rather than permission semantics.) Either way, the filter doesn't behave like an iteration over permission entries.
 
 ## Cause
 
@@ -43,8 +43,8 @@ for perm in perms:                       # iterate strings, not characters
 
 ```bash
 # .env should have INFLUXDB_HOST, INFLUXDB_TOKEN
-python broken.py    # filter matches based on character coincidence
-python fixed.py     # filter matches actual permission semantics
+python broken.py    # always reports 0 matches, regardless of real state
+python fixed.py     # iterates parsed permission entries; matches actually work
 ```
 
 The demo doesn't create or delete any resources — it only reads from `system.tokens`.
