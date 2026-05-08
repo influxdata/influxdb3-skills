@@ -4,7 +4,7 @@ A Claude Code plugin that teaches Claude to write correct InfluxDB 3 code, manag
 
 Stands alone — no MCP server required.
 
-**Status:** v0.4.1. Two skills (`influxdb3` v0.4.1, `influxdb3-plugins` v0.4.1). Local distribution only (symlink into `~/.claude/plugins/`). Version history in [`CHANGELOG.md`](CHANGELOG.md); roadmap in [What it does NOT cover yet](#what-it-does-not-cover-yet).
+**Status:** v0.4.1. Two skills (`influxdb3` v0.4.1, `influxdb3-plugins` v0.4.1). Distributed as a Claude Code plugin from this repo. Version history in [`CHANGELOG.md`](CHANGELOG.md); roadmap in [What it does NOT cover yet](#what-it-does-not-cover-yet).
 
 > **Reviewers:** if you've been invited to review this skill, start with [`TESTING.md`](TESTING.md) and your area-specific briefing under [`evals/reviewer-briefings/`](evals/reviewer-briefings/).
 
@@ -40,21 +40,52 @@ Both skills cover all three trigger types and single-node deployments. Multi-nod
 
 ## Install
 
-```bash
-git clone https://github.com/influxdata/claude-skill-for-influxdb3.git ~/Projects/claude-influxdb3
-mkdir -p ~/.claude/plugins
-ln -s ~/Projects/claude-influxdb3 ~/.claude/plugins/claude-influxdb3
-```
-
-Restart Claude Code, then in a fresh session:
+In Claude Code, add this repo as a plugin marketplace and install the plugin:
 
 ```
-/plugin list
+/plugin marketplace add influxdata/claude-skill-for-influxdb3
+/plugin install claude-influxdb3@influxdata
 ```
 
-Expected: `claude-influxdb3 0.4.1`.
+Verify with `/plugin` and check that `claude-influxdb3` appears as installed and enabled.
+
+To update later:
+
+```
+/plugin marketplace update influxdata
+/plugin update claude-influxdb3@influxdata
+```
 
 If you don't have InfluxDB 3 running yet, just ask Claude — the skill will walk you through it.
+
+### Develop locally
+
+If you're contributing to the plugin and want to install your working copy instead of the published version:
+
+```bash
+git clone https://github.com/influxdata/claude-skill-for-influxdb3.git ~/Projects/claude-influxdb3
+```
+
+If you already have the published marketplace registered, remove it first so the local one can take its place (the marketplace name `influxdata` would otherwise collide):
+
+```
+/plugin uninstall claude-influxdb3@influxdata
+/plugin marketplace remove influxdata
+```
+
+Then point the marketplace at your local clone and install:
+
+```
+/plugin marketplace add ~/Projects/claude-influxdb3
+/plugin install claude-influxdb3@influxdata
+```
+
+After editing files, refresh:
+
+```
+/plugin marketplace update influxdata
+/plugin update claude-influxdb3@influxdata
+```
 
 ## Use it
 
