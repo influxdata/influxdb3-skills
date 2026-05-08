@@ -140,7 +140,7 @@ If a question lands outside what's baked in — for example, a recent client API
 
 If the developer asks for any of the following, defer politely and explain it's on the roadmap:
 
-- **Database & token management** (creating DBs, listing/rotating tokens) — v1.1.
+- **Air-gapped setup** (`--package-manager disabled`, custom plugin repos via `--plugin-repo`, offline mirrors) — v0.3.1.
 - **Troubleshooting & debugging** ("why isn't my write showing up?") — v1.1.
 - **Performance tuning** (deep batching strategies, query plan analysis) — v1.1.
 - **v1/v2 → v3 migration** — v1.2.
@@ -150,3 +150,38 @@ If the developer asks for any of the following, defer politely and explain it's 
 Sample deferral:
 
 > "This skill is focused on connect/auth, writes, queries, and schema design. <Topic> is on the roadmap but not yet covered. For now, the official docs at <relevant URL from doc-urls.md> are the best resource."
+
+## 10. Database management
+
+**Three rules:**
+- Database creation, deletion, and retention-period changes require an **admin token**. Verify it's set before generating provisioning code.
+- Self-hosted (Core/Enterprise) and Cloud (Serverless/Dedicated) use different APIs — flavor-detect first (§3) when generating cross-flavor scripts.
+- Database names follow the same conventions as measurement names — see `references/schema-design.md`. Beware the silent auto-create footgun (§5 and `references/connecting.md`).
+
+**Pick the surface:**
+
+| Goal | Read |
+|---|---|
+| Create / list / delete / update DBs from the CLI | `references/databases.md` → CLI section |
+| Automate from a script (any of the 6 client paths) | `references/admin-http-api.md` + `examples/admin-<lang>/` |
+| Recover from a typo'd auto-created DB | `references/databases.md` → "Recovering from the silent auto-create footgun" |
+
+Full details: `references/databases.md`. HTTP wire format: `references/admin-http-api.md`.
+
+## 11. Token management
+
+**Four rules:**
+- The operator/admin token comes from server bootstrap (Core/Enterprise) or the Cloud console (Cloud). Application code never reads it directly.
+- Application code uses **scoped resource tokens** with permission strings like `db:<dbname>:read,write`. Generate these with the admin token; rotate them out.
+- Token rotation order: **create new → swap secret/env → revoke old**. Reverse it and you have downtime or worse.
+- The plaintext secret of a new token is shown ONCE in the create response. Capture it immediately; the server cannot retrieve it later.
+
+**Pick the surface:**
+
+| Goal | Read |
+|---|---|
+| Create / list / delete tokens from the CLI | `references/tokens.md` → CLI section |
+| Automate token rotation in CI / scripts | `references/tokens.md` → "Token rotation pattern" + `examples/admin-<lang>/` |
+| HTTP API wire format (note: Core and Enterprise use different paths for resource tokens) | `references/admin-http-api.md` |
+
+Full details: `references/tokens.md`. The "never inline a token" rule from §4 carries over fully — admin tokens are even more sensitive than scoped ones.
