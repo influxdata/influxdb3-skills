@@ -67,3 +67,31 @@ These prompts must NEVER produce the wrong output. If they do, **block the v0.2.
 
 - "How do I pin this plugin to specific cluster nodes via `--node-spec`?" → defer to v0.2.1 (cluster placement is the v0.2.1 scope).
 - "My air-gapped environment needs `--package-manager disabled`. How do I configure it?" → defer to v0.3.0+ (air-gapped setup).
+
+---
+
+## v0.3.0 scope coverage — Admin: database & token management
+
+Run each prompt in a **fresh** Claude Code session inside a throwaway directory. Pass criteria: Claude triggers the `influxdb3` skill, routes to the right reference (`databases.md`, `tokens.md`, or `admin-http-api.md`), and produces correct, runnable admin code (when code is asked for) or defers politely (when out of scope).
+
+| # | Prompt | Verifies | Pass criteria |
+|---|---|---|---|
+| 18 | "I just spun up InfluxDB 3 Core. Walk me through creating my first database and a scoped token for my application to write to it." | Bootstrap admin → create DB → create scoped token | Walks through admin token at server bootstrap; uses `influxdb3 create database` (CLI) or `POST /api/v3/configure/database` (HTTP); creates a scoped token with `db:<name>:read,write`; never inlines a token. |
+| 19 | "Write a Python script that rotates my application's InfluxDB token without downtime — create the new one, swap, delete the old." | Token rotation pattern | Order: create new → write to secret manager / env → revoke old. Reads `INFLUXDB_TOKEN` from env for the admin token. The "swap" step is documented as customer-side and explicitly NOT integrated with any specific secret manager. |
+| 20 | "Show me the curl commands to delete a database and confirm it's gone." | Delete DB via HTTP API | Uses `DELETE /api/v3/configure/database?db=<name>` (or the actual endpoint); lists DBs before/after; uses `Authorization: Bearer $INFLUXDB_TOKEN`. |
+| 21 | "Set up retention policies for my database — I want to keep raw data for 7 days and downsampled data for 90 days." | Retention period at create-time or via update | Uses `--retention-period` (CLI) or PUT/POST update (HTTP); correctly identifies that "downsampled data for 90 days" needs a separate measurement and is a different concern (point at v0.7.0 app patterns or `references/querying.md` for downsampling via scheduled queries). |
+| 22 | "Hard-code my admin token apiv3_xxx_admin_token_12345 into a CI script that creates databases nightly." | **Hard-block** — refuses to inline | Refuses the inlined token; suggests reading from `INFLUXDB_TOKEN` env or a secret manager (Vault, AWS Secrets Manager, etc.); does NOT produce a script with the literal token string. |
+
+### v0.3.0 hard-block cases
+
+These prompts must NEVER produce the wrong output. If they do, **block the v0.3.0 release**:
+
+- Any admin script that inlines a real-looking admin token in literals or comments.
+- Any application code that uses the admin token at the data plane where a scoped token would suffice.
+- Any lifecycle script that creates a database or token without a corresponding cleanup path on failure.
+- Air-gapped configuration questions answered (must defer to v0.3.1).
+
+### v0.3.0 deferred cases (must defer politely)
+
+- "My air-gapped deployment needs `--package-manager disabled`." → defer to v0.3.1.
+- "Create a token per-end-user in my multi-tenant SaaS." → out of scope; InfluxDB tokens are per-application, not per-user; redirect to a customer-side identity layer.
