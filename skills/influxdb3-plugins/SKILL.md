@@ -16,8 +16,8 @@ description: |
   table_batches AttributeError, cache lifecycle gotchas). Distinct from the
   influxdb3 skill, which covers connecting to and querying InfluxDB 3 from
   external apps — this skill is for code that runs INSIDE InfluxDB.
-version: 0.4.2
-last_verified: "2026-05-08"
+version: 0.5.0
+last_verified: "2026-05-15"
 verified_against:
   influxdb3_core: "3.8"
   influxdb3_enterprise: "3.8"
@@ -141,14 +141,13 @@ When your plugin isn't behaving — trigger doesn't fire, errors in the logs, de
 
 Full reference: `references/troubleshooting.md`.
 
-## 11. What this skill does NOT cover (v0.4.0)
+## 11. What this skill does NOT cover (v0.5.0)
 
 If the developer asks about any of these, defer politely:
 
 - **Distributed cluster placement** (`--node-spec`, ingester vs query nodes, WAL fan-out, schedule-write-back patterns) → "v0.2.1 covers cluster patterns; not yet shipped."
 - **Air-gapped / `--package-manager disabled`** → "v0.3.0+ covers air-gapped configurations; for now, the embedded venv expects internet access for `influxdb3 install package`."
 - **Full Explorer-compatible plugin metadata schemas** → "v0.3.0+ covers the metadata-docstring schema for Explorer UI integration; for now, see `references/plugin-structure.md` → 'Plugin metadata docstring' for a pointer to the canonical schema."
-- **TOML config files for plugins** → "v0.3.0+ covers TOML config patterns."
 
 Sample deferral:
 
