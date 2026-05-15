@@ -148,6 +148,8 @@ influxdb3 create trigger \
   my_plugin_trigger
 ```
 
+Note `--plugin-filename` (not `--path ... --upload`) — for TOML-config plugins, both the `.py` and the `.toml` must already live in `PLUGIN_DIR` before you create the trigger, because `--upload` only transfers the single Python file. See `examples/toml_config/README.md` for the file-staging steps.
+
 ### Native types are preserved
 
 This is the practical reason to prefer TOML over inline `--trigger-arguments key=val`:
@@ -159,7 +161,7 @@ This is the practical reason to prefer TOML over inline `--trigger-arguments key
 
 TOML tables become Python `dict`s, arrays become `list`s, booleans become `bool`. No casting required in the plugin — `int(args["threshold"])` is unnecessary (and counterproductive) when the value comes from TOML.
 
-### Complete worked example
+### Runnable example (external)
 
 See `skills/influxdb3-plugins/examples/toml_config/` for a runnable scheduled-trigger plugin with a matching TOML, install commands, and verification queries.
 
