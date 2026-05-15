@@ -7,6 +7,7 @@ Activate with:
     --plugin-filename example_toml_config.py \\
     --trigger-spec "every:10s" \\
     --trigger-arguments config_file_path=example_toml_config_scheduler.toml \\
+    --token "$INFLUXDB_TOKEN" \\
     toml_demo
 
 The engine reads the TOML alongside this file and merges its keys into args.

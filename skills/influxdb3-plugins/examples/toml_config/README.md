@@ -14,7 +14,25 @@ No queries, no writes — the goal is purely to make TOML-to-args delivery obser
 
 ## Install and run
 
-Both files must live under your `PLUGIN_DIR` on the InfluxDB 3 host. With `example_toml_config.py` and `example_toml_config_scheduler.toml` in place:
+Both the `.py` and the `.toml` need to live in your `PLUGIN_DIR` on the InfluxDB 3 host before you create the trigger. This example uses `--plugin-filename` (not `--path ... --upload` like the other examples in this directory) because `--upload` only transfers the single Python file — it does NOT upload the companion TOML. For TOML-config plugins, both files must be in place server-side first.
+
+### Stage the files
+
+If you have local filesystem access to the host, copy both files into `PLUGIN_DIR`. Otherwise, upload each file via the HTTP API:
+
+```bash
+curl -X POST "$INFLUXDB_HOST/api/v3/plugins/files/example_toml_config.py" \
+  -H "Authorization: Bearer $INFLUXDB_TOKEN" \
+  --data-binary @example_toml_config.py
+
+curl -X POST "$INFLUXDB_HOST/api/v3/plugins/files/example_toml_config_scheduler.toml" \
+  -H "Authorization: Bearer $INFLUXDB_TOKEN" \
+  --data-binary @example_toml_config_scheduler.toml
+```
+
+### Create the trigger
+
+With both files staged in `PLUGIN_DIR`:
 
 ```bash
 influxdb3 create trigger \
@@ -30,11 +48,11 @@ influxdb3 create trigger \
 
 Query `system.processing_engine_logs` after the first tick:
 
-```sql
-SELECT * FROM system.processing_engine_logs
-WHERE trigger_name = 'toml_demo'
-ORDER BY event_time DESC
-LIMIT 5;
+```bash
+influxdb3 query \
+  --database mydb \
+  --token "$INFLUXDB_TOKEN" \
+  "SELECT * FROM system.processing_engine_logs WHERE trigger_name = 'toml_demo' ORDER BY event_time DESC LIMIT 5;"
 ```
 
 You should see a row whose message looks like:
@@ -51,3 +69,12 @@ The `(int)` is the receipt that the engine preserved the TOML type rather than s
 - **Native types come through.** `threshold` is an `int`, `severity_levels` is a `dict`, not strings. This is the practical reason to prefer TOML over inline `--trigger-arguments key=val` (which always arrive as strings).
 - **`config_file_path` is `PLUGIN_DIR`-relative.** Pass just the filename, not an absolute path, unless your operator wants to opt into a non-standard layout.
 - **House naming convention:** `<plugin_base>_config_<trigger_type>.toml`. The engine doesn't enforce it — `config_file_path` accepts any filename — but matching the InfluxData convention makes plugins easier to recognize and lets you ship separate TOMLs for a single plugin's multiple trigger types (e.g., scheduled + data-writes).
+
+## Cleanup
+
+```bash
+influxdb3 delete trigger \
+  --database mydb \
+  --token "$INFLUXDB_TOKEN" \
+  toml_demo
+```
