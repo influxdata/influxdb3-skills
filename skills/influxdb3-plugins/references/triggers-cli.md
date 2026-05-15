@@ -15,7 +15,7 @@ Create a new trigger that connects a plugin to a database event. Positional argu
 | `--trigger-spec <spec>` | yes | When to fire: `table:<name>`, `all_tables`, `every:<duration>`, `cron:<expr>` (6-field with seconds), or `request:<path>`. |
 | `--path <path>` | yes | Plugin filename (relative to `--plugin-dir`), absolute path with `--upload`, or `gh:` prefix for upstream plugins. |
 | `--upload` | no | Upload the local file/dir to the server. Required when `--path` is absolute. |
-| `--trigger-arguments k=v,k2=v2` | no | Comma-separated key=value pairs passed to the plugin as `args`. All values arrive as strings. |
+| `--trigger-arguments k=v,k2=v2` | no | Comma-separated key=value pairs passed to the plugin as `args`. All values arrive as strings. **For typed values from a TOML file**, pass `config_file_path=<filename.toml>` — see `references/plugin-structure.md` → "Plugin configuration via TOML". |
 | `--run-asynchronous` | no | Allow multiple instances of this trigger to run concurrently. Default is synchronous. |
 | `--error-behavior <log\|retry\|disable>` | no | What happens when the plugin raises. Default `log`. |
 | `--disabled` | no | Create the trigger in disabled state. |
