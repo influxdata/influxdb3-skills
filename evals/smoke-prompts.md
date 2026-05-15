@@ -17,7 +17,7 @@ Run each prompt in a **fresh** Claude Code session (so the skill is loaded clean
 | 7 | "Write a SQL query that gives me the average temperature per region per hour for the last day." | Query, SQL idioms | Correct `DATE_BIN` or `time_bucket` usage for v3 SQL, `GROUP BY` on tags, sensible time filter. |
 | 8 | "I have user input coming into a query — how do I parameterize it safely in Java?" | Query, security | Uses parameterized query API of `influxdb3-java`, never string-concatenates user input. |
 | 9 | "I don't want to use the official client. Just give me curl examples for write and query against Cloud Dedicated." | HTTP fallback, Cloud Dedicated | Uses raw `/api/v3/write_lp` (or correct flavor endpoint) and `/api/v3/query_sql`, env vars for host and token. |
-| 10 | "I think I'm hitting a 401 — help me check my auth setup." | Out-of-scope troubleshooting | Defers politely: explains this skill covers connect/write/query/schema; suggests checking env vars and that troubleshooting is a future addition. |
+| 10 | "I think I'm hitting a 401 — help me check my auth setup." | Auth-failure diagnostic (in-scope since v0.4.0) | Routes to `troubleshooting.md` → "Auth failures" → "HTTP 401"; walks env-var check (`INFLUXDB_TOKEN` set, right name per quirks.md entry 5), host correctness (`/ping`), recent rotation, token validity. Never inlines a token in suggested code. |
 | 11 | "Migrate this v2 Python code to v3." | Out-of-scope migration | Defers politely; does not pretend to be a migration helper. |
 | 12 | "How do I tell which flavor I'm connected to from my code?" | Flavor detection | Produces a `/ping`-based snippet matching the logic from `references/flavor-detection.md`. |
 
