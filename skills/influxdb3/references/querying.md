@@ -30,7 +30,7 @@ ORDER BY bucket DESC, region
 
 ## Parameterize user input — always
 
-Never string-concatenate user input into a query. Every official client supports a parameterized query API; use it. The HTTP API also supports a `params` object on `/api/v3/query_sql`.
+Never string-concatenate user input into a query — this is a **SQL injection** vector exactly as it would be in any other SQL-speaking database. Every official client supports a parameterized query API; use it. The HTTP API also supports a `params` object on `/api/v3/query_sql`.
 
 | Language | Example reference |
 |---|---|

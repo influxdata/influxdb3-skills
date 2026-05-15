@@ -34,6 +34,8 @@ await client.write(points);
 
 Default rule: batch ≥ 1,000 points or flush every 1 second.
 
+> **Cloud Serverless wrinkle:** writes go to the v2-compatibility endpoint `/api/v2/write` (not `/api/v3/write_lp` as in Core / Enterprise / Cloud Dedicated). The `@influxdata/influxdb3-client` library handles the routing for you when `INFLUXDB_HOST` points at a Cloud Serverless URL, but if you ever drop down to raw HTTP for Cloud Serverless you need the v2 path and the `INFLUXDB_ORG` env var. See `references/flavors.md` for the full per-flavor matrix and `references/clients/http.md` for the raw-HTTP shapes.
+
 ## Parameterized SQL query
 
 ```javascript
