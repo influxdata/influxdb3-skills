@@ -14,7 +14,7 @@ No queries, no writes — the goal is purely to make TOML-to-args delivery obser
 
 ## Install and run
 
-Both the `.py` and the `.toml` need to live in your `PLUGIN_DIR` on the InfluxDB 3 host before you create the trigger. This example uses `--plugin-filename` (not `--path ... --upload` like the other examples in this directory) because `--upload` only transfers the single Python file — it does NOT upload the companion TOML. For TOML-config plugins, both files must be in place server-side first.
+Both the `.py` and the `.toml` need to live in your `PLUGIN_DIR` on the InfluxDB 3 host before you create the trigger. This example passes just the bare filename to `--path` (no `--upload`) because `--upload` only transfers the single Python file — it does NOT upload the companion TOML. For TOML-config plugins, both files must be in place server-side first, after which `--path <filename>` resolves the .py from `PLUGIN_DIR` and the engine separately resolves `config_file_path=<filename.toml>` from the same directory.
 
 ### Stage the files
 
@@ -37,7 +37,7 @@ With both files staged in `PLUGIN_DIR`:
 ```bash
 influxdb3 create trigger \
   --database mydb \
-  --plugin-filename example_toml_config.py \
+  --path example_toml_config.py \
   --trigger-spec "every:10s" \
   --trigger-arguments config_file_path=example_toml_config_scheduler.toml \
   --token "$INFLUXDB_TOKEN" \

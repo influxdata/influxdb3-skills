@@ -141,14 +141,14 @@ Create the trigger with:
 ```bash
 influxdb3 create trigger \
   --database mydb \
-  --plugin-filename my_plugin.py \
+  --path my_plugin.py \
   --trigger-spec "every:1m" \
   --trigger-arguments config_file_path=my_plugin_config_scheduler.toml \
   --token "$INFLUXDB_TOKEN" \
   my_plugin_trigger
 ```
 
-Note `--plugin-filename` (not `--path ... --upload`) — for TOML-config plugins, both the `.py` and the `.toml` must already live in `PLUGIN_DIR` before you create the trigger, because `--upload` only transfers the single Python file. See `examples/toml_config/README.md` for the file-staging steps.
+Note `--path my_plugin.py` is the bare filename (no `--upload`) — for TOML-config plugins, both the `.py` and the `.toml` must already live in `PLUGIN_DIR` before you create the trigger, because `--upload` only transfers the single Python file. `--path` resolves the .py from `PLUGIN_DIR`; the engine separately resolves `config_file_path` from the same directory. See `examples/toml_config/README.md` for the file-staging steps.
 
 ### Native types are preserved
 

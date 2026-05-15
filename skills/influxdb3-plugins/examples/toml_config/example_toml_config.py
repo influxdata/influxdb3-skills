@@ -4,7 +4,7 @@ Example: TOML-config scheduled plugin.
 Activate with:
   influxdb3 create trigger \\
     --database mydb \\
-    --plugin-filename example_toml_config.py \\
+    --path example_toml_config.py \\
     --trigger-spec "every:10s" \\
     --trigger-arguments config_file_path=example_toml_config_scheduler.toml \\
     --token "$INFLUXDB_TOKEN" \\
