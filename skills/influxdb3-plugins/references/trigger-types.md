@@ -146,7 +146,7 @@ Inside the plugin:
 ```python
 def process_scheduled_call(influxdb3_local, call_time, args=None):
     if args:
-        threshold = float(args.get("threshold", "100"))  # always cast — args values are strings
+        threshold = float(args.get("threshold", "100"))  # cast when using --trigger-arguments (strings); TOML config (`config_file_path`) preserves native types — see `plugin-structure.md` → "Plugin configuration via TOML"
         email = args.get("notify_email", "default@example.com")
 ```
 

@@ -40,7 +40,7 @@ When something stopped working. Symptom-keyed at the top; topic sections below. 
 
 **Diagnose (in order):**
 
-1. Is `INFLUXDB_TOKEN` set? `echo "${INFLUXDB_TOKEN:0:8}..."` should show the first 8 chars (typically `apiv3_`).
+1. Is `INFLUXDB_TOKEN` set? `echo "${INFLUXDB_TOKEN:0:8}..."` should show the first 8 chars (typically `apiv3_`). (This is the developer truncating their own env var to verify it's loaded — it does NOT violate the redaction rule above, which only forbids echoing tokens pasted into Claude's input.)
 2. Is the script reading from the right env var name? App code reads `INFLUXDB_TOKEN`; the `influxdb3` CLI reads `INFLUXDB3_AUTH_TOKEN`. See `quirks.md` entry 5.
 3. Is the host correct? `curl -sS -i "$INFLUXDB_HOST/ping"` — should return 200 with `x-influxdb-build` header.
 4. Was the token recently rotated? See [Token rotation aftermath](#token-rotation-aftermath).

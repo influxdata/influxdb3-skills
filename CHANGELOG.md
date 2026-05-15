@@ -4,6 +4,16 @@ All notable changes to this skill will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.5.1] — 2026-05-15
+
+### Fixed
+- `references/trigger-types.md` — the `# always cast — args values are strings` comment in the worked example was accurate for inline `--trigger-arguments` but became misleading after v0.5.0 added TOML config (which preserves native types). The comment now distinguishes the two paths and cross-links to the TOML coverage.
+- `references/troubleshooting.md` — clarified that the `${INFLUXDB_TOKEN:0:8}` env-var truncation in the auth-failure diagnostic does NOT violate the redaction rule (the rule forbids echoing tokens pasted INTO Claude's input; developers inspecting their own env vars on the command line is unrelated).
+
+### Known gaps (still deferred)
+- `admin-http-api.md` — HTTP body shape for `update database` retention period is undocumented upstream (verified against InfluxData docs). Skill continues to recommend the CLI path.
+- Cloud Serverless / Cloud Dedicated token shape verification — requires runtime testing against real Cloud instances; queued for a future release.
+
 ## [0.5.0] — 2026-05-15
 
 ### Added
