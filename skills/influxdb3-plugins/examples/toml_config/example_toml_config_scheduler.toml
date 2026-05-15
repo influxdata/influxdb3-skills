@@ -1,0 +1,16 @@
+# Example TOML config consumed by example_toml_config.py.
+#
+# The InfluxDB 3 Processing Engine loads this file when the trigger is
+# created with --trigger-arguments config_file_path=example_toml_config_scheduler.toml
+# and merges its keys into the args dict passed to process_scheduled_call.
+
+# Threshold for alerting (int, not a string — the engine preserves TOML types)
+threshold = 75
+
+# Optional label included in log output
+label = "demo-trigger"
+
+# Nested table — comes through as a Python dict in args["severity_levels"]
+[severity_levels]
+warn = 70
+alert = 90
