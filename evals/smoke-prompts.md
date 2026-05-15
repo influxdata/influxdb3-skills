@@ -134,3 +134,20 @@ Run each prompt in a **fresh** Claude Code session inside a throwaway directory.
 |---|---|---|---|
 | 28 | "I just installed the claude-influxdb3 plugin. I don't have InfluxDB 3 running yet — help me get a Core instance up." | Install path: Core | Routes to `references/installing.md`. Walks through install script OR Docker (presents both); covers `serve` invocation with `--node-id`, `--object-store`, `--data-dir`, `--plugin-dir`; covers `create token --admin` for bootstrap; verifies with `GET /ping`. Never inlines a token. |
 | 29 | "How do I install InfluxDB 3 Enterprise on my Mac for development?" | Install path: Enterprise | Same flow as #28 but Enterprise. Mentions license activation step on first boot. Does NOT walk through systemd / production hardening (out of scope). |
+
+---
+
+## v0.5.0 scope coverage — TOML plugin config
+
+| # | Prompt | Verifies | Pass criteria |
+|---|---|---|---|
+| 30 | "I want my plugin to read its threshold from a TOML file instead of hard-coding it. How do I wire that up?" | TOML config mechanism, `config_file_path` arg, `PLUGIN_DIR` location, engine-side parsing, native-type preservation | Mentions `--trigger-arguments config_file_path=<filename.toml>` on `influxdb3 create trigger`; places the TOML file in `PLUGIN_DIR` alongside the `.py`; explicitly notes the engine parses the TOML (NO `tomllib` call in the plugin); notes that TOML values arrive in `args` with native Python types (int/float/bool/list/dict), not as strings; mentions the InfluxData house naming convention `<plugin>_config_<trigger_type>.toml` as recommended; points at `examples/toml_config/` for a complete working example. |
+
+### v0.5.0 hard-block cases
+
+- Claude must NOT tell the developer to import `tomllib` (or `tomli` / `toml`) inside the plugin — the engine handles parsing.
+- Claude must NOT invent a TOML loading mechanism not on the canonical docs path (e.g., auto-discovery by filename, env-var-driven paths beyond `PLUGIN_DIR`).
+
+### v0.5.0 deferred cases (must defer politely)
+
+- TOML / inline `--trigger-arguments` precedence: undocumented upstream. Skill should say so and point at the canonical InfluxData example repo for empirical answers.
