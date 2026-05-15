@@ -139,6 +139,8 @@ Run each prompt in a **fresh** Claude Code session inside a throwaway directory.
 
 ## v0.5.0 scope coverage — TOML plugin config
 
+Run each prompt in a **fresh** Claude Code session inside a throwaway directory. Pass criteria: Claude triggers the `influxdb3-plugins` skill, routes to the new TOML config coverage in `references/plugin-structure.md`, and produces correct plugin wiring (when code is asked for) or defers politely (when out of scope for v0.5.0).
+
 | # | Prompt | Verifies | Pass criteria |
 |---|---|---|---|
 | 30 | "I want my plugin to read its threshold from a TOML file instead of hard-coding it. How do I wire that up?" | TOML config mechanism, `config_file_path` arg, `PLUGIN_DIR` location, engine-side parsing, native-type preservation | Mentions `--trigger-arguments config_file_path=<filename.toml>` on `influxdb3 create trigger`; places the TOML file in `PLUGIN_DIR` alongside the `.py`; explicitly notes the engine parses the TOML (NO `tomllib` call in the plugin); notes that TOML values arrive in `args` with native Python types (int/float/bool/list/dict), not as strings; mentions the InfluxData house naming convention `<plugin>_config_<trigger_type>.toml` as recommended; points at `examples/toml_config/` for a complete working example. |
