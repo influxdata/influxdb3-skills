@@ -9,7 +9,8 @@ Demonstrates:
 - influxdb3_local.query() usage
 - LineBuilder usage with int64 field (LineBuilder is a runtime-injected
   global — no import required)
-- writing back via influxdb3_local.write(...)
+- writing back via influxdb3_local.write_sync(line, no_sync=True) — the preferred
+  API. write(line) is legacy. no_sync is required (no default).
 """
 
 
@@ -23,4 +24,4 @@ def process_scheduled_call(influxdb3_local, call_time, args=None):
     line = (LineBuilder("scheduled_heartbeat")
             .tag("source", "scheduled_hello")
             .int64_field("recent_count", n))
-    influxdb3_local.write(line)
+    influxdb3_local.write_sync(line, no_sync=True)

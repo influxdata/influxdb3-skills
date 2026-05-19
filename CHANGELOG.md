@@ -4,6 +4,28 @@ All notable changes to this skill will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.5.2] — 2026-05-19
+
+### Fixed
+- **Plugin write API**: skill content now teaches `influxdb3_local.write_sync(line, no_sync=True)` as the preferred plugin-write pattern instead of the legacy `influxdb3_local.write(line)`. Per Plugins-PM reviewer feedback (Ryan Cater) and confirmed by introspecting the live Enterprise 3.8.4 binary, the runtime itself labels `write` and `write_to_db` as **legacy** in their own docstrings:
+  - `write` / `write_to_db`: "Legacy api that batches writes and writes them at the end of plugin execution."
+  - `write_sync` / `write_sync_to_db`: "Writes synchronously via the write buffer."
+- Corrected the documented `write_sync(line, no_sync)` signature in `references/runtime-api.md` — `no_sync` is a **required positional argument** (no default), not the `no_sync=False` shown previously. Verified by attempting `write_sync(line)` on the live runtime, which fails with `TypeError: PyPluginCallApi.write_sync() missing 1 required positional argument: 'no_sync'`.
+- Added a "no_sync=True vs no_sync=False — which to pick" decision table in `references/runtime-api.md` explaining the durability vs throughput trade-off.
+
+### Changed
+- All four plugin examples updated to use `write_sync(line, no_sync=True)`:
+  - `examples/wal/process_writes_hello.py`
+  - `examples/scheduled/process_scheduled_call_hello.py`
+  - `examples/cache_counter/counter.py`
+  - `examples/multifile_alert/processors.py`
+- `references/trigger-types.md` data-transformation use case updated.
+- Smoke prompt #14 pass criteria updated to require `write_sync(line, no_sync=True)`.
+- README Status line caught up from v0.4.2 → v0.5.2 (was stale through the v0.5.0 and v0.5.1 releases).
+
+### Verified
+- `write_sync(line, no_sync=True)` confirmed working live on Enterprise 3.8.4 (data lands in the target table). Trigger cleanup successful; orphan check clean.
+
 ## [0.5.1] — 2026-05-15
 
 ### Fixed

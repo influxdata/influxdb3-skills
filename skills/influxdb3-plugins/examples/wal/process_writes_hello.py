@@ -8,7 +8,10 @@ summarizing each batch. Demonstrates:
 - iterating table_batches: each item is a dict with "table_name" and "rows" keys
 - LineBuilder usage with tags + int64 field (LineBuilder is a runtime-injected
   global — no import required)
-- influxdb3_local.write(...)
+- influxdb3_local.write_sync(line, no_sync=True) for writing the derived row
+  back. write_sync is the preferred API; write(line) is legacy. no_sync=True
+  returns as soon as the row is buffered (high-throughput); flip to no_sync=False
+  if you need to wait for WAL sync.
 """
 
 
@@ -23,4 +26,4 @@ def process_writes(influxdb3_local, table_batches, args=None):
         line = (LineBuilder("processed_summary")
                 .tag("source_table", table_name)
                 .int64_field("row_count", n))
-        influxdb3_local.write(line)
+        influxdb3_local.write_sync(line, no_sync=True)

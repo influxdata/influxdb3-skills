@@ -27,7 +27,7 @@ def emit_alerts(influxdb3_local, batch, cfg):
                 .tag("field", cfg.field)
                 .float64_field("value", value_f)
                 .float64_field("threshold", cfg.threshold))
-        influxdb3_local.write(line)
+        influxdb3_local.write_sync(line, no_sync=True)
         n_alerts += 1
 
     if n_alerts:

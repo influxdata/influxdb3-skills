@@ -16,7 +16,7 @@ description: |
   table_batches AttributeError, cache lifecycle gotchas). Distinct from the
   influxdb3 skill, which covers connecting to and querying InfluxDB 3 from
   external apps — this skill is for code that runs INSIDE InfluxDB.
-version: 0.5.1
+version: 0.5.2
 last_verified: "2026-05-15"
 verified_against:
   influxdb3_core: "3.8"

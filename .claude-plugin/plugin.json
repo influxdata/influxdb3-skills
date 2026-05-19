@@ -1,6 +1,6 @@
 {
   "name": "claude-influxdb3",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "Teach Claude Code to write correct InfluxDB 3 code (connect, write, query, schema design), to develop, install, and test Processing Engine plugins, to provision and manage databases and auth tokens, AND to troubleshoot when something stops working — across Core, Enterprise, Cloud Serverless, and Cloud Dedicated, in Python, JavaScript, Go, Java, C#, and raw HTTP.",
   "author": {
     "name": "InfluxData",

@@ -35,7 +35,7 @@ def process_writes(influxdb3_local, table_batches, args=None):
 
 ### Use cases
 
-- Data transformation and enrichment (write derived rows back via `influxdb3_local.write(...)`)
+- Data transformation and enrichment (write derived rows back via `influxdb3_local.write_sync(line, no_sync=True)`)
 - Threshold alerting on incoming values
 - Computing per-batch aggregates and writing them as derived measurements
 

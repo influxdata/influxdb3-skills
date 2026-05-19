@@ -36,4 +36,4 @@ def process_scheduled_call(influxdb3_local, call_time, args=None):
     line = (LineBuilder("plugin_counter")
             .tag("plugin", "cache_counter")
             .int64_field("count", counter))
-    influxdb3_local.write(line)
+    influxdb3_local.write_sync(line, no_sync=True)
