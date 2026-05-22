@@ -15,6 +15,10 @@ We built a Claude Code plugin that teaches Claude to write **correct** InfluxDB 
 
 ## 2. Install (~1 minute)
 
+Pick the path that matches you.
+
+### Option A — From GitHub (if you have InfluxData GitHub access)
+
 In Claude Code, run:
 
 ```
@@ -25,6 +29,22 @@ In Claude Code, run:
 Verify with `/plugin` — you should see **`claude-influxdb3`** listed as installed and enabled. If it doesn't show up right away, run `/reload-plugins`. No full restart needed.
 
 **Hit an auth error on the first command?** That means GitHub credentials aren't cached. Run `gh auth login` (choose GitHub.com → HTTPS), then retry.
+
+### Option B — From a file (no GitHub account needed)
+
+If you don't have GitHub access, ask your contact for the **`claude-skill-for-influxdb3.zip`** file (it'll come over Slack).
+
+1. **Unzip it to a stable location** — e.g. `~/Downloads/claude-skill-for-influxdb3`. Pick somewhere permanent, *not* a temp folder: Claude Code references the plugin by this path, so if you move or delete it later, the plugin stops working.
+2. In Claude Code, run (substitute your actual unzip path):
+
+   ```
+   /plugin marketplace add ~/Downloads/claude-skill-for-influxdb3
+   /plugin install claude-influxdb3@influxdata
+   ```
+
+3. Verify with `/plugin`; run `/reload-plugins` if it doesn't appear immediately.
+
+> The unzipped folder contains a hidden `.git` directory — that's intentional, please leave it in place (it's what lets Claude Code resolve the plugin). You do **not** need git installed or any GitHub account for this to work.
 
 ## 3. Test it — pick a tier
 
