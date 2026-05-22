@@ -40,7 +40,9 @@ Verify:
 /plugin
 ```
 
-You should see `claude-influxdb3` listed as installed and enabled. (If you previously installed from the published marketplace, run `/plugin uninstall claude-influxdb3@influxdata` and `/plugin marketplace remove influxdata` first — the marketplace name `influxdata` would otherwise collide. The README "Develop locally" section covers this in more detail.)
+You should see `claude-influxdb3` listed as installed and enabled. If it doesn't show up immediately, run `/reload-plugins`. (If you previously installed from the published marketplace, run `/plugin uninstall claude-influxdb3@influxdata` and `/plugin marketplace remove influxdata` first — the marketplace name `influxdata` would otherwise collide. The README "Develop locally" section covers this in more detail.)
+
+The `git clone` above uses your GitHub credentials directly, so if you can clone the internal repo you're already authenticated for the marketplace step too.
 
 After editing files in your local clone, refresh:
 

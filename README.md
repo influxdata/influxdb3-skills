@@ -47,7 +47,9 @@ In Claude Code, add this repo as a plugin marketplace and install the plugin:
 /plugin install claude-influxdb3@influxdata
 ```
 
-Verify with `/plugin` and check that `claude-influxdb3` appears as installed and enabled.
+Verify with `/plugin` and check that `claude-influxdb3` appears as installed and enabled. If it doesn't show up immediately, run `/reload-plugins`.
+
+> **GitHub access:** the repo is internal to InfluxData, so Claude Code installs it using your existing GitHub credentials. If `marketplace add` fails with a 401/403, run `gh auth login` (GitHub.com → HTTPS) once, then retry.
 
 To update later:
 

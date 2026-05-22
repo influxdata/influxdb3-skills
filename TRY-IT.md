@@ -8,12 +8,12 @@ We built a Claude Code plugin that teaches Claude to write **correct** InfluxDB 
 
 ## 1. What you need
 
-- **Claude Code** installed and signed in.
-- **A GitHub account on the InfluxData org** (you almost certainly have this — the repo is internal to InfluxData).
+- **Claude Code** installed (a recent version).
+- **GitHub access to the InfluxData org.** The repo is internal, so Claude Code installs it using your existing GitHub credentials. If you've run `gh auth login` (or push/pull from InfluxData repos in your terminal already), you're set. If not, run `gh auth login` once first — otherwise step 2 will fail with a 401/403.
 - **~10 minutes.**
 - *(Optional)* a local InfluxDB 3 instance — only needed if you want to actually **run** the code Claude generates. Plenty of useful testing needs no database at all (see Tier 1).
 
-## 2. Install (2 commands, ~1 minute)
+## 2. Install (~1 minute)
 
 In Claude Code, run:
 
@@ -22,7 +22,9 @@ In Claude Code, run:
 /plugin install claude-influxdb3@influxdata
 ```
 
-Verify with `/plugin` — you should see **`claude-influxdb3`** listed as installed and enabled. That's it.
+Verify with `/plugin` — you should see **`claude-influxdb3`** listed as installed and enabled. If it doesn't show up right away, run `/reload-plugins`. No full restart needed.
+
+**Hit an auth error on the first command?** That means GitHub credentials aren't cached. Run `gh auth login` (choose GitHub.com → HTTPS), then retry.
 
 ## 3. Test it — pick a tier
 
