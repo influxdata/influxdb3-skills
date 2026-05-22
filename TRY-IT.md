@@ -59,10 +59,8 @@ A 👍 "this just worked" is as useful to us as a 👎 — both are data.
 
 ## 5. How to report (30 seconds)
 
-> **Gary: fill in your preferred channel before sharing.**
-
 - **File a quick issue:** https://github.com/influxdata/claude-skill-for-influxdb3/issues/new
-- **Or drop a note in** `#<your-slack-channel>`
+- **Or drop a note in** `#project-influxdb3-claude-skill`
 
 Please include:
 1. The **prompt** you used (copy-paste it).
