@@ -109,7 +109,7 @@ influxdb3 serve \
 
 `--cluster-id` is required on Enterprise — it prefixes the location of the Enterprise Catalog in the object store. Pick any string; it sticks for the lifetime of that deployment.
 
-**Enterprise license activation:** On first boot, Enterprise sends a verification email to `--license-email` and pauses with `Waiting for verification...` until you click the link. After verification, the license is cached in the object store under `<cluster-id>/trial_or_home_license` and subsequent boots are non-interactive. License types:
+**Enterprise license activation:** Enterprise will not boot without a license. `--license-email` and `--license-type` are **required on first boot** (unless you supply `--license-file`). On first boot, Enterprise sends a verification email to `--license-email`; click the link to activate. After verification, the license is cached in the object store under `<cluster-id>/trial_or_home_license` and subsequent boots are non-interactive. License types:
 
 | `--license-type` | Use it for |
 |---|---|
@@ -119,7 +119,21 @@ influxdb3 serve \
 
 If you already have a license file, pass `--license-file <path>` and skip `--license-email` / `--license-type`.
 
-> **Quirk:** if you start Enterprise non-interactively (e.g., from a script) without a pre-cached license or `--license-file`, the server will block on the email-verification step indefinitely. Either click the link in the email, pre-cache the license interactively once, or supply `--license-file`.
+> **ASK for the license — don't run a bare `serve`.** On a new/fresh cluster (no cached license), ask the developer for their license email and type before generating the start command, then pass `--license-email` + `--license-type` (use their real email, not the placeholder). A license-less non-interactive start **fails fast** with `No interactive TTY detected. Cannot prompt for email.` — it does not hang; supplying `--license-email` is what avoids the prompt. Note: `--object-store memory` can't cache the license, so prefer a file store (below).
+
+## Object store: `file` is the default; avoid `memory` for anything you run more than once
+
+`--object-store` selects where the catalog and Parquet data live. It **defaults to `file`** (local filesystem, requires `--data-dir <path>`). Supported backends:
+
+| `--object-store` | Data | When to use |
+|---|---|---|
+| `file` (default) | On disk under `--data-dir` (Parquet + catalog) | **Local/dev default.** Survives restarts; license caches once; RAM stays bounded. Requires `--data-dir`. |
+| `s3` / `google` / `azure` | Remote object store | Production and shared/multi-node storage. Each takes its own flags (`--bucket`, region/credentials) — see `doc-urls.md`. |
+| `memory` | **RAM only, nothing on disk** | Brief throwaway tests only. |
+
+> **`serve --help` is wrong here:** it claims the default is `memory`; the real default is `file` (confirmed in source and at runtime).
+
+> **Warning:** `memory` holds *all* data in RAM — under sustained writes it grows unbounded and can OOM the host, and it won't cache the Enterprise license. For load generation or anything you'll restart, use `file` with a temp `--data-dir` (`rm -rf` it when done).
 
 ## Bootstrap: create the operator/admin token
 
