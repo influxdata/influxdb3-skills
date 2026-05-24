@@ -27,6 +27,11 @@ influxdb3 create token --admin --name <name> --expiry 90d --token "$INFLUXDB_TOK
 
 The new token's secret value is printed to stdout **once** when created — capture it immediately. The server stores only a hash; if you lose the plaintext, you must create a new token.
 
+> **Scripting token capture? Use `--format json`** — the default text output contains ANSI color codes that corrupt a grepped token. Parse the `token` field instead:
+> ```bash
+> TOKEN=$(influxdb3 create token --admin --format json | jq -r .token)
+> ```
+
 ### Create a scoped resource token
 
 `--name` and `--permission` are required. Permission format: `$RESOURCE_TYPE:$RESOURCE_NAMES:$ACTIONS`.

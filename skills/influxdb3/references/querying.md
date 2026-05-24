@@ -28,6 +28,8 @@ ORDER BY bucket DESC, region
 
 `DATE_BIN` is the v3 way to bucket on time. Don't reach for `time_bucket` (that's a TimescaleDB idiom — it'll fail).
 
+> **`format=json` returns timestamps as ISO-8601 strings, not nanosecond ints.** Do time math in SQL, not on the client: `... date_part('epoch', MAX(time)) - date_part('epoch', MIN(time)) ...`. For a numeric epoch client-side, select `date_part('epoch', time)` explicitly.
+
 ## Parameterize user input — always
 
 Never string-concatenate user input into a query — this is a **SQL injection** vector exactly as it would be in any other SQL-speaking database. Every official client supports a parameterized query API; use it. The HTTP API also supports a `params` object on `/api/v3/query_sql`.

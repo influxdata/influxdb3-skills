@@ -4,6 +4,23 @@ All notable changes to this skill will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+Findings from a hands-on test pass (local bring-up + sustained write/query load). All changes are in the `influxdb3` skill.
+
+### Added
+- **`references/installing.md`**: new "Object store" section. Documents that `--object-store` defaults to `file` (requires `--data-dir`) — *not* `memory` as the binary's `--help` text wrongly claims — lists the `s3`/`google`/`azure` remote backends, and warns that the opt-in `memory` store is RAM-only and grows without bound under sustained writes (can OOM the host) and won't cache the Enterprise license.
+- **`references/querying.md`**: note that `format=json` returns timestamp columns as ISO-8601 strings (Apache Arrow JSON default, version-independent); do time math in SQL with `date_part('epoch', …)`.
+- **`references/tokens.md`**: when scripting token capture, use `influxdb3 create token --format json` and parse the `token` field — the default text output emits ANSI color codes (even when piped) that corrupt a naively-grepped token.
+
+### Fixed
+- **Enterprise license bring-up**: the skill now instructs Claude to **ask** the developer for a license email and license type before starting Enterprise, instead of only showing static `--license-email`/`--license-type` placeholders. Surfaced in both `SKILL.md` §1.5 and `references/installing.md`.
+- **Corrected the license quirk** in `references/installing.md`: a license-less, no-TTY Enterprise start **fails fast** (`No interactive TTY detected. Cannot prompt for email.`) rather than "blocking indefinitely" as previously stated; clarified that supplying `--license-email` is what clears the no-TTY failure.
+- **`SKILL.md` §1.5** now also triggers for the "binary installed but no server running" case, not just "no instance anywhere".
+
+### Changed
+- Bumped `SKILL.md` `last_verified` to 2026-05-24 and `verified_against` core/enterprise to 3.9 (license flags are hidden from `serve --help` on 3.9.0 but remain functional).
+
 ## [0.5.2] — 2026-05-19
 
 ### Fixed

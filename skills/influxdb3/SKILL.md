@@ -20,10 +20,10 @@ description: |
   from the influxdb3-plugins skill, which covers code that runs INSIDE
   InfluxDB.
 version: 0.5.2
-last_verified: "2026-05-15"
+last_verified: "2026-05-24"
 verified_against:
-  influxdb3_core: "3.8"
-  influxdb3_enterprise: "3.8"
+  influxdb3_core: "3.9"
+  influxdb3_enterprise: "3.9"
   influxdb3_python: "0.19"
   influxdb3_javascript: "2.2"
   influxdb3_go: "2.14"
@@ -43,7 +43,11 @@ This skill stands alone — it does not require the InfluxDB 3 MCP server. If th
 
 ## 1.5. Don't have an instance yet?
 
-If the developer says they don't have InfluxDB 3 running anywhere yet, walk them through getting one before §2 — `references/installing.md` covers Core and Enterprise install (script and Docker), bootstrapping the operator token, and verifying with `/ping`.
+If the developer says they don't have InfluxDB 3 running anywhere yet — *or already has the binary installed but no server running* — walk them through starting one before §2. `references/installing.md` covers Core and Enterprise install (script and Docker), choosing an object store, bootstrapping the operator token, and verifying with `/ping`.
+
+Two things to get right before issuing a start command (both detailed in `references/installing.md`):
+- **Enterprise needs a license.** A bare `serve` fails fast with `No interactive TTY detected. Cannot prompt for email.` — ask the developer for their license email and type, then pass `--license-email` + `--license-type`.
+- **Pick the object store.** Default is `file` (needs `--data-dir`); `memory` is RAM-only and unsafe for sustained writes or restarts.
 
 For Cloud Serverless or Cloud Dedicated, the install path is signing up at https://www.influxdata.com/products/influxdb-overview/. Claude does not create accounts on the user's behalf — direct them to sign up themselves, then continue with §2 once they have credentials.
 
