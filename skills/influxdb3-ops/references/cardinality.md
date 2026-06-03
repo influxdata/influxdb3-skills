@@ -1,0 +1,70 @@
+# Cardinality — What It Costs in v3, How to Detect and Remediate
+
+The operational and remediation side of high cardinality. Design-time prevention (the tag-vs-field rule) lives in the sibling `influxdb3` skill at `skills/influxdb3/references/schema-design.md` — link there; this file covers what an operator does *after* a high-cardinality schema is already in production.
+
+> Verified against InfluxDB 3 Enterprise 3.10.0 on 2026-06-03. Both detection queries below ran against `--database _internal` with the exact columns shown. The v3 cardinality framing is quoted from the Core/Enterprise schema-design docs.
+
+## What cardinality costs in v3
+
+InfluxDB 3 is a columnar engine (IOx/Parquet), not the v1/v2 TSM engine. **There is no hard cardinality limit and no `series cardinality exceeded` error in v3.** The InfluxDB 3 docs state plainly:
+
+> "The InfluxDB 3 storage engine supports infinite tag value and series cardinality. Unlike previous versions of InfluxDB, tag value cardinality doesn't affect the overall performance of your database."
+
+Do **not** quote a `series cardinality exceeded` error to a v3 user — that string is a v1/v2 artifact and does not exist here. (The v0.1.0 `influxdb3/references/troubleshooting.md` "Performance hints" still mentions it as a deferred placeholder; this reference supersedes that for v3.)
+
+What high cardinality actually costs in v3 is **schema-shape driven**, not a limit:
+
+- **Wider series keys / wide schemas** → increased resource usage when persisting data during ingestion, and more memory held per table.
+- **Complex primary keys (many tags in the series key)** → reduced sort/persist performance, since the primary key is the timestamp plus the full tag set.
+- **More distinct series and bigger result sets** → more Parquet data scanned per query, higher per-query memory, slower queries.
+
+So the symptom is **operational, not an error message**: rising process/query memory, slower queries, a large `series_key_columns` set, and growing object-store usage — not a rejected write. See `references/observability.md` for the specific metrics that climb (`datafusion_mem_pool_bytes`, `jemalloc_memstats_bytes`, `influxdb_iox_query_log_max_memory`, `influxdb_iox_query_log_num_rows`, `influxdb_iox_query_log_parquet_files`).
+
+## Detect
+
+**Widest series keys / most columns** (`system.tables` — `column_count` is `UInt64`, `series_key_columns` is the tag/series-key column set). A long `series_key_columns` list is the direct fingerprint of a high-cardinality tag design:
+
+```sql
+SELECT database_name, table_name, column_count, series_key_columns
+FROM system.tables
+ORDER BY column_count DESC
+LIMIT 20;
+```
+
+**Biggest tables by rows** (`system.parquet_files` — a volume/cardinality proxy; many distinct series produce many rows and bytes):
+
+```sql
+SELECT table_name, sum(row_count) AS rows, sum(size_bytes) AS bytes
+FROM system.parquet_files
+GROUP BY table_name
+ORDER BY rows DESC
+LIMIT 20;
+```
+
+Run both through the `_internal` database:
+
+```bash
+INFLUXDB3_AUTH_TOKEN="$INFLUXDB_TOKEN" "$INFLUXDB3_CLI" query --database _internal \
+  --host "$INFLUXDB_HOST" "<SQL>"
+```
+
+Correlate the table you flag here with the memory/query metrics in `references/observability.md`: a wide-series-key table that also tops `influxdb_iox_query_log_max_memory` or `influxdb_iox_query_log_parquet_files` is the one paying the cost.
+
+## Remediate
+
+The fix is the same as the design rule, applied after the fact: **move the high-cardinality identifier out of the series key (tag) and make it a field.** Identifiers like UUIDs, request/trace IDs, and user/account IDs belong as fields, not tags — see `skills/influxdb3/references/schema-design.md` (the schema authority) for the full tag-vs-field decision table and the offender list.
+
+But you cannot simply re-tag in place. **Schema type-stickiness** means a column's role and type are fixed on first write to a table: a name that was created as a tag stays a tag. Remediation therefore requires one of:
+
+- **A new field name** for the identifier (e.g. `request_id` as a tag → write a new `request_id_val` field instead), or
+- **Recreating the table** with the corrected schema and migrating data (`SELECT *` out, rewrite as line protocol).
+
+The stickiness mechanism and the new-name-or-recreate workaround are documented in `skills/influxdb3/references/troubleshooting.md` → "Schema-type stickiness".
+
+## Prevent
+
+Prevention is design-time and lives in the sibling skill — don't re-derive it here:
+
+- `skills/influxdb3/references/schema-design.md` → "The tag-vs-field decision" and "Cardinality — the most common mistake" (when-in-doubt-make-it-a-field; the 50,000-GPU example).
+
+This `influxdb3-ops` skill owns the operational half: detecting an existing high-cardinality table and remediating it on a live instance.
