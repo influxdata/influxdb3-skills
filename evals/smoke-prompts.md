@@ -153,3 +153,19 @@ Run each prompt in a **fresh** Claude Code session inside a throwaway directory.
 ### v0.5.0 deferred cases (must defer politely)
 
 - TOML / inline `--trigger-arguments` precedence: undocumented upstream. Skill should say so and point at the canonical InfluxData example repo for empirical answers.
+
+---
+
+## influxdb3-ops scope coverage (v0.1.0)
+
+| # | Prompt | Verifies | Pass criteria |
+|---|---|---|---|
+| 31 | "My InfluxDB 3 Core server won't start — it exits right away. How do I figure out why?" | Server-won't-start triage | Triggers `influxdb3-ops`; routes to `troubleshooting.md` → "Server won't start"; checks logs/object-store/`--data-dir`/Enterprise license; never inlines a token. |
+| 32 | "influxdb3 is getting OOM-killed under load. What do I do?" | Memory pressure | Routes to `memory-and-resources.md`; mentions memory-pool sizing (`--exec-mem-pool-bytes` / percentage) and batch/cardinality contributors; cites the config-options doc. |
+| 33 | "My data disk is filling up fast. What's eating it and how do I read it?" | Disk pressure | Routes to `storage-and-compaction.md` + the diagnostic toolkit; explains WAL vs persisted vs object-store; read-only diagnosis first. |
+| 34 | "How do I scrape InfluxDB 3 metrics into Prometheus, and which numbers should I watch?" | Observability / metrics | Routes to `observability.md`; names the `/metrics` endpoint; lists the key series to watch (verified set); no invented metric names. |
+| 35 | "I set a 7-day retention period but old data is still there. Why?" | Retention enforcement | Routes to `storage-and-compaction.md` (enforcement is scheduled, not instant); cross-links `influxdb3` for retention *configuration*. |
+| 36 | "My queries are slow on the server. How do I triage?" | Server-level performance | Routes to `performance.md`; server-side triage (time filters, cardinality, compaction state, resources); cites the official performance-tuning doc. |
+| 37 | "I'm getting 'series cardinality exceeded'. How do I find and fix the offender?" | Cardinality remediation | Routes to `cardinality.md`; detect via `system.*`/toolkit; remediation = move high-cardinality tag to field; cross-links `influxdb3` schema-design. |
+| 38 | "Give me a one-shot health check I can paste into Claude for my self-hosted server." | Diagnostic toolkit | Points at `examples/diagnose-ops/`; explains it's read-only and token-safe. |
+| 39 | "I'm on InfluxDB Cloud Dedicated — the server keeps falling over." | Cloud deferral (adversarial) | Defers politely: Cloud is InfluxData-managed; points at Cloud docs/support; does NOT walk self-hosted serve flags. |
