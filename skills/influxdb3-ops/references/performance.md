@@ -62,13 +62,13 @@ From the Performance tuning doc (Core and Enterprise — see `references/doc-url
 
 | Knob | What the doc says |
 |---|---|
-| `--num-io-threads` | Threads for HTTP requests and line-protocol parsing. Default `2` — often insufficient; raise for write-heavy / many concurrent writers (Enterprise ingest nodes: 8–24+ on large hosts). |
-| `--datafusion-num-threads` | Query/snapshot execution threads; auto-allocated from remaining cores after IO threads. |
+| `--datafusion-num-threads` | Query/snapshot execution threads (defaults to available cores). The primary thread-count knob in 3.10; raise on query-heavy nodes and tune per node mode (ingest vs. query vs. compact) on Enterprise. |
 | `--wal-flush-interval` | Write latency vs. throughput. Default `1s`; reduce toward `100ms` for lower-latency ingest. |
 | `--max-http-request-size` | Max HTTP request size. Default `10 MB`; raise for large write batches. |
 | `--object-store-connection-limit` / `--object-store-max-retries` / `--object-store-http2-only` | Object-store connection pool, retry, and HTTP/2 behavior for cloud stores — the knobs for the object-store latency signal above. |
-| `--checkpoint-interval` / `--gen1-lookback-duration` | Startup optimization (consolidate snapshot metadata; bound gen1 metadata loaded at startup). Doc recommends `1h` checkpoint interval in production. |
+| `--gen1-lookback-duration` | Startup optimization — bounds how far back gen1 file metadata is loaded into the in-memory index at startup; lower it to speed startup on large datasets. |
+| `--checkpoint-interval` (per perf-tuning docs; not present in 3.10 nightly — verify for your build) | Doc describes a startup optimization that consolidates snapshot metadata and recommends `1h` in production. |
 
 **Memory-pool and snapshot thresholds** (`--exec-mem-pool-bytes`, `--parquet-mem-cache-size`, `--force-snapshot-mem-threshold`) are also in this doc, but they're covered with the OOM/disk context in `references/memory-and-resources.md` — go there rather than re-tuning them here.
 
-**Enterprise:** the doc emphasizes per-node-mode tuning (`--mode=ingest|query|compact`); each mode wants a different IO/DataFusion thread balance. For multi-node sizing beyond the documented examples, point to the canonical page in `references/doc-urls.md` rather than inventing numbers.
+**Enterprise:** the doc emphasizes per-node-mode tuning (`--mode=ingest|query|compact`); each mode wants a different DataFusion thread allocation and resource balance. For multi-node sizing beyond the documented examples, point to the canonical page in `references/doc-urls.md` rather than inventing numbers.
