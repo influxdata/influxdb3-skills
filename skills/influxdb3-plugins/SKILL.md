@@ -138,6 +138,7 @@ When your plugin isn't behaving — trigger doesn't fire, errors in the logs, de
 | `Schema error: No field named plugin_name` (or similar) on `system.processing_engine_logs` | `references/quirks.md` entry 10 |
 | Cache values disappeared / counter reset | `references/troubleshooting.md` → "Cache lifecycle gotchas" |
 | Plugin runs but writes don't show up | back to main skill: `references/troubleshooting.md` → "Silent auto-create misroute" |
+| Server itself unhealthy (won't start, OOM, disk full, slow at the server level) | sibling skill `influxdb3-ops` |
 
 Full reference: `references/troubleshooting.md`.
 

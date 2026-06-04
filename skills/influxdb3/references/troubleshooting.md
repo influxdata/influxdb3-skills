@@ -31,7 +31,7 @@ When something stopped working. Symptom-keyed at the top; topic sections below. 
 | Orphan databases / tokens after a script crash | [Admin failures](#admin-failures) |
 | Permission-string typo rejected | [Admin failures](#admin-failures) |
 | `delete token` syntax error | `references/quirks.md` → entry 8 |
-| Slow query / slow write | [Performance hints (defer to v0.5.0)](#performance-hints) |
+| Slow query / slow write | [Performance hints](#performance-hints) (deep analysis → `influxdb3-ops` skill) |
 | Plugin trigger doesn't fire | sibling skill: `influxdb3-plugins/references/troubleshooting.md` |
 
 ## Auth failures
@@ -211,7 +211,7 @@ WHERE table_name = '<measurement>';
 
 **Diagnose:** Retention enforcement runs on a schedule (typically hourly), not instantly. Also: retention applies to *new* data only on some flavors; existing data outside the window may persist until the next compaction.
 
-**Fix:** wait for the next retention sweep, or force compaction if your flavor supports it. For an immediate purge, drop and recreate the measurement (destructive).
+**Fix:** wait for the next retention sweep, or force compaction if your flavor supports it. For an immediate purge, drop and recreate the measurement (destructive). Enforcement-timing and compaction detail: the `influxdb3-ops` skill (`skills/influxdb3-ops/references/storage-and-compaction.md`).
 
 ### Orphan databases / tokens after a script crash
 
@@ -239,14 +239,14 @@ print([t['name'] for t in data if t['name'].startswith('<your-test-prefix>')])
 
 ## Performance hints
 
-Slow queries, slow writes, cardinality remediation, batch-size tuning — full coverage in v0.5.0 (deferred). Quick triage:
+Slow queries, slow writes, cardinality remediation, batch-size tuning — deep coverage lives in the `influxdb3-ops` skill (`skills/influxdb3-ops/references/performance.md` and `cardinality.md`). Quick triage:
 
 - **Slow query, no time filter** → add `WHERE time > now() - INTERVAL '...'`. Almost always fixes it.
 - **Slow query, unbounded `SELECT *`** → add `LIMIT <n>`. v0.1.0's `querying.md` covers this.
 - **Slow write, large batches** → split into 1,000–10,000-point batches per write call.
-- **Cardinality blowup symptom** (`series cardinality exceeded`) → high-cardinality value used as a tag. Move it to a field. v0.1.0's `schema-design.md` covers cardinality.
+- **High cardinality** → in InfluxDB 3 there is **no hard cardinality limit and no "series cardinality exceeded" error** (unlike v1/v2). High cardinality costs memory and query time, not a rejected write. Design guidance: `references/schema-design.md`. Server-side detection/remediation and the real limits (max databases/tables/columns): the `influxdb3-ops` skill (`skills/influxdb3-ops/references/cardinality.md`).
 
-For deeper analysis, defer to v0.5.0. Do not try to debug query plans, batching strategy, or cardinality remediation in this skill.
+For deeper analysis, use the `influxdb3-ops` skill. Do not try to debug query plans, batching strategy, or cardinality remediation in this skill.
 
 ## Where to fetch more
 
