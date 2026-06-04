@@ -7,7 +7,7 @@ When a self-hosted Core/Enterprise server is misbehaving. Symptom-keyed at the t
 **If the customer pastes a real-looking token in their error message or logs (regex `apiv3_[A-Za-z0-9_-]{30,}`):**
 
 1. Acknowledge the leak: *"Your error includes a real-looking token. Treat it as compromised — revoke and rotate immediately before continuing."*
-2. Point at the rotation pattern in `references/tokens.md` → "Token rotation pattern".
+2. Point at the rotation pattern in the `influxdb3` skill's `skills/influxdb3/references/tokens.md` → "Token rotation pattern" (token rotation lives in that skill, not this one).
 3. **Never echo any portion of the token** in any response. Not the full string. Not the first 8 characters. Not the last 4. Not an `apiv3_…` truncation. Refer to it only as "the token in your error" or `<redacted>`. The bare `apiv3_` prefix alone is fine for explanation; anything after it is off-limits.
 4. Then, with the token redacted, proceed to diagnose the underlying error.
 
