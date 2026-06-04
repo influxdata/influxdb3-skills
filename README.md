@@ -1,16 +1,16 @@
 # claude-influxdb3
 
-A Claude Code plugin that teaches Claude to write correct InfluxDB 3 code, manage databases and tokens, develop Processing Engine plugins, and troubleshoot when things break — for **Core and Enterprise**, in **Python, JavaScript/TypeScript, Go, Java, C#**, or **raw HTTP**.
+A Claude Code plugin that teaches Claude to write correct InfluxDB 3 code, manage databases and tokens, develop Processing Engine plugins, troubleshoot when things break, and operate and run self-hosted servers — for **Core and Enterprise**, in **Python, JavaScript/TypeScript, Go, Java, C#**, or **raw HTTP**.
 
 Stands alone — no MCP server required.
 
-**Status:** v0.5.2. Two skills (`influxdb3` v0.5.2, `influxdb3-plugins` v0.5.2). Distributed as a Claude Code plugin from this repo. Version history in [`CHANGELOG.md`](CHANGELOG.md); roadmap in [What it does NOT cover yet](#what-it-does-not-cover-yet).
+**Status:** v0.6.0. Three skills (`influxdb3` v0.5.2, `influxdb3-plugins` v0.5.2, `influxdb3-ops` v0.1.0). Distributed as a Claude Code plugin from this repo. Version history in [`CHANGELOG.md`](CHANGELOG.md); roadmap in [What it does NOT cover yet](#what-it-does-not-cover-yet).
 
 > **Reviewers:** if you've been invited to review this skill, start with [`TESTING.md`](TESTING.md) and your area-specific briefing under [`evals/reviewer-briefings/`](evals/reviewer-briefings/).
 
 ## What it does
 
-The plugin contains two skills. Each loads automatically when its topics come up in a Claude Code conversation.
+The plugin contains three skills. Each loads automatically when its topics come up in a Claude Code conversation.
 
 ### `influxdb3` skill — application + admin work
 
@@ -35,6 +35,17 @@ The plugin contains two skills. Each loads automatically when its topics come up
 - **Manage plugin dependencies** — `influxdb3 install package` against the embedded venv. Will not propose `python -m venv` against system Python.
 - **Maintain state across runs** — trigger-local and global cache namespaces with TTLs.
 - **Diagnose plugin runtime problems** — trigger-doesn't-fire checks, dependency `ImportError`s, `table_batches` gotchas, cache lifecycle issues.
+
+### `influxdb3-ops` skill — operating the server
+
+- **Get the right signals first** — where the server actually tells you what's wrong: process logs, the `/metrics` Prometheus endpoint, and the `system.*` tables. Knows which signal answers which question before reaching for guesses.
+- **Startup & configuration** — the `serve` flags that matter, object-store selection (`file`/`s3`/`google`/`azure` and the `memory` footgun), license bring-up, and the memory pool / WAL knobs that govern how much RAM the server will use.
+- **Storage, retention enforcement & compaction** — how data lands and ages out, when retention actually deletes, and how compaction works (and why it can fall behind).
+- **Memory & disk pressure** — reading the pressure signals, what drives them, and the levers to pull before the host OOMs or fills its data dir.
+- **Server-level performance triage** — turning "the server is slow" into a specific bottleneck (query, ingest, compaction, or host resource) using the observable signals rather than guesswork.
+- **Cardinality reality** — the truth about v3 cardinality: there is no "series cardinality exceeded" error; the real limits are max databases, tables, and columns. Sizes the actual limits instead of repeating v1/v2 folklore.
+- **Symptom-keyed ops troubleshooting** — a router from operator symptoms (won't start, slow, OOMing, disk filling, data not aging out) to the right checks and fixes.
+- **Run a read-only diagnostic toolkit** — the `diagnose-ops` scripts gather server state (config, storage, memory, `system.*`, `/metrics`) without mutating anything — safe to run against a production server and paste back to Claude.
 
 Both skills cover all three trigger types and single-node deployments. Multi-node cluster patterns are deferred — see [What it does NOT cover yet](#what-it-does-not-cover-yet).
 
@@ -101,11 +112,12 @@ If you want to test it cleanly:
 
 When asked about any of the below, the skill defers to the official docs rather than guessing:
 
-- **Performance tuning** — slow queries, cardinality remediation, batch-size optimization. Planned for v0.5.0.
 - **v1/v2 → v3 migration helper** — v0.6.0.
 - **App-pattern templates** — IoT pipelines, dashboards, alerts/downsampling. v0.7.0.
 - **Cluster placement & multi-node patterns for plugins** — v0.2.1.
-- **Air-gapped setup** — v0.3.1.
+- **Enterprise fleet ops** — multi-node cluster placement, replication, and RBAC for the `influxdb3-ops` skill. Roadmap.
+- **Backup & restore** — backup/restore workflows for self-hosted servers. Roadmap.
+- **Air-gapped operation** — running and operating without outbound network access. Roadmap.
 - **Cloud Serverless and Cloud Dedicated support** — these flavors use different APIs for token management, database management, and (in Serverless's case) writes/queries. Needs flavor-specific code paths beyond what's currently built. Roadmap, version TBD.
 
 ## Verifying the skill is fresh

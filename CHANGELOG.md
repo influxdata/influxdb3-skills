@@ -4,6 +4,17 @@ All notable changes to this skill will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.6.0] — 2026-06-03
+
+Adds a third skill for operating self-hosted servers and bumps the plugin to 0.6.0.
+
+### Added
+- **New `influxdb3-ops` skill (v0.1.0)** — operating self-hosted Core/Enterprise servers: startup & configuration (serve flags, object store, license, memory pool), storage with retention enforcement & compaction, memory & disk pressure, observability (process logs, the `/metrics` endpoint, `system.*` tables), and server-level performance & cardinality triage. Ships a symptom-keyed ops troubleshooting router, an ops-quirks reference, and a read-only `diagnose-ops` toolkit that gathers server state without mutating anything.
+
+### Changed
+- **`influxdb3` skill**: the previously-deferred performance/cardinality content is re-pointed to the new `influxdb3-ops` skill. Corrected the v3 cardinality framing — there is no "series cardinality exceeded" error in v3; the real limits are max databases, tables, and columns.
+- **Plugin** bumped to `0.6.0`.
+
 ## [Unreleased]
 
 Findings from a hands-on test pass (local bring-up + sustained write/query load). All changes are in the `influxdb3` skill.
