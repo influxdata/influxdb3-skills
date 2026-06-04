@@ -4,7 +4,7 @@ The three signal sources for diagnosing a running InfluxDB 3 node. Start here: l
 
 > Verified against InfluxDB 3 Enterprise 3.10.0 on 2026-06-03. Every metric series below appeared in a live `/metrics` scrape; every SQL was run against `--database _internal`; every flag appears in `influxdb3 serve --help-all`. `/metrics` requires Bearer auth.
 
-## 1. Server logs
+## Server logs
 
 Where logs land depends on how the node was started:
 
@@ -29,7 +29,7 @@ When `--log-filter` starts with `debug`/`trace`, the server auto-quiets noisy mo
 - **Object-store errors** — repeated errors mentioning the object store (S3/GCS/Azure auth, timeouts, 403/404) point at the durable layer and usually correlate with `object_store_op_duration_seconds` latency in `/metrics`.
 - **Panics** — a `panicked` / backtrace line is always abnormal; cross-check `thread_panic_count_total` in `/metrics`. A panic followed by no further logs means the process died.
 
-## 2. The `/metrics` endpoint
+## The `/metrics` endpoint
 
 Prometheus text-format metrics, served by the node. **Gotcha:** unlike most Prometheus exporters, this endpoint **requires Bearer auth** — a scraper with no credentials gets rejected. Configure the token in your Prometheus `authorization` / `bearer_token` scrape config; for ad-hoc scrapes pass the header:
 
@@ -76,7 +76,7 @@ Key series (all confirmed present in the live scrape), grouped by concern:
 | `tokio_watchdog_hangs_total` | counter | Hangs detected by the tokio watchdog | Any increase = the async runtime stalled (blocking work on async threads) |
 | `thread_panic_count_total` | counter | Thread panics observed | Anything above 0 is abnormal; cross-check logs |
 
-## 3. `system.*` tables
+## `system.*` tables
 
 Queryable diagnostic tables in the `system` schema. Query them through the `_internal` database with the CLI (or any SQL client). Operator-relevant tables: `queries`, `compaction_events`, `nodes`, `license`, plus `parquet_files`, `databases`, `tables`.
 

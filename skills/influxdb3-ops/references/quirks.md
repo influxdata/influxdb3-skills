@@ -42,7 +42,7 @@ An ops-focused catalogue of "this is just how it is" behaviors an operator hits 
 
 **Why:** `--object-store=memory` holds all data in RAM. It is a testing/dev convenience, not durable storage.
 
-**What to do:** Never use `memory` for sustained or production writes. Use `file`, `s3`, `azure`, or `gcs`. Object-store options in `references/configuration.md`.
+**What to do:** Never use `memory` for sustained or production writes. Use `file`, `s3`, `google`, or `azure`. Object-store options in `references/configuration.md`.
 
 ---
 
