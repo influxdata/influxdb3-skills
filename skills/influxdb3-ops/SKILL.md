@@ -26,6 +26,7 @@ last_verified: "2026-06-03"
 verified_against:
   influxdb3_core: "3.10"
   influxdb3_enterprise: "3.10"
+  storage_formats: ["parquet", "pachatree"]
 ---
 
 # InfluxDB 3 Operations Skill
@@ -46,6 +47,7 @@ Capture **flavor + version** before diagnosing — references and config flags d
 
 1. `GET <host>/ping` and read the headers: `x-influxdb-build` (`Core` / `Enterprise`) and `x-influxdb-version` (e.g. `3.10`).
 2. Note both in your working context; quote the exact version when routing to docs.
+3. **Detect the storage format** — it changes how you read storage/disk/compaction/cardinality signals. **Core** uses Parquet. **Enterprise** uses Parquet today but defaults to **PachaTree** at 3.10 GA (opt-in now via `--use-pacha-tree`). Detect with: `SELECT count(*) FROM information_schema.tables WHERE table_schema='system' AND table_name LIKE 'pt_%'` — `>0` means PachaTree. Full method and the per-format surface map: `references/storage-format.md`.
 
 For full flavor-detection logic (Cloud probes, ambiguous cases), cross-link the sibling skill — do not duplicate it: `skills/influxdb3/references/flavor-detection.md`.
 
@@ -69,6 +71,7 @@ Most investigations begin by looking at all three. The topic references below al
 |---|---|
 | `influxdb3 serve` flags, `INFLUXDB3_*` env vars, object-store + license config, mem-pool sizing | `references/configuration.md` |
 | Durability (WAL→Parquet), retention enforcement, compaction, object-store errors, disk usage | `references/storage-and-compaction.md` |
+| Which storage format am I on (Parquet vs PachaTree) and how signals differ | `references/storage-format.md` |
 | OOM, disk pressure, sizing the box | `references/memory-and-resources.md` |
 
 ## 5. Performance & cardinality
@@ -115,6 +118,7 @@ These are on the roadmap. If asked, defer politely and point at the relevant doc
 - **Enterprise fleet ops** — multi-node cluster placement, replication, RBAC.
 - **Backup / restore.**
 - **Air-gapped operation.**
+- **PachaTree deep tuning** — the skill detects the format and adapts storage/compaction guidance, but the beta `--pt-*` tuning flags are an undocumented surface not yet covered per-flag; await GA docs.
 
 Sample deferral:
 
