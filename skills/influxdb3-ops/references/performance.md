@@ -2,7 +2,7 @@
 
 Deep server-side analysis of slow queries and slow writes. This is the home for the performance content the `influxdb3` skill defers.
 
-> **Handoff:** the `influxdb3` skill owns *client-side quick triage* — add a time filter, add `LIMIT`, batch writes (see its `references/troubleshooting.md` → "Performance hints" and `references/writing.md`). **THIS** reference owns *server-side* analysis: reading `system.queries`, the query-engine `/metrics`, and the documented tuning knobs. If the customer hasn't tried the client-side fixes yet, send them there first.
+> **Handoff:** the `influxdb3` skill owns *client-side quick triage* — add a time filter, add `LIMIT`, batch writes (see its `skills/influxdb3/references/troubleshooting.md` → "Performance hints" and `skills/influxdb3/references/writing.md`). **THIS** reference owns *server-side* analysis: reading `system.queries`, the query-engine `/metrics`, and the documented tuning knobs. If the customer hasn't tried the client-side fixes yet, send them there first.
 
 > Verified against InfluxDB 3 Enterprise 3.10.0 on 2026-06-03. The `system.queries` SQL was run against `--database _internal`; every `/metrics` series below appeared in a live scrape. `/metrics` requires Bearer auth.
 
