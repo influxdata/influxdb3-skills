@@ -20,6 +20,44 @@ What high cardinality actually costs in v3 is **schema-shape driven**, not a lim
 
 So the symptom is **operational, not an error message**: rising process/query memory, slower queries, a large `series_key_columns` set, and growing object-store usage — not a rejected write. See `references/observability.md` for the specific metrics that climb (`datafusion_mem_pool_bytes`, `jemalloc_memstats_bytes`, `influxdb_iox_query_log_max_memory`, `influxdb_iox_query_log_num_rows`, `influxdb_iox_query_log_parquet_files`).
 
+## Real limits that DO exist in v3
+
+The "no hard cardinality limit" framing above is correct — but InfluxDB 3 does enforce three separate hard limits that operators hit in practice. These are **structural** limits (databases, tables, columns), not cardinality (series/tag-value) limits. The numbers differ between Core and Enterprise, and all three are configurable:
+
+| Limit | Core | Enterprise | Config flag (override) |
+|---|---|---|---|
+| Max databases | 5 | 100 | — |
+| Max tables (across **all** databases, not per-DB) | 2,000 | 10,000 | `--num-table-limit` |
+| Max columns per table (incl. the required `time` column → 499 combined tag+field) | 500 | 500 | `--num-total-columns-per-table-limit` |
+
+Verified against the official admin docs on 2026-06-03: [Core](https://docs.influxdata.com/influxdb3/core/admin/databases/) and [Enterprise](https://docs.influxdata.com/influxdb3/enterprise/admin/databases/).
+
+**Detection** (run through `_internal` with the CLI invocation shown under "Detect" below):
+
+Database count vs the limit (5 Core / 100 Enterprise):
+
+```sql
+SELECT count(*) AS databases FROM system.databases WHERE deleted = false;
+```
+
+Total table count vs the limit (2,000 Core / 10,000 Enterprise):
+
+```sql
+SELECT count(*) AS tables FROM system.tables WHERE deleted = false;
+```
+
+Widest tables vs the 500-column limit:
+
+```sql
+SELECT database_name, table_name, column_count
+FROM system.tables
+WHERE deleted = false
+ORDER BY column_count DESC
+LIMIT 20;
+```
+
+**Remediation when near a limit:** consolidate — merge sparse/redundant tables and retire unused databases to stay under the table/database counts. A table approaching 500 columns is almost always an over-wide schema (one measurement absorbing fields that belong in separate tables, or tags that should be fields); fix the schema shape per `skills/influxdb3/references/schema-design.md` rather than raising the limit. The column-limit flag exists, but a 500-column table is a design smell first.
+
 ## Detect
 
 **Widest series keys / most columns** (`system.tables` — `column_count` is `UInt64`, `series_key_columns` is the tag/series-key column set). A long `series_key_columns` list is the direct fingerprint of a high-cardinality tag design:
