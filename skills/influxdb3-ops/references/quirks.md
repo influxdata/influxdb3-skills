@@ -46,11 +46,11 @@ An ops-focused catalogue of "this is just how it is" behaviors an operator hits 
 
 ---
 
-## 5. Never hand-delete WAL or Parquet files to reclaim disk
+## 5. Never hand-delete WAL, Parquet, or `.pt` files to reclaim disk
 
-**What you'll see:** Disk is filling up, and the WAL/Parquet directories are the obvious culprit. Deleting them "frees space."
+**What you'll see:** Disk is filling up, and the WAL / data-file directories are the obvious culprit. Deleting them "frees space." (The data files are `.parquet` in Parquet mode and `.pt` in PachaTree mode — see `references/storage-format.md`.)
 
-**Why:** Those files are the database's durability and data. Deleting them causes data loss or catalog/Parquet corruption — there is no safe manual cleanup of the data dir.
+**Why:** Those files are the database's durability and data. Deleting them — `.parquet`, `.pt`, or WAL — causes data loss or catalog corruption; there is no safe manual cleanup of the data dir.
 
 **What to do:** Reclaim space through retention and compaction, not `rm`. If disk is critically low, follow the recovery steps in `references/memory-and-resources.md`.
 
@@ -73,6 +73,16 @@ An ops-focused catalogue of "this is just how it is" behaviors an operator hits 
 **Why:** Doc-vs-build drift. Those flags are not present in the 3.10 `serve --help-all` output (verified: 0 matches). The docs describe flags from a different build or that were renamed/removed.
 
 **What to do:** Treat `influxdb3 serve --help-all` as the source of truth for available flags, not the perf-tuning prose. Verified flags and their defaults are in `references/configuration.md`.
+
+---
+
+## 8. In PachaTree mode, `system.parquet_files` is empty
+
+**What you'll see:** On an Enterprise node running PachaTree (`--use-pacha-tree`), `system.parquet_files` still exists and queries cleanly — but returns **0 rows**. An operator (or a disk/usage script) reading it for persisted-file inventory sees nothing and may conclude there's no data.
+
+**Why:** PachaTree writes `.pt` files, not `.parquet`, so the Parquet inventory table stays empty. The real file inventory moves to `system.pt_ingest_files` (with `system.pt_ingest_wal` for the WAL side).
+
+**What to do:** Detect the storage format first (`references/storage-format.md`), then query the matching table — `system.parquet_files` in Parquet mode, `system.pt_ingest_files` in PachaTree mode. Note `pt_ingest_files` has **no `table_name` column**, so group by `generation` or take totals. Inspection queries are in `references/storage-and-compaction.md` → "Disk / storage inspection".
 
 ---
 

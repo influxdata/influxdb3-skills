@@ -61,10 +61,12 @@ Key series (all confirmed present in the live scrape), grouped by concern:
 | `influxdb_iox_query_log_max_memory` | histogram | Peak memory per query | Tail near pool limit = OOM risk |
 | `influxdb_iox_query_log_phase_current` | gauge | Queries currently in each phase | Many stuck in one phase (e.g. permit) = contention |
 | **Compaction / parquet cache** | | | |
-| `influxdb3_compaction_sequence_number` | gauge | Latest compaction sequence this node has seen | Should advance over time; flat = compaction stalled |
-| `influxdb3_parquet_cache_size_bytes` | gauge | In-memory parquet cache footprint | Bounded by `--parquet-mem-cache-size`; pinned at max = under cache pressure |
-| `influxdb3_parquet_cache_size_number_of_files` | gauge | Files held in the parquet cache | Context for the byte size above |
-| `influxdb3_parquet_cache_access_total` | counter | Cache accesses (by hit/miss) | Falling hit ratio = cache too small for the read pattern |
+| `influxdb3_compaction_sequence_number` | gauge | Latest compaction sequence this node has seen (Parquet-mode signal) | Should advance over time; flat = compaction stalled |
+| `influxdb3_compactor_snapshots_pending` | gauge | Snapshots waiting to be scheduled into compaction plans (**PachaTree only** — present only when `--use-pacha-tree` is active) | 0 = caught up; sustained non-zero = compaction backlog |
+| `influxdb3_compactor_snapshot_poll_duration_seconds` | histogram | Compactor snapshot poll-cycle latency (**PachaTree only**) | Rising tail = compactor falling behind |
+| `influxdb3_parquet_cache_size_bytes` | gauge | In-memory read-cache footprint (present in **both** formats — this is the shared Parquet read cache) | Bounded by `--parquet-mem-cache-size`; pinned at max = under cache pressure |
+| `influxdb3_parquet_cache_size_number_of_files` | gauge | Files held in the read cache (both formats) | Context for the byte size above |
+| `influxdb3_parquet_cache_access_total` | counter | Cache accesses (by hit/miss; both formats) | Falling hit ratio = cache too small for the read pattern |
 | **Object store** | | | |
 | `object_store_op_duration_seconds` | histogram | Object-store operation latency | Rising = slow/throttled durable layer; correlate with log errors |
 | `object_store_op_ttfb_seconds` | histogram | Time-to-first-byte from object store | High TTFB = network/region/throttle issue |
@@ -79,6 +81,8 @@ Key series (all confirmed present in the live scrape), grouped by concern:
 ## `system.*` tables
 
 Queryable diagnostic tables in the `system` schema. Query them through the `_internal` database with the CLI (or any SQL client). Operator-relevant tables: `queries`, `compaction_events`, `nodes`, `license`, plus `parquet_files`, `databases`, `tables`.
+
+**Which tables apply depends on the storage format.** The file-inventory and compaction tables differ between Parquet and PachaTree (Enterprise) mode — detect the format first per `references/storage-format.md`. In Parquet mode the inventory/compaction surfaces are `system.parquet_files` and `system.compaction_events`; in PachaTree mode a family of `system.pt_*` tables takes their place (see "PachaTree mode" below). The query/node/license/cache tables are identical in both.
 
 ```bash
 INFLUXDB3_AUTH_TOKEN="$INFLUXDB_TOKEN" "$INFLUXDB3_CLI" query --database _internal \
@@ -125,3 +129,5 @@ SELECT table, name, column_names, max_cardinality, max_age_seconds FROM system.d
 ```
 
 Other tables seen in the live catalog and useful here: `system.parquet_files` (persisted-file sizes per table — object-store usage and cardinality, see `references/storage-and-compaction.md` and `references/cardinality.md`), `system.databases`, and `system.tables`.
+
+**PachaTree mode** (Enterprise, when `--use-pacha-tree` is active — detect per `references/storage-format.md`): a family of `system.pt_*` tables is operator-inspectable in place of the Parquet surfaces above. The file inventory is `system.pt_ingest_files` (sizes, row counts, generations) with `system.pt_ingest_wal` for the WAL side; compaction observability moves to `system.pt_compaction_active_jobs` (in-flight plans), `system.pt_compaction_run_sets` (completed run sets per window/level), `system.pt_compaction_nodes` (per-node progress), plus `system.pt_compaction_deferred_snapshots` and `system.pt_compaction_ingest_nodes`. Column shapes and example queries are in `references/storage-and-compaction.md` and the format map in `references/storage-format.md`. **Note:** in PachaTree mode `system.parquet_files` still exists but returns 0 rows — use `system.pt_ingest_files` for the real inventory.

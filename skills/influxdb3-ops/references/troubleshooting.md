@@ -31,7 +31,7 @@ Before diagnosing anything, run the read-only diagnostic toolkit `examples/diagn
 | Process OS-killed, or queries failing with OOM | [Out of memory / OOM](#out-of-memory--oom) |
 | Local disk filling up | [Disk filling up](#disk-filling-up) |
 | Retention "not enforcing" / expired data still present | [Compaction backlog / retention not enforcing](#compaction-backlog--retention-not-enforcing) |
-| Many tiny Parquet files / historical queries slowing | [Compaction backlog / retention not enforcing](#compaction-backlog--retention-not-enforcing) |
+| Many tiny persisted files (`.parquet` / `.pt`) / historical queries slowing | [Compaction backlog / retention not enforcing](#compaction-backlog--retention-not-enforcing) |
 | Queries/writes slow server-wide | [Slow at the server level](#slow-at-the-server-level) |
 | `too many databases/tables/columns` rejection | [Hitting a hard limit](#hitting-a-hard-limit) |
 | User expects a `series cardinality exceeded` error | [Hitting a hard limit](#hitting-a-hard-limit) |
@@ -82,19 +82,19 @@ Before diagnosing anything, run the read-only diagnostic toolkit `examples/diagn
 
 **Diagnose (in order):**
 
-1. **Local disk vs. object store.** Local disk holds the WAL, the Parquet cache (`influxdb3_parquet_cache_size_bytes`), and logs; the object store holds persisted Parquet, the catalog, and the WAL copy. Unbounded *local* growth is usually the cache or log volume, not raw data — see `references/memory-and-resources.md` → "Disk pressure".
-2. **Inspect actual usage.** Query `system.parquet_files` per table for persisted footprint and scrape the cache-size metric, both shown in `references/storage-and-compaction.md` → "Disk / storage inspection".
+1. **Local disk vs. object store.** Local disk holds the WAL, the read cache (`influxdb3_parquet_cache_size_bytes`, shared in both storage formats), and logs; the object store holds the persisted data files (`.parquet` or `.pt`), the catalog, and the WAL copy. Unbounded *local* growth is usually the cache or log volume, not raw data — see `references/memory-and-resources.md` → "Disk pressure".
+2. **Inspect actual usage.** The file-inventory table depends on the storage format — **detect it first** (`references/storage-format.md`). In **Parquet mode** query `system.parquet_files` per table; in **PachaTree mode** that table is empty, so query `system.pt_ingest_files` (group by `generation`). Both, plus the cache-size metric to scrape, are shown in `references/storage-and-compaction.md` → "Disk / storage inspection".
 
-**Fix:** lower `--parquet-mem-cache-size`, rotate logs, or let retention/compaction reclaim object-store space. **NEVER hand-delete WAL or Parquet files** — it causes data loss and catalog corruption; see the safety note in `references/memory-and-resources.md` → "Disk pressure".
+**Fix:** lower `--parquet-mem-cache-size` (Parquet read cache), rotate logs, or let retention/compaction reclaim object-store space. **NEVER hand-delete WAL, `.parquet`, or `.pt` files** — it causes data loss and catalog corruption; see the safety note in `references/memory-and-resources.md` → "Disk pressure".
 
 ## Compaction backlog / retention not enforcing
 
-**What you'll see:** expired data is still present after its retention window, and/or many tiny Parquet files accumulate while historical-range queries slow down.
+**What you'll see:** expired data is still present after its retention window, and/or many tiny persisted files (`.parquet` or `.pt`) accumulate while historical-range queries slow down.
 
 **Diagnose (in order):**
 
 1. **"Retention not enforcing" is usually expected timing.** Retention is enforced on a schedule, **not instantly** — physical deletion is periodic and the docs don't publish an exact interval. Expired data persisting until the next sweep is normal. Full explanation in `references/storage-and-compaction.md` → "Retention enforcement".
-2. **Confirm a real compaction backlog** via `system.compaction_events` (look for `event_status` ≠ `success`) per `references/storage-and-compaction.md` → "Compaction". Small files piling up with stalled/erroring events is the backlog signature.
+2. **Confirm a real compaction backlog** — **detect the storage format first** (`references/storage-format.md`), then use the matching surface. In **Parquet mode** query `system.compaction_events` (look for `event_status` ≠ `success`). In **PachaTree mode** use the `system.pt_compaction_*` tables (`pt_compaction_active_jobs` for in-flight plans, `pt_compaction_run_sets` for completed run sets) and watch the `influxdb3_compactor_snapshots_pending` metric. Both are detailed in `references/storage-and-compaction.md` → "Compaction". Small files piling up with stalled/erroring activity is the backlog signature.
 
 **Fix:** for genuine timing, wait for the next sweep; for a backlog tied to object-store errors, resolve those first. See `references/storage-and-compaction.md` → "Compaction" and "Retention enforcement".
 

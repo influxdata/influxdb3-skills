@@ -45,6 +45,27 @@ Core omits `--cluster-id` and the `--license-*` flags **(Core docs)** — Core i
 
 Cloud credential flags map to provider-standard env vars (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_DEFAULT_REGION`, `GOOGLE_SERVICE_ACCOUNT`, `AZURE_STORAGE_ACCOUNT`, `AZURE_STORAGE_ACCESS_KEY`), not `INFLUXDB3_*`.
 
+## Storage format
+
+The object store holds persisted data in one of **two on-disk formats**, and the choice changes which tuning flags and system tables apply (full detector + surface map in `references/storage-format.md`):
+
+- **Core is Parquet only** — `.parquet` files, for the foreseeable future.
+- **Enterprise** runs **Parquet today** and moves to **PachaTree** (`.pt` files), which becomes the **default at 3.10 GA**. On current pre-GA builds PachaTree is **opt-in** (Performance Preview beta — not for production yet), enabled with `--use-pacha-tree` (env `INFLUXDB3_ENTERPRISE_USE_PACHA_TREE`).
+
+`--use-pacha-tree` **conflicts with the `--parquet-*` flags** — you can't set both. PachaTree has its own tuning under a `--pt-*` prefix, but those flags are **beta/undocumented** (not listed in `serve --help-all`); don't invent their names — point operators at current Enterprise docs.
+
+**Parquet read-cache flags** (Parquet mode; verified present in `serve --help-all`) — these tune the in-memory read cache that fronts persisted files. In PachaTree mode they conflict with `--use-pacha-tree` and don't apply:
+
+| Flag | Default | Purpose |
+|---|---|---|
+| `--parquet-mem-cache-size <SIZE>` | `20%` | In-memory Parquet read-cache size (absolute bytes or percentage of host RAM). Drives `influxdb3_parquet_cache_size_bytes`. |
+| `--parquet-mem-cache-prune-percentage <PCT>` | `0.1` | Fraction pruned from the cache on each prune cycle. |
+| `--parquet-mem-cache-prune-interval <INTERVAL>` | `1s` | How often the cache prune check runs. |
+| `--parquet-mem-cache-query-path-duration <DURATION>` | `3d` | Time window over which query-path caching is considered. |
+| `--disable-parquet-mem-cache` | off | Turns the in-memory Parquet read cache off entirely. |
+
+The `influxdb3_parquet_cache_*` metrics that report on this cache persist in **both** formats (it's the shared read cache); see `references/observability.md`.
+
 ## Memory
 
 The query-execution memory pool is set with `--exec-mem-pool-bytes <SIZE>` (`INFLUXDB3_EXEC_MEM_POOL_BYTES`). It accepts either an **absolute byte value** or a **percentage of total available memory** — e.g. `8000000000` or `10%`. The Enterprise default is `20%`. (On the verified host, `datafusion_mem_pool_bytes{state="limit"}` reported ~7.73 GB, consistent with ~20% of that host's total RAM.)
