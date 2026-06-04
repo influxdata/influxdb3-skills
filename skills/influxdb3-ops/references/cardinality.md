@@ -58,6 +58,24 @@ LIMIT 20;
 
 **Remediation when near a limit:** consolidate — merge sparse/redundant tables and retire unused databases to stay under the table/database counts. A table approaching 500 columns is almost always an over-wide schema (one measurement absorbing fields that belong in separate tables, or tags that should be fields); fix the schema shape per `skills/influxdb3/references/schema-design.md` rather than raising the limit. The column-limit flag exists, but a 500-column table is a design smell first.
 
+## The exception: caches are cardinality-sensitive (LVC & DVC)
+
+The "no hard cardinality limit" claim is about the **storage engine** — Parquet/object-store has no cardinality cost. The precise exception is the two **in-memory** caches, the Last Value Cache (LVC) and the Distinct Value Cache (DVC). Both are available in **both Core and Enterprise**, and both grow with the cardinality of the data they cover. If you have created either cache, cardinality has a direct RAM cost there (it feeds the OOM picture in `references/memory-and-resources.md`).
+
+**Last Value Cache (LVC)** caches the last `count` values per series key (subject to `ttl`). Memory scales with (distinct series matching the cache key) × (value columns) × `count` — the docs put it as `key_column_cardinality × count = rows cached`. An LVC on a high-cardinality table or wide key column can consume large RAM. Inspect what exists:
+
+```sql
+SELECT table, name, key_column_names, value_column_names, count, ttl FROM system.last_caches;
+```
+
+**Distinct Value Cache (DVC)** caches distinct values of one or more columns, **bounded by `max_cardinality`** (and aged out by `max_age_seconds`). `max_cardinality` is the maximum number of distinct value combinations the cache will store and must be set explicitly at creation — there is no implied unbounded default. When the real distinct count exceeds `max_cardinality`, the cache cannot track every value, so DVC-backed lookups can return **incomplete** results. Size `max_cardinality` to the real distinct count of the column(s). Inspect what exists:
+
+```sql
+SELECT table, name, column_names, max_cardinality, max_age_seconds FROM system.distinct_caches;
+```
+
+`system.tables` also exposes `last_cache_count` and `distinct_cache_count` per table — a quick way to see which tables carry caches at all. Run all of these through `_internal` (CLI invocation under "Detect" below); see `references/observability.md` for these tables in the broader `system.*` context. Verified against InfluxDB 3 Enterprise 3.10.0 on 2026-06-03. Docs: LVC [Core](https://docs.influxdata.com/influxdb3/core/admin/last-value-cache/) / [Enterprise](https://docs.influxdata.com/influxdb3/enterprise/admin/last-value-cache/); DVC [Core](https://docs.influxdata.com/influxdb3/core/admin/distinct-value-cache/) / [Enterprise](https://docs.influxdata.com/influxdb3/enterprise/admin/distinct-value-cache/).
+
 ## Detect
 
 **Widest series keys / most columns** (`system.tables` — `column_count` is `UInt64`, `series_key_columns` is the tag/series-key column set). A long `series_key_columns` list is the direct fingerprint of a high-cardinality tag design:

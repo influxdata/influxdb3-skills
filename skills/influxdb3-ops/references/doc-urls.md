@@ -34,6 +34,10 @@ When the skill content does not cover an operator's question — or when the ans
 | File indexes (Enterprise) | https://docs.influxdata.com/influxdb3/enterprise/admin/file-index/ | Manage file indexes to tune query performance (Enterprise-only) |
 | Usage telemetry (Core) | https://docs.influxdata.com/influxdb3/core/reference/telemetry/ | What telemetry is collected and how to opt out (`--disable-telemetry-upload`) on Core |
 | Usage telemetry (Enterprise) | https://docs.influxdata.com/influxdb3/enterprise/reference/telemetry/ | What telemetry is collected and how to opt out on Enterprise |
+| Last Value Cache (Core) | https://docs.influxdata.com/influxdb3/core/admin/last-value-cache/ | LVC behavior, `count`/`ttl`, and its cardinality-driven memory cost on Core |
+| Last Value Cache (Enterprise) | https://docs.influxdata.com/influxdb3/enterprise/admin/last-value-cache/ | LVC behavior and memory cost on Enterprise |
+| Distinct Value Cache (Core) | https://docs.influxdata.com/influxdb3/core/admin/distinct-value-cache/ | DVC `max_cardinality`/`max_age_seconds` bounds and incomplete-result behavior on Core |
+| Distinct Value Cache (Enterprise) | https://docs.influxdata.com/influxdb3/enterprise/admin/distinct-value-cache/ | DVC bounds and behavior on Enterprise |
 
 ## Per-flavor landing pages
 

@@ -13,7 +13,7 @@ For users who installed the `claude-influxdb3` plugin but don't have a server ye
 | License | Free, open source | Commercial — needs license activation |
 | Single-node | ✅ | ✅ |
 | Multi-node clustering | ❌ | ✅ |
-| Last-value & distinct-value caches | ❌ | ✅ |
+| Last-value & distinct-value caches | ✅ | ✅ |
 | HA / read replicas | ❌ | ✅ |
 | Object store backends | local, S3, Azure, GCS | local, S3, Azure, GCS |
 | When to pick | Trying it out, dev/test, small production | Production with HA needs, performance primitives, multi-node |

@@ -117,4 +117,11 @@ SELECT license_type, licensed_cores, available_cores, expires_at
 FROM system.license;
 ```
 
+**In-memory caches** (`system.last_caches`, `system.distinct_caches`) — what Last Value / Distinct Value caches exist and how they're sized. These caches are the one cardinality-sensitive memory consumer in v3 (both Core and Enterprise); a cache on a high-cardinality table can hold large RAM. `system.tables` also carries `last_cache_count` / `distinct_cache_count` per table, a quick way to see which tables carry caches. Triage in `references/cardinality.md`.
+
+```sql
+SELECT table, name, key_column_names, value_column_names, count, ttl FROM system.last_caches;
+SELECT table, name, column_names, max_cardinality, max_age_seconds FROM system.distinct_caches;
+```
+
 Other tables seen in the live catalog and useful here: `system.parquet_files` (persisted-file sizes per table — object-store usage and cardinality, see `references/storage-and-compaction.md` and `references/cardinality.md`), `system.databases`, and `system.tables`.

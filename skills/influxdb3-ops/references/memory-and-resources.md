@@ -15,7 +15,7 @@ curl -sS -H "Authorization: Bearer $INFLUXDB_TOKEN" "$INFLUXDB_HOST/metrics" \
 
 `query_datafusion_query_execution_ooms_total` rising is the key signal that queries are hitting the pool ceiling. `datafusion_mem_pool_bytes{state="reserved"}` approaching `{state="limit"}` means the pool is saturated. (On the verified host, `limit` was ~7.73 GB — the Enterprise default `20%` of host RAM.)
 
-**Top causes:** (1) the memory pool sized too high relative to host RAM, so the pool plus everything else exceeds physical memory and the OS kills the process; (2) huge un-batched writes; (3) high-cardinality or unbounded queries (no `LIMIT`, no time filter) that try to materialize too much at once.
+**Top causes:** (1) the memory pool sized too high relative to host RAM, so the pool plus everything else exceeds physical memory and the OS kills the process; (2) huge un-batched writes; (3) high-cardinality or unbounded queries (no `LIMIT`, no time filter) that try to materialize too much at once; (4) **in-memory caches** — the Last Value Cache (LVC) and Distinct Value Cache (DVC) live outside the query pool and grow with the cardinality of the data they cover, so a cache on a high-cardinality table adds non-query memory the OS counts against the process. See `references/cardinality.md` for how to inspect and size them.
 
 **Diagnose (in order):**
 
