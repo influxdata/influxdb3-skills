@@ -11,8 +11,9 @@ description: |
   connectivity errors), observability surfaces (the /metrics Prometheus
   endpoint, scraping InfluxDB 3 metrics, reading server logs, operator-facing
   system.* tables), server-level performance (slow queries or writes
-  attributed to the server, "series cardinality exceeded", cardinality
-  remediation), and configuration surfaces (influxdb3 serve flags, INFLUXDB3_*
+  attributed to the server, high-cardinality memory/query cost, hitting the
+  database / table / column-count limits), and configuration surfaces
+  (influxdb3 serve flags, INFLUXDB3_*
   environment variables, object-store configuration, memory pool sizing).
   Distinct from the influxdb3 skill (connecting to, reading from, writing to,
   or administering the DB from an external app) and the influxdb3-plugins
