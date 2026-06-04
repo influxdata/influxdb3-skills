@@ -154,7 +154,7 @@ If a question lands outside what's baked in — for example, a recent client API
 If the developer asks for any of the following, defer politely and explain it's on the roadmap:
 
 - **Air-gapped setup** (`--package-manager disabled`, custom plugin repos via `--plugin-repo`, offline mirrors) — v0.3.1.
-- **Performance tuning** (slow queries, slow writes, cardinality remediation, batch-size optimization) — v0.5.0.
+- **Performance tuning** (slow queries, slow writes, cardinality remediation, batch-size optimization) — see the sibling **`influxdb3-ops`** skill (operating/running self-hosted servers).
 - **v1/v2 → v3 migration** — v1.2.
 - **App-pattern templates** (IoT pipelines, dashboards, alerts/downsampling) — v1.3.
 - **Processing Engine plugins** (Python code that runs inside InfluxDB 3 — `process_writes`, `process_scheduled_call`, `process_request` triggers, `influxdb3_local` API, `LineBuilder`) — see the sibling `influxdb3-plugins` skill (v0.2.0+).
@@ -206,7 +206,7 @@ When something stopped working — connection errors, writes not landing where e
 - **Redact first, diagnose second.** If the customer pasted a real-looking token (regex `apiv3_[A-Za-z0-9_-]{30,}`), acknowledge the leak, recommend immediate rotation via `references/tokens.md`, then proceed without echoing **any portion** of the token — not the full string, not a prefix, not a suffix, not a "first 8 characters" sample. Refer to it as "the token in your error" or `<redacted>`.
 - **Always check for silent auto-create misroute** when a write "succeeded" but the data isn't visible — list databases the token can see and look for typo'd siblings (`references/troubleshooting.md` → "Silent auto-create misroute").
 - **Run the diagnostic toolkit** at `examples/diagnose/` when the symptom is unclear. It produces a one-page health report that's the right thing to paste into Claude.
-- **Defer performance questions** to v0.5.0 — slow query / slow write / cardinality remediation are out of scope here. Quick triage (add a time filter, add a LIMIT, batch in 1k–10k chunks) is fine; deeper analysis defers.
+- **Quick triage only** (add a time filter, add a LIMIT, batch in 1k–10k chunks). Deeper server-side analysis — slow query / slow write / cardinality — belongs to the sibling `influxdb3-ops` skill.
 
 **Symptom → section:**
 
