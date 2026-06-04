@@ -64,6 +64,20 @@ run_query() {
   fi
 }
 
+run_query_scalar() {
+  # $1 = SQL returning a single numeric value ; prints just the number, or
+  # empty string on failure. Parses the CLI's bordered-table output.
+  local sql="$1"
+  local out
+  if out="$("${CLI}" query --database "${DB}" --host "${HOST}" "${sql}" 2>/dev/null)"; then
+    printf '%s' "${out}" \
+      | grep -Eo '[0-9]+' \
+      | head -n 1
+  else
+    printf ''
+  fi
+}
+
 generate_report() {
   echo "InfluxDB 3 ops diagnostic — read-only health report"
   echo "=================================================="
@@ -86,6 +100,22 @@ generate_report() {
   fi
   echo
 
+  # --- Storage format detection -------------------------------------------
+  # PachaTree exposes system tables prefixed `pt_`; Parquet does not. We use
+  # this to branch the compaction and file-inventory sections below. If the
+  # discriminator query fails we default to "unknown" and keep going.
+  local pt_tables
+  pt_tables="$(run_query_scalar "SELECT count(*) AS n FROM information_schema.tables WHERE table_schema='system' AND table_name LIKE 'pt_%'")"
+  if [[ -z "${pt_tables}" ]]; then
+    FORMAT="unknown"
+  elif [[ "${pt_tables}" -gt 0 ]]; then
+    FORMAT="pachatree"
+  else
+    FORMAT="parquet"
+  fi
+  echo "storage format: ${FORMAT}"
+  echo
+
   # --- [2] /metrics health ------------------------------------------------
   echo "[2] /metrics health (key operator series)"
   local metrics_status metrics_body
@@ -100,7 +130,7 @@ generate_report() {
     # rows (object_store_op_duration_seconds_bucket) so the report stays one
     # page; the _sum/_count summary lines for that histogram are kept.
     printf '%s\n' "${metrics_body}" \
-      | grep -E 'datafusion_mem_pool_bytes|query_datafusion_query_execution_ooms_total|jemalloc_memstats_bytes|http_requests_total|grpc_requests_total|influxdb3_compaction_sequence_number|influxdb3_parquet_cache_size_bytes|object_store_op_duration_seconds|object_store_transfer_bytes_total|tokio_watchdog_hangs_total|thread_panic_count_total|process_start_time_seconds' \
+      | grep -E 'datafusion_mem_pool_bytes|query_datafusion_query_execution_ooms_total|jemalloc_memstats_bytes|http_requests_total|grpc_requests_total|influxdb3_compaction_sequence_number|influxdb3_compactor_snapshots_pending|influxdb3_parquet_cache_size_bytes|object_store_op_duration_seconds|object_store_transfer_bytes_total|tokio_watchdog_hangs_total|thread_panic_count_total|process_start_time_seconds' \
       | grep -v '^#' \
       | grep -vE 'object_store_op_duration_seconds_bucket' \
       | sed 's/^/    /' || echo "    (no matching metric series found)"
@@ -134,8 +164,16 @@ generate_report() {
   echo
 
   # --- [6] Recent compaction ----------------------------------------------
-  echo "[6] Recent compaction (system.compaction_events)"
-  run_query "SELECT event_time, event_type, event_status, event_duration FROM system.compaction_events ORDER BY event_time DESC LIMIT 10" | sed 's/^/  /'
+  if [[ "${FORMAT}" == "pachatree" ]]; then
+    echo "[6] Recent compaction (PachaTree: system.pt_compaction_*)"
+    echo "  active jobs (system.pt_compaction_active_jobs):"
+    run_query "SELECT plan_id, state, target_level, total_slices, completed_slices, created_at FROM system.pt_compaction_active_jobs ORDER BY created_at DESC LIMIT 10" | sed 's/^/  /'
+    echo "  recent run sets (system.pt_compaction_run_sets):"
+    run_query "SELECT window, level, file_count, row_count, size_mb FROM system.pt_compaction_run_sets ORDER BY created_at DESC LIMIT 10" | sed 's/^/  /'
+  else
+    echo "[6] Recent compaction (system.compaction_events)"
+    run_query "SELECT event_time, event_type, event_status, event_duration FROM system.compaction_events ORDER BY event_time DESC LIMIT 10" | sed 's/^/  /'
+  fi
   echo
 
   # --- [7] Slowest recent queries -----------------------------------------
@@ -143,9 +181,14 @@ generate_report() {
   run_query "SELECT query_text, end2end_duration, max_memory, success FROM system.queries WHERE running = false ORDER BY end2end_duration DESC LIMIT 10" | sed 's/^/  /'
   echo
 
-  # --- [8] Biggest tables -------------------------------------------------
-  echo "[8] Biggest tables (system.parquet_files)"
-  run_query "SELECT table_name, sum(size_bytes) AS bytes, sum(row_count) AS rows FROM system.parquet_files GROUP BY table_name ORDER BY bytes DESC LIMIT 15" | sed 's/^/  /'
+  # --- [8] Biggest tables / file inventory --------------------------------
+  if [[ "${FORMAT}" == "pachatree" ]]; then
+    echo "[8] Persisted file inventory (PachaTree: system.pt_ingest_files by generation)"
+    run_query "SELECT generation, count(*) AS files, sum(size_bytes) AS bytes, sum(row_count) AS rows FROM system.pt_ingest_files GROUP BY generation ORDER BY generation" | sed 's/^/  /'
+  else
+    echo "[8] Biggest tables (system.parquet_files)"
+    run_query "SELECT table_name, sum(size_bytes) AS bytes, sum(row_count) AS rows FROM system.parquet_files GROUP BY table_name ORDER BY bytes DESC LIMIT 15" | sed 's/^/  /'
+  fi
   echo
 
   echo "Done. (read-only)"

@@ -11,14 +11,14 @@ restarts anything on the server.
 
 ## What it does
 
-1. `[1] /ping` — reports HTTP status, flavor (`x-influxdb-build`), and version (`x-influxdb-version`).
-2. `[2] /metrics health` — scrapes `/metrics` once and surfaces the key operator series (DataFusion mem pool, query OOMs, jemalloc, HTTP/gRPC request counts, compaction sequence, parquet cache size, object-store op durations and transfer bytes, tokio watchdog hangs, thread panics, process start time). The noisy per-bucket histogram lines are dropped; `_sum`/`_count` summaries are kept. A 401 prints a "metrics need a valid admin token" note.
+1. `[1] /ping` — reports HTTP status, flavor (`x-influxdb-build`), and version (`x-influxdb-version`). It then **detects the storage format** (Parquet vs PachaTree) by checking for `pt_*` system tables and prints `storage format: <parquet|pachatree|unknown>`. This format gates the compaction and file-inventory sections below; if the discriminator query fails it reports `unknown` and still runs the rest.
+2. `[2] /metrics health` — scrapes `/metrics` once and surfaces the key operator series (DataFusion mem pool, query OOMs, jemalloc, HTTP/gRPC request counts, compaction sequence, PachaTree compaction backlog (`influxdb3_compactor_snapshots_pending`, absent under Parquet), parquet cache size, object-store op durations and transfer bytes, tokio watchdog hangs, thread panics, process start time). The noisy per-bucket histogram lines are dropped; `_sum`/`_count` summaries are kept. A 401 prints a "metrics need a valid admin token" note.
 3. `[3] Local disk` — if `INFLUXDB_DATA_DIR` is set and exists (file object store only), runs `du -sh` on it and `df -h` of its mount; otherwise prints "skipped".
 4. `[4] Logs` — a process can't portably read another process's logs, so it prints the per-deployment command to fetch them (Docker, systemd, foreground).
 5. `[5] Node & license` — `system.nodes` (node_id, mode, core_count, state) and `system.license` (license_type, licensed_cores, available_cores, expires_at).
-6. `[6] Recent compaction` — last 10 rows of `system.compaction_events`.
+6. `[6] Recent compaction` — **adapts to the storage format.** Under **Parquet**: last 10 rows of `system.compaction_events`. Under **PachaTree**: recent active jobs from `system.pt_compaction_active_jobs` plus recent run sets from `system.pt_compaction_run_sets`.
 7. `[7] Slowest recent queries` — top 10 completed queries from `system.queries` by `end2end_duration`.
-8. `[8] Biggest tables` — top 15 tables by total parquet size from `system.parquet_files`.
+8. `[8] Biggest tables / file inventory` — **adapts to the storage format.** Under **Parquet**: top 15 tables by total parquet size from `system.parquet_files`. Under **PachaTree** (relabeled "Persisted file inventory"): per-generation file counts, bytes, and rows from `system.pt_ingest_files` (which has no `table_name` column).
 
 Each `system.*` query tolerates failure (permission or edition differences) and
 prints a short "skipped/failed: <reason>" instead of aborting the run.
@@ -51,6 +51,8 @@ database: _internal
     status:  200
     flavor:  Enterprise
     version: 3.10.0-oss-nightly
+
+storage format: parquet
 
 [2] /metrics health (key operator series)
     datafusion_mem_pool_bytes{state="limit"} 7730941133
