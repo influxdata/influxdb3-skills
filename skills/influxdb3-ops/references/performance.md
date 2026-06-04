@@ -24,7 +24,7 @@ Read it: a long `end2end_duration` with a `query_text` that has no `WHERE time >
 
 **2. High cardinality.** A query touching a high-cardinality table materializes far more series than expected, inflating `execute_duration` and `max_memory` even with a time filter. See `references/cardinality.md`.
 
-**3. Compaction backlog.** Many small Parquet files scanned per query shows up as a high `parquet_files` (and often high `partitions`) value in the inventory above — the engine opens hundreds of tiny files instead of a few compacted ones. See `references/storage-and-compaction.md` for confirming the backlog and how compaction consolidates.
+**3. Compaction backlog.** Many small persisted files scanned per query shows up as a high `parquet_files` (and often high `partitions`) value in the inventory above — the engine opens hundreds of tiny files instead of a few compacted ones. **The `system.queries.parquet_files` column exists in both storage formats**, but in PachaTree mode it may read `0` (the format-specific small-files signal lives in `system.pt_ingest_files` — many small files in low `generation`s — and the `system.pt_compaction_*` tables, not `system.parquet_files`). Detect the format first (`references/storage-format.md`); then see `references/storage-and-compaction.md` for confirming the backlog per format and how compaction consolidates.
 
 **4. Resource saturation.** If the heavy queries aren't obviously unbounded and cardinality/compaction look healthy, the node may be CPU- or memory-bound. Cross-check the query-engine histograms in a `/metrics` scrape against the `system.queries` durations:
 

@@ -43,12 +43,12 @@ curl -sS -H "Authorization: Bearer $INFLUXDB_TOKEN" "$INFLUXDB_HOST/metrics" \
 
 Disk fills at two different layers, and the fix differs by layer (full model in `references/storage-and-compaction.md`).
 
-- **Local disk** holds the WAL (recent writes buffered for fast query access), the **Parquet cache** of recently-read persisted files, and logs. The cache size is observable as `influxdb3_parquet_cache_size_bytes` and bounded by `--parquet-mem-cache-size`; the WAL is bounded by the buffer window. Local disk growing unboundedly is usually the cache or log volume, not raw data.
-- **Object store** holds persisted Parquet, the catalog, and the WAL copy. It grows with ingested-then-persisted data and only shrinks when retention/compaction removes files.
+- **Local disk** holds the WAL (recent writes buffered for fast query access), the **read cache** of recently-read persisted files, and logs. The cache size is observable as `influxdb3_parquet_cache_size_bytes` (this metric persists in both storage formats) and bounded by `--parquet-mem-cache-size`; the WAL is bounded by the buffer window. Local disk growing unboundedly is usually the cache or log volume, not raw data.
+- **Object store** holds persisted files (`.parquet` in Parquet mode, `.pt` in PachaTree mode — see `references/storage-format.md`), the catalog, and the WAL copy. It grows with ingested-then-persisted data and only shrinks when retention/compaction removes files.
 
-**Read usage:** scrape `influxdb3_parquet_cache_size_bytes` for cache footprint; query `system.parquet_files` (grouped per table) for persisted object-store usage — both shown in `references/storage-and-compaction.md`. The diagnostic toolkit at `examples/diagnose-ops/` collects these in one pass.
+**Read usage:** scrape `influxdb3_parquet_cache_size_bytes` for cache footprint; for persisted object-store usage query the format-specific file inventory (`system.parquet_files` per table in Parquet mode, `system.pt_ingest_files` by generation in PachaTree mode) — both shown in `references/storage-and-compaction.md`. The diagnostic toolkit at `examples/diagnose-ops/` collects these in one pass.
 
-**SAFETY — never hand-delete WAL or Parquet files.** Deleting files out from under a running (or stopped) server causes data loss and catalog corruption. Reclaim space through retention and compaction, or by lowering `--parquet-mem-cache-size`, never with `rm`. If you suspect corruption, do not attempt repair — route to InfluxData support.
+**SAFETY — never hand-delete WAL, Parquet (`.parquet`), or PachaTree (`.pt`) files.** Deleting files out from under a running (or stopped) server causes data loss and catalog corruption. Reclaim space through retention and compaction, or by lowering `--parquet-mem-cache-size`, never with `rm`. If you suspect corruption, do not attempt repair — route to InfluxData support.
 
 ## Sizing guidance
 

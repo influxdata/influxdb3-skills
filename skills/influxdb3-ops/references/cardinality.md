@@ -87,7 +87,9 @@ ORDER BY column_count DESC
 LIMIT 20;
 ```
 
-**Biggest tables by rows** (`system.parquet_files` — a volume/cardinality proxy; many distinct series produce many rows and bytes):
+**Biggest tables by rows** — a volume/cardinality proxy; many distinct series produce many rows and bytes. **The file inventory is format-specific** (detect first per `references/storage-format.md`); `system.tables` above is the format-agnostic per-table cardinality view (`column_count`, `series_key_columns`) and is the only per-table breakdown available under PachaTree.
+
+*Parquet mode* — per-table volume from the file inventory:
 
 ```sql
 SELECT table_name, sum(row_count) AS rows, sum(size_bytes) AS bytes
@@ -97,7 +99,16 @@ ORDER BY rows DESC
 LIMIT 20;
 ```
 
-Run both through the `_internal` database:
+*PachaTree mode* — `system.parquet_files` is empty and `system.pt_ingest_files` has **no `table_name` column**, so volume is only available grouped by `generation` (use `system.tables` above for per-table shape):
+
+```sql
+SELECT generation, sum(row_count) AS rows, sum(size_bytes) AS bytes
+FROM system.pt_ingest_files
+GROUP BY generation
+ORDER BY rows DESC;
+```
+
+Run these through the `_internal` database:
 
 ```bash
 INFLUXDB3_AUTH_TOKEN="$INFLUXDB_TOKEN" "$INFLUXDB3_CLI" query --database _internal \
