@@ -27,16 +27,21 @@ You'll need a local clone so you can read source files, examine commit history, 
 git clone https://github.com/influxdata/claude-skill-for-influxdb3.git ~/Projects/claude-influxdb3
 ```
 
-Then in Claude Code, register the local clone as a marketplace and install the plugin:
+Then in Claude Code, register the local clone as a marketplace:
 
-```
+```text
 /plugin marketplace add ~/Projects/claude-influxdb3
+```
+
+Then install the plugin:
+
+```text
 /plugin install claude-influxdb3@influxdata
 ```
 
 Verify:
 
-```
+```text
 /plugin
 ```
 
@@ -44,10 +49,15 @@ You should see `claude-influxdb3` listed as installed and enabled. If it doesn't
 
 The `git clone` above uses your GitHub credentials directly, so if you can clone the internal repo you're already authenticated for the marketplace step too.
 
-After editing files in your local clone, refresh:
+After editing files in your local clone, refresh the marketplace:
 
-```
+```text
 /plugin marketplace update influxdata
+```
+
+Then update the plugin:
+
+```text
 /plugin update claude-influxdb3@influxdata
 ```
 

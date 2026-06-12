@@ -21,8 +21,11 @@ Pick the path that matches you.
 
 In Claude Code, run:
 
-```
+```text
 /plugin marketplace add influxdata/claude-skill-for-influxdb3
+```
+
+```text
 /plugin install claude-influxdb3@influxdata
 ```
 
@@ -37,8 +40,11 @@ If you don't have GitHub access, ask your contact for the **`claude-skill-for-in
 1. **Unzip it to a stable location** — e.g. `~/Downloads/claude-skill-for-influxdb3`. Pick somewhere permanent, *not* a temp folder: Claude Code references the plugin by this path, so if you move or delete it later, the plugin stops working.
 2. In Claude Code, run (substitute your actual unzip path):
 
-   ```
+   ```text
    /plugin marketplace add ~/Downloads/claude-skill-for-influxdb3
+   ```
+
+   ```text
    /plugin install claude-influxdb3@influxdata
    ```
 

@@ -40,10 +40,15 @@ Both skills cover all three trigger types and single-node deployments. Multi-nod
 
 ## Install
 
-In Claude Code, add this repo as a plugin marketplace and install the plugin:
+In Claude Code, add this repo as a plugin marketplace:
 
-```
+```text
 /plugin marketplace add influxdata/claude-skill-for-influxdb3
+```
+
+Then install the plugin:
+
+```text
 /plugin install claude-influxdb3@influxdata
 ```
 
@@ -51,10 +56,15 @@ Verify with `/plugin` and check that `claude-influxdb3` appears as installed and
 
 > **GitHub access:** the repo is internal to InfluxData, so Claude Code installs it using your existing GitHub credentials. If `marketplace add` fails with a 401/403, run `gh auth login` (GitHub.com → HTTPS) once, then retry.
 
-To update later:
+To update later, refresh the marketplace:
 
-```
+```text
 /plugin marketplace update influxdata
+```
+
+Then update the plugin:
+
+```text
 /plugin update claude-influxdb3@influxdata
 ```
 
@@ -70,22 +80,35 @@ git clone https://github.com/influxdata/claude-skill-for-influxdb3.git ~/Project
 
 If you already have the published marketplace registered, remove it first so the local one can take its place (the marketplace name `influxdata` would otherwise collide):
 
-```
+```text
 /plugin uninstall claude-influxdb3@influxdata
+```
+
+```text
 /plugin marketplace remove influxdata
 ```
 
-Then point the marketplace at your local clone and install:
+Then point the marketplace at your local clone:
 
-```
+```text
 /plugin marketplace add ~/Projects/claude-influxdb3
+```
+
+And install from it:
+
+```text
 /plugin install claude-influxdb3@influxdata
 ```
 
-After editing files, refresh:
+After editing files, refresh the marketplace:
 
-```
+```text
 /plugin marketplace update influxdata
+```
+
+Then update the plugin:
+
+```text
 /plugin update claude-influxdb3@influxdata
 ```
 
