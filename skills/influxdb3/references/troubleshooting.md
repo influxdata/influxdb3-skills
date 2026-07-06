@@ -125,7 +125,7 @@ done
 1. Identify which DB has the data and which DB the writes *should* go to.
 2. Fix the env var or code typo so future writes target the correct name.
 3. (Optional) migrate the data from the typo'd DB to the correct one — copy out via SQL `SELECT *`, write back as line protocol.
-4. Drop the typo'd DB: `influxdb3 delete database <typo_name> --token "$INFLUXDB_TOKEN"` (no `--force` — see `quirks.md` entry 7).
+4. Drop the typo'd DB: `influxdb3 delete database <typo_name> -y --token "$INFLUXDB_TOKEN"` (`-y` skips the confirmation prompt for scripting; there is no `--force` — see `quirks.md` entry 7).
 
 **Prevention:** SKILL.md §2 "First-time setup checklist" requires verifying the database exists before generating any write code. Generated app code should include a startup check.
 

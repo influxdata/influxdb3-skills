@@ -48,23 +48,23 @@ influxdb3 update database -d <name> -r none --token "$INFLUXDB_TOKEN"
 ### Delete
 
 ```bash
-influxdb3 delete database <name> --token "$INFLUXDB_TOKEN"
+influxdb3 delete database <name> -y --token "$INFLUXDB_TOKEN"
 ```
 
-The CLI's `delete database` is **non-interactive by default** — there is no `--force` flag. Advanced options:
+As of 3.10 the CLI **prompts for confirmation**; pass `-y`/`--yes` for scripting (without it, a non-interactive run fails with `Cannot proceed without confirmation`, exit 1). There is no `--force` flag (`delete trigger` has one; `delete database` uses `-y`). The HTTP API `DELETE /api/v3/configure/database?db=<name>` never prompts. See `references/quirks.md` entry 7. Advanced options:
 
 ```bash
 # Soft-delete: keep data and resources, mark for hard-delete later
-influxdb3 delete database <name> --hard-delete never --token "$INFLUXDB_TOKEN"
+influxdb3 delete database <name> -y --hard-delete never --token "$INFLUXDB_TOKEN"
 
 # Hard-delete now (default)
-influxdb3 delete database <name> --hard-delete now --token "$INFLUXDB_TOKEN"
+influxdb3 delete database <name> -y --hard-delete now --token "$INFLUXDB_TOKEN"
 
 # Delete only data (keep tokens, triggers, caches, schema)
-influxdb3 delete database <name> --data-only --token "$INFLUXDB_TOKEN"
+influxdb3 delete database <name> -y --data-only --token "$INFLUXDB_TOKEN"
 
 # Delete data + tables, keep DB-level resources (tokens, triggers)
-influxdb3 delete database <name> --data-only --remove-tables --token "$INFLUXDB_TOKEN"
+influxdb3 delete database <name> -y --data-only --remove-tables --token "$INFLUXDB_TOKEN"
 ```
 
 ## HTTP API
@@ -99,7 +99,7 @@ InfluxDB 3 silently auto-creates a database on first write to a name that doesn'
 2. Fix the env var or the typo in code so future writes target the correct name.
 3. Once you've confirmed writes are now flowing to the correct DB, drop the typo'd one:
    ```bash
-   influxdb3 delete database <typo_name> --token "$INFLUXDB_TOKEN"
+   influxdb3 delete database <typo_name> -y --token "$INFLUXDB_TOKEN"
    ```
 
 For prevention guidance, see v0.1.0's setup checklist in `SKILL.md` §2 and `references/connecting.md` → "The silent auto-create footgun".

@@ -89,13 +89,13 @@ for row in system_tokens_rows:
 
 ---
 
-## 7. `delete database` has no `--force` flag
+## 7. `delete database` uses `-y`/`--yes` to skip the prompt — there is no `--force`
 
-**What you'll see:** Generated CLI code with `influxdb3 delete database <name> --force` errors with `error: unexpected argument '--force' found`.
+**What you'll see:** Two related surprises. (a) `influxdb3 delete database <name> --force` errors with `error: unexpected argument '--force' found` — that flag doesn't exist. (b) In a script / non-interactive shell (no TTY), a bare `influxdb3 delete database <name>` prints `Are you sure you want to delete "<name>"?` and then fails with `Delete command failed: Cannot proceed without confirmation` (exit 1).
 
-**Why:** Deletion is non-interactive by default — there is no confirmation prompt, so no need for `--force`. (Other commands like `delete trigger` DO have `--force`; this is asymmetric.)
+**Why:** As of 3.10 the CLI added an interactive confirmation prompt; the flag to skip it is `-y`/`--yes`, not `--force`. (Verified against 3.10.0 on both Core and Enterprise; earlier docs described deletion as non-interactive-by-default — that no longer holds for the CLI.) The HTTP API `DELETE /api/v3/configure/database?db=<name>` has **no** prompt and is unaffected.
 
-**What to do:** Drop the `--force`. Use `--hard-delete <when>` (`never` / `now` / `default` / `<timestamp>`) or `--data-only` for advanced cases. Pattern documented in `references/databases.md`.
+**What to do:** For scripting/automation, pass `-y` (or `--yes`): `influxdb3 delete database <name> -y --token "$INFLUXDB_TOKEN"`. Combine with `--hard-delete <when>` (`never` / `now` / `default` / `<timestamp>`) or `--data-only` for advanced cases. Pattern documented in `references/databases.md`. Or call the HTTP API, which never prompts.
 
 ---
 
