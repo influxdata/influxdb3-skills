@@ -16,7 +16,9 @@ sensor,host=server01,region=us-west temperature=72.4,humidity=45.1 1714400000
 
 Spaces separate the three sections. Commas separate tags within section 1 and fields within section 2. Timestamp is optional; the server stamps "now" if omitted (use this only for live writes — backfills must include explicit timestamps).
 
-Quoting: string field values are wrapped in double quotes (`status="ok"`), tag values are not. Escape commas, equals, and spaces in tag/field keys and tag values with `\`.
+Quoting: string field values are wrapped in double quotes (`status="ok"`), tag values are not. Escape commas, equals, and spaces in tag/field keys and tag values with `\`; escape double quotes and backslashes inside string field values with `\`.
+
+**Constructing line protocol from untrusted values is injection-prone — a newline is a record separator.** If you hand-build line protocol by interpolating a tag or field value that contains a literal newline (`\n`) or carriage return (`\r`), everything after it is parsed as a *second point* — a value like `"ok\nmalicious,host=x value=1"` forges an extra record. Line protocol has no escape for `\n`/`\r`, so a value that may contain them cannot be safely written raw. Prefer an official client's builder (Python `Point`, or `LineBuilder` in the plugins runtime), which escapes the structural characters it can; for values that might contain `\n`/`\r`, **reject or strip them before writing** rather than relying on escaping. This matters most for whole-batch writes, where per-line partial acceptance means a `400` on a later line doesn't undo an already-parsed forged point.
 
 Full spec: see `references/doc-urls.md` → "Line protocol".
 
