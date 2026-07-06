@@ -83,7 +83,7 @@ Three paths:
 
 1. **Local development** → `--upload` flag with absolute path. Server uploads the file/directory.
 2. **Production** → place plugin in `--plugin-dir` via deploy tooling; trigger uses relative path.
-3. **Use an upstream plugin** → `--path "gh:influxdata/system_metrics/system_metrics.py"`. Resolves against the official repo (or a custom one set with `--plugin-repo`).
+3. **Use an upstream plugin** → `--path "gh:influxdata/system_metrics/system_metrics.py"`. Resolves against the official repo (or a custom one set with `--plugin-repo`). **Trust boundary:** `gh:`/`--plugin-repo` fetch remote code that runs unsandboxed with no signature or checksum — pin to a repo you trust and review the code first (`references/installing.md` → "Security").
 
 Full reference + HTTP API equivalents + security: `references/installing.md`.
 
@@ -126,6 +126,7 @@ Full reference + log queries + error-behavior modes + cache inspection: `referen
 
 - Use `influxdb3 install package <pkg>` to install into the embedded venv at `<PLUGIN_DIR>/venv`.
 - **Never** `python -m venv` against system Python — wrong interpreter, runtime errors guaranteed.
+- **Supply-chain caution:** package names hit public PyPI with no typosquat protection and extra args reach `pip` verbatim; install only verified, version-pinned names (`references/dependencies.md`).
 
 Full reference: `references/dependencies.md`.
 
