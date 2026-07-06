@@ -3,8 +3,9 @@
 // Exercises a full token + database lifecycle (10 steps).
 // Cleanup runs in a try/finally so partial failures don't orphan tokens or DBs.
 //
-// Targets Enterprise (uses /api/v3/enterprise/configure/token). For Core,
-// change the resource-token create endpoint to /api/v3/configure/token.
+// Requires Enterprise or Cloud (creates scoped resource tokens via
+// /api/v3/enterprise/configure/token). Does NOT run on Core — Core has no
+// resource tokens (POST /api/v3/configure/token returns 404), so step 3 fails.
 
 import 'dotenv/config';
 

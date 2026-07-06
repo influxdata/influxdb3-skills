@@ -10,6 +10,8 @@
 
 **The most important rule:** application code reads a **scoped resource token**, never the admin token. The admin token is for admin operations only.
 
+> **Scoped resource tokens are an Enterprise / Cloud feature — Core does not have them** (verified against Core 3.10.0). On Core, `influxdb3 create token` offers only `--admin` (no `--permission`), and `POST /api/v3/configure/token` returns 404 — **every Core token is an admin token**, and Core has no RBAC. So the "use a scoped token for app code" rule below is the right pattern on Enterprise and Cloud; on Core you cannot follow it, and the practical mitigation is to run Core in a trusted context and treat *any* Core token as full-admin (one leak = total compromise). The scoped-token CLI/HTTP examples in this file apply to Enterprise/Cloud.
+
 ## CLI
 
 ### Create or regenerate the admin token
@@ -119,8 +121,7 @@ The CLI's short-form string and the HTTP body's structured object encode the sam
 
 See `references/admin-http-api.md` for full request/response shapes including the Core-vs-Enterprise endpoint divergence:
 
-- **Core resource token create:** `POST /api/v3/configure/token`
-- **Enterprise resource token create:** `POST /api/v3/enterprise/configure/token`
+- **Resource (scoped) token create — Enterprise only:** `POST /api/v3/enterprise/configure/token`. **Core does not support resource tokens** — `POST /api/v3/configure/token` returns 404 on Core 3.10.0 (see the flavor callout above).
 - Admin token create (both): `POST /api/v3/configure/token/named_admin`
 - Delete token (both): `DELETE /api/v3/configure/token?token_name=<name>`
 - List tokens: SQL on `system.tokens`

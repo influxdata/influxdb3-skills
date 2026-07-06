@@ -55,9 +55,9 @@ Use the CLI: `influxdb3 update database --database <name> --retention-period <du
 
 ## Token operations
 
-> **Endpoints differ between Core and Enterprise for resource tokens:**
-> - **Core:** `POST /api/v3/configure/token`
+> **Resource (scoped) tokens are Enterprise-only:**
 > - **Enterprise:** `POST /api/v3/enterprise/configure/token`
+> - **Core: not supported** — `POST /api/v3/configure/token` returns **404** on Core 3.10.0, and the CLI has no `--permission` flag. Every Core token is an admin token (no RBAC). See `references/tokens.md` for the flavor callout.
 > Admin-token endpoints are identical across both. Delete is identical.
 
 ### Create resource (scoped) token
@@ -100,7 +100,7 @@ Content-Type: application/json
 
 > **The plaintext secret value lives in the `token` field. It is shown ONCE and never retrievable again. Capture immediately and store in your secret manager.**
 
-**Core** *(per influxdb3_ui source; not yet runtime-verified)*: same body shape, but the path is `POST /api/v3/configure/token` (without the `enterprise/` prefix).
+**Core: not supported.** Runtime-verified against Core 3.10.0 — `POST /api/v3/configure/token` returns **404** and the CLI rejects `--permission`. Core has no scoped/resource tokens or RBAC; every Core token is an admin token. (This corrects an earlier note that inferred a Core path from `influxdb3_ui` source; that path does not exist.)
 
 ### Create / regenerate admin token *(per influxdb3_ui source)*
 
@@ -175,7 +175,7 @@ The structured form's `resource_type` enum is `"db"` or `"system"`; `actions` en
 | Operation | Core | Enterprise | Cloud Serverless | Cloud Dedicated |
 |---|---|---|---|---|
 | Database CRUD | `/api/v3/configure/database` | Same | Product UI or management API | Product UI or management API |
-| Resource token create | `/api/v3/configure/token` | `/api/v3/enterprise/configure/token` | Product UI or management API | Product UI or management API |
+| Resource token create | **Not supported** (404; no RBAC) | `/api/v3/enterprise/configure/token` | Product UI or management API | Product UI or management API |
 | Admin token create | `/api/v3/configure/token/named_admin` | Same | Product UI or management API | Product UI or management API |
 | Delete token | `/api/v3/configure/token?token_name=<name>` | Same | Product UI or management API | Product UI or management API |
 | List tokens | SQL on `system.tokens` (`_internal`) | Same | (different — see the product docs) | (different — see the product docs) |
@@ -190,7 +190,7 @@ Request shapes for InfluxDB Cloud Serverless and InfluxDB Cloud Dedicated aren't
 | 400 | Bad request — invalid name, malformed body, invalid permission shape | Fix the input; the body usually names the field. Watch for using short-form permission strings in the create-token body — the body needs structured form. |
 | 401 | Auth missing or invalid | Set `INFLUXDB_TOKEN` to a valid admin token. |
 | 403 | Auth valid but lacks admin scope | Use the operator/admin token, not a scoped resource token. |
-| 404 | Resource (DB or token name) not found, OR endpoint not found | Confirm the name; for endpoint 404 verify Core vs Enterprise (resource tokens use different paths). |
+| 404 | Resource (DB or token name) not found, OR endpoint not found | Confirm the name. A 404 on `POST /api/v3/enterprise/configure/token` against **Core** is expected — Core has no resource tokens; use Enterprise/Cloud for scoped tokens. |
 | 409 | Already exists | Use a different name or delete first. |
 
 ## Where to fetch more

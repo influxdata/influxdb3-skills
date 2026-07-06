@@ -2,7 +2,7 @@
 
 `admin_lifecycle.go` exercises the full token + database lifecycle for InfluxDB 3 **Enterprise**, using `net/http` to hit the management HTTP API directly. The official `influxdb3-go` client is data-plane only — admin operations go through the management API.
 
-> **Targets Enterprise.** `createScopedToken` calls `/api/v3/enterprise/configure/token`. For Core, change to `/api/v3/configure/token`.
+> **Requires Enterprise or Cloud.** `createScopedToken` creates a scoped resource token via `/api/v3/enterprise/configure/token`. This does **not** run on Core — Core has no resource tokens (that path returns 404; the CLI has no `--permission`), so the scoped-token step fails there.
 
 ## What it does
 
@@ -20,7 +20,7 @@ go run admin_lifecycle.go
 
 - Don't copy into production CI without changing the test-DB name pattern.
 - Generalize the `defer`-based cleanup into your real provisioning code.
-- For Core, change `createScopedToken`'s endpoint.
+- Core can't run this example (no resource tokens); use it against Enterprise or Cloud.
 
 ## Where to fetch more
 

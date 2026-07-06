@@ -2,7 +2,7 @@
 
 `admin-lifecycle.js` exercises the full token + database lifecycle for InfluxDB 3 **Enterprise**, using built-in `fetch` (Node 18+) to hit the management HTTP API directly. The official `@influxdata/influxdb3-client` is data-plane only — it doesn't expose admin operations.
 
-> **Targets Enterprise.** `createScopedToken` calls `/api/v3/enterprise/configure/token`. For Core, change that path to `/api/v3/configure/token`.
+> **Requires Enterprise or Cloud.** `createScopedToken` creates a scoped resource token via `/api/v3/enterprise/configure/token`. This does **not** run on Core — Core has no resource tokens (that path returns 404; the CLI has no `--permission`), so the scoped-token step fails there.
 
 ## What it does
 
@@ -22,7 +22,7 @@ node admin-lifecycle.js
 
 - Don't copy into production CI without changing the test-DB name pattern.
 - Generalize the `try/finally` cleanup pattern into your real provisioning code.
-- For Core, change `createScopedToken`'s endpoint to `/api/v3/configure/token`.
+- Core can't run this example (no resource tokens); use it against Enterprise or Cloud.
 
 ## Where to fetch more
 

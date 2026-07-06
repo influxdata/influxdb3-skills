@@ -3,8 +3,9 @@
 // Exercises the full token + database lifecycle (10 steps).
 // Cleanup uses defer'd best-effort revocations so partial failures don't orphan.
 //
-// Targets Enterprise (uses /api/v3/enterprise/configure/token). For Core,
-// change the resource-token create endpoint to /api/v3/configure/token.
+// Requires Enterprise or Cloud (creates scoped resource tokens via
+// /api/v3/enterprise/configure/token). Does NOT run on Core — Core has no
+// resource tokens (POST /api/v3/configure/token returns 404), so step 3 fails.
 package main
 
 import (
