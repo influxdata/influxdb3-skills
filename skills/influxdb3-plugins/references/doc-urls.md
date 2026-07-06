@@ -2,6 +2,8 @@
 
 When the skill content does not cover a developer's plugin question — or when the answer might be version-sensitive — fetch from this list. **Do not invent URLs that aren't on this list.** If you need a doc that's not here, ask the developer for the URL or note that the answer requires fresh research.
 
+> **This is an advisory allowlist, not an enforced egress control.** Nothing parses this file to block other destinations — it's a rule a cooperating Claude follows. Match the **exact host** (`docs.influxdata.com`, `github.com`) and reject lookalikes that merely contain it (suffix `…influxdata.com.evil.example`, `user@` prefix, unexpected subdomain, raw IP literal). Never fetch internal/link-local or cloud-metadata addresses (`169.254.169.254`, `localhost`, RFC1918). Real egress restriction belongs at the harness/network layer.
+
 ## Processing Engine concept docs
 
 | Topic | URL | When to fetch |

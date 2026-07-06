@@ -2,6 +2,8 @@
 
 When the skill content does not cover a developer's question — or when the answer might be version-sensitive — fetch from this list. **Do not invent URLs that aren't on this list.** If you need a doc that's not here, ask the developer for the URL or note that the answer requires fresh research.
 
+> **This is an advisory allowlist, not an enforced egress control.** Nothing in the skill or harness parses this file to block other destinations — it's a rule a cooperating Claude follows, and deviations should be conspicuous. When honoring it, match the **exact host** (`docs.influxdata.com`, `github.com`): reject lookalikes that merely *contain* an allowed host — a suffix (`docs.influxdata.com.evil.example`), a `user@` prefix (`docs.influxdata.com@evil.example`), a subdomain you didn't expect, or a raw IP literal. Never fetch internal/link-local or cloud-metadata addresses (e.g. `169.254.169.254`, `localhost`, RFC1918 ranges). If actual egress restriction matters for your deployment, enforce it at the harness/network layer — this list cannot.
+
 ## InfluxDB 3 product docs (per flavor)
 
 | Flavor | URL | When to fetch |
