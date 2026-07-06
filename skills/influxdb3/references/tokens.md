@@ -73,6 +73,8 @@ The CLI internally queries `system.tokens` under `_internal`. Equivalent SQL:
 SELECT * FROM system.tokens;
 ```
 
+> **Filtering by name? Bind it, don't interpolate.** Token names are user-chosen, so `WHERE name = '<name>'` built by string-concatenation is a SQL-injection vector. Pass the name as a bound parameter (`WHERE name = $name` with a `params`/`query_parameters` object) — see `references/querying.md` → "Parameterize user input" and the `examples/admin-*/` lifecycle scripts.
+
 > **`permissions` column is a JSON-encoded string** like `["db:gf_ha:read", "db:gf_ha:write"]`. To filter by permission programmatically, `JSON.parse` the column value first.
 
 ### Delete a token

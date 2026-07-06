@@ -138,6 +138,14 @@ Content-Type: application/json
 {"db": "_internal", "q": "SELECT * FROM system.tokens"}
 ```
 
+To filter by a specific token name, **bind the name as a parameter — never string-concatenate it into `q`.** Token names are user-chosen, so an interpolated name is a SQL-injection vector (`references/querying.md` → "Parameterize user input"):
+
+```
+{"db": "_internal",
+ "q": "SELECT name FROM system.tokens WHERE name = $name",
+ "params": {"name": "my-app-token"}}
+```
+
 **Schema of `system.tokens`** (verified live against Enterprise 3.8.4):
 
 | Column | Type | Notes |

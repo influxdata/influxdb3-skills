@@ -86,11 +86,14 @@ def _delete_token(host: str, admin_token: str, name: str) -> None:
         r.raise_for_status()
 
 
-def _query_sql(host: str, admin_token: str, db: str, q: str) -> list[dict]:
+def _query_sql(host: str, admin_token: str, db: str, q: str, params: dict | None = None) -> list[dict]:
+    body = {"db": db, "q": q}
+    if params:
+        body["params"] = params  # bind values as $name — never string-concatenate into q
     r = requests.post(
         f"{host}/api/v3/query_sql",
         headers={**_admin_headers(admin_token), "Content-Type": "application/json"},
-        json={"db": db, "q": q},
+        json=body,
         timeout=10,
     )
     r.raise_for_status()
@@ -145,7 +148,8 @@ def main() -> int:
         print(f"==> step 5: list tokens via SQL, find {token_a}")
         rows = _query_sql(
             host, admin_token, "_internal",
-            f"SELECT name FROM system.tokens WHERE name = '{token_a}'",
+            "SELECT name FROM system.tokens WHERE name = $name",
+            params={"name": token_a},
         )
         matches = [r for r in rows if r.get("name") == token_a]
         print(f"  found: {len(matches)}")

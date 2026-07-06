@@ -72,11 +72,13 @@ async function deleteToken(name) {
   if (![200, 204, 404].includes(r.status)) throw new Error(`delete token: HTTP ${r.status}`);
 }
 
-async function querySql(db, q) {
+async function querySql(db, q, params) {
+  const body = { db, q };
+  if (params) body.params = params; // bind values as $name — never string-concatenate into q
   const r = await fetch(`${host}/api/v3/query_sql`, {
     method: 'POST',
     headers: { ...adminHeaders, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ db, q }),
+    body: JSON.stringify(body),
   });
   if (!r.ok) throw new Error(`query: HTTP ${r.status}`);
   return await r.json();
@@ -112,7 +114,7 @@ try {
   if (![200, 204].includes(sc1)) throw new Error(`write returned ${sc1}`);
 
   console.log(`==> step 5: list tokens via SQL, find ${tokenA}`);
-  const rows = await querySql('_internal', `SELECT name FROM system.tokens WHERE name = '${tokenA}'`);
+  const rows = await querySql('_internal', 'SELECT name FROM system.tokens WHERE name = $name', { name: tokenA });
   const matches = rows.filter(r => r.name === tokenA);
   console.log(`  found: ${matches.length}`);
   if (matches.length === 0) throw new Error('token A not found');

@@ -75,9 +75,10 @@ curl -sS -X POST "$INFLUXDB_HOST/api/v3/write_lp?db=$TEST_DB&precision=second" \
   --data-binary "lifecycle_test,host=h1 value=1.0 $NOW" -w "  HTTP %{http_code}\n" -o /dev/null
 
 echo "==> step 5: list tokens via SQL, find $TOKEN_A"
+# Bind the name as a $name parameter (named object, not string-concatenated into q).
 curl_admin -X POST "$INFLUXDB_HOST/api/v3/query_sql" \
   -H "Content-Type: application/json" \
-  -d "{\"db\": \"_internal\", \"q\": \"SELECT name FROM system.tokens WHERE name = '$TOKEN_A'\"}" \
+  -d "{\"db\": \"_internal\", \"q\": \"SELECT name FROM system.tokens WHERE name = \$name\", \"params\": {\"name\": \"$TOKEN_A\"}}" \
   | python3 -c "
 import json, sys
 rows = json.load(sys.stdin)

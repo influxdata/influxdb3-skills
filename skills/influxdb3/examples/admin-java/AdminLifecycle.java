@@ -77,7 +77,12 @@ public class AdminLifecycle {
     }
 
     static JSONArray querySql(String db, String q) throws Exception {
+        return querySql(db, q, null);
+    }
+
+    static JSONArray querySql(String db, String q, JSONObject params) throws Exception {
         JSONObject body = new JSONObject().put("db", db).put("q", q);
+        if (params != null) body.put("params", params); // bind values as $name — never concatenate into q
         String resp = send(authed("/api/v3/query_sql")
             .header("Content-Type", "application/json")
             .POST(HttpRequest.BodyPublishers.ofString(body.toString()))
@@ -131,7 +136,8 @@ public class AdminLifecycle {
             if (sc1 < 200 || sc1 >= 300) throw new RuntimeException("write returned " + sc1);
 
             System.out.println("==> step 5: list tokens via SQL, find " + tokenA);
-            JSONArray rows = querySql("_internal", "SELECT name FROM system.tokens WHERE name = '" + tokenA + "'");
+            JSONArray rows = querySql("_internal", "SELECT name FROM system.tokens WHERE name = $name",
+                new JSONObject().put("name", tokenA));
             int matches = 0;
             for (int i = 0; i < rows.length(); i++) {
                 if (tokenA.equals(rows.getJSONObject(i).optString("name"))) matches++;
