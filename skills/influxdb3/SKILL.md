@@ -89,7 +89,7 @@ For InfluxDB Clustered, route to its install docs.
 
 Before you generate application code, walk the developer through each item and confirm it's true:
 
-- [ ] **The server is reachable.** `curl <host>/ping` returns 200 with an `x-influxdb-build` header.
+- [ ] **The server is reachable.** `curl -H "Authorization: Bearer <token>" <host>/ping` returns 200 with an `x-influxdb-build` header. `/ping` is auth-gated on 3.10 and later. An unauthenticated 401 still confirms that the server is up.
 - [ ] **An admin token exists.** For Core and Enterprise, it's the operator token printed at first start, or one created with `influxdb3 create token --admin`. For other products, follow that product's token docs.
 - [ ] **The target database exists.** Check with `influxdb3 show databases --token <admin-token>` or `GET /api/v3/configure/database?format=json`. Create it with `influxdb3 create database <name> --token <admin-token>` or `POST /api/v3/configure/database` with body `{"db":"<name>"}`.
 - [ ] **An application token exists** with read and write on that database. For InfluxDB 3 Enterprise and InfluxDB 3 Cloud, best practice is a scoped token, not the admin token: `influxdb3 create token --permission "db:<name>:read,write" --token <admin-token>`. InfluxDB 3 Core has no scoped tokens or RBAC, so the application uses an admin token. Keep Core in a trusted context and treat every Core token as full-admin. See `references/tokens.md`.

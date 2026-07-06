@@ -65,7 +65,7 @@ reading it:
 
 1. Is `INFLUXDB_TOKEN` set? `echo "${INFLUXDB_TOKEN:0:8}..."` should show the first 8 chars (typically `apiv3_`). (This is the developer truncating their own env var to verify it's loaded — it does NOT violate the redaction rule above, which only forbids echoing tokens pasted into the conversation.)
 2. Is the script reading from the right env var name? App code reads `INFLUXDB_TOKEN`; the `influxdb3` CLI reads `INFLUXDB3_AUTH_TOKEN`. See `quirks.md` entry 5.
-3. Is the host correct? `curl -sS -i "$INFLUXDB_HOST/ping"` — should return 200 with `x-influxdb-build` header.
+3. Is the host correct? `curl -sS -i -H "Authorization: Bearer $INFLUXDB_TOKEN" "$INFLUXDB_HOST/ping"` — should return 200 with the `x-influxdb-build` header. (`/ping` is auth-gated on 3.10+; unauthenticated it returns 401 — which still proves the host/port is right and the server is up.)
 4. Was the token recently rotated? See [Token rotation aftermath](#token-rotation-aftermath).
 5. Is the token still valid? Run the diagnostic toolkit (`examples/diagnose/diagnose.py`) — it reports token validity.
 
@@ -84,7 +84,7 @@ reading it:
 
 ### HTTP 404 — host
 
-**Diagnose:** `curl -sS -i "$INFLUXDB_HOST/ping"` returns 404 instead of 200, OR connection times out / refuses.
+**Diagnose:** `curl -sS -i "$INFLUXDB_HOST/ping"` returns 404 (or the connection times out / refuses) rather than a reachable response. A reachable server returns 200 (with a token) or 401 (without one, on 3.10+) — either proves the host is right; a 404, timeout, or refusal points at a wrong host/port or a stopped server.
 
 - Wrong host URL (typo, wrong port).
 - Server isn't running.

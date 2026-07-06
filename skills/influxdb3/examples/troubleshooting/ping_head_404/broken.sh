@@ -8,9 +8,13 @@
 set -euo pipefail
 
 : "${INFLUXDB_HOST:?INFLUXDB_HOST is required}"
+: "${INFLUXDB_TOKEN:?INFLUXDB_TOKEN is required}"   # /ping is auth-gated on 3.10+
 
+# Token is sent so the only difference from fixed.sh is the HTTP method:
+# HEAD /ping returns 404 (the quirk), GET /ping returns 200. Without the token,
+# an unauthenticated probe would return 401 and mask the quirk.
 echo "==> HEAD $INFLUXDB_HOST/ping (broken)"
-status=$(curl -sS -I -o /dev/null -w "%{http_code}" "$INFLUXDB_HOST/ping" --max-time 5)
+status=$(curl -sS -I -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $INFLUXDB_TOKEN" "$INFLUXDB_HOST/ping" --max-time 5)
 echo "   status: $status"
 if [[ "$status" != "200" ]]; then
   echo "   FAIL: server appears down (status $status)"
