@@ -10,6 +10,12 @@ Runs a one-page health check:
 Output is the first thing a customer should paste to their agent when something feels off.
 
 Reads INFLUXDB_HOST and INFLUXDB_TOKEN from env or .env.
+
+Trust boundary: INFLUXDB_HOST and the auto-loaded .env decide where the bearer
+token is sent. Every request attaches `Authorization: Bearer <token>` to
+`{host}/...` with no host validation, so a poisoned env var or a hostile .env in
+the working directory would ship the token to an attacker's host. Only run this
+against a host you control, and don't load a .env you didn't write.
 """
 from __future__ import annotations
 

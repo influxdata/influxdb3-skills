@@ -16,6 +16,12 @@
 # Database CRUD and delete-token endpoints are identical across Core and Enterprise.
 set -euo pipefail
 
+# Trust boundary: INFLUXDB_HOST and this auto-sourced .env decide where the
+# ADMIN token is sent. Every request below (including the trap-based cleanup
+# DELETEs, which fire even on Ctrl-C) attaches `Authorization: Bearer
+# $INFLUXDB_TOKEN` to "$INFLUXDB_HOST/..." with no host validation — a poisoned
+# env or a hostile .env in this directory would exfiltrate an admin token. Only
+# run against a host you control; don't source a .env you didn't write.
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 [[ -f "$script_dir/.env" ]] && { set -a; source "$script_dir/.env"; set +a; }
 
