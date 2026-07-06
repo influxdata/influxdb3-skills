@@ -54,14 +54,16 @@ Expected: JSON array of rows.
 
 The v3 SQL query endpoint accepts an optional `params` object — use it. Never string-concatenate user input into the `q` field.
 
+`params` is a **named object** (`{"name": value}`) referenced in the SQL as `$name`. It is **not** positional — a `$1` placeholder with an array (`"params": ["server01"]`) is rejected with HTTP 400 `invalid type: sequence, expected a map`.
+
 ```bash
 curl -sS -X POST "$INFLUXDB_HOST/api/v3/query_sql" \
   -H "Authorization: Bearer $INFLUXDB_TOKEN" \
   -H "Content-Type: application/json" \
   -d "{
     \"db\": \"$INFLUXDB_DATABASE\",
-    \"q\": \"SELECT * FROM sensor WHERE host = \$1 LIMIT 10\",
-    \"params\": [\"server01\"]
+    \"q\": \"SELECT * FROM sensor WHERE host = \$host LIMIT 10\",
+    \"params\": {\"host\": \"server01\"}
   }"
 ```
 
