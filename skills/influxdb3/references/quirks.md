@@ -171,6 +171,16 @@ ORDER BY event_time DESC LIMIT 50;
 
 ---
 
+## 13. `delete table` renames, doesn't remove — tombstones persist in listings
+
+**What you'll see:** After `DELETE /api/v3/configure/table?db=<db>&table=<table>`, `list_tables`/`SELECT table_name FROM information_schema.tables` still shows an entry — just not the name you deleted. It's now `<table>-<deleted_at_timestamp>`.
+
+**Why:** The default (soft) delete renames the table to a tombstone instead of removing it. The tombstone stays visible in `information_schema.tables` and `SHOW TABLES` output until a hard delete purges it — passing `hard_delete_at=now` on the same DELETE request purges immediately, otherwise it happens on the scheduled/system-default hard-deletion time. Re-deleting a table that's already been deleted returns `409 Conflict`, not `200` or `404`.
+
+**What to do:** Filter out names that end in a deleted-at timestamp to account for these entries when listing or counting tables. Don't assume `list_tables` output is exclusively live tables. Reference: `references/admin-http-api.md` → "Delete table".
+
+---
+
 ## Where to fetch more
 
 - App-side troubleshooting: `references/troubleshooting.md`

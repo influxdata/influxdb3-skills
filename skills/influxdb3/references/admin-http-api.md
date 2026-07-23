@@ -53,6 +53,39 @@ Authorization: Bearer <admin-token>
 
 Use the CLI: `influxdb3 update database --database <name> --retention-period <duration>` (e.g., `30d`, `24h`, or `none` to clear). The HTTP body shape for retention is not documented in the surface we audited — for v0.3.0, the recommended path is the CLI.
 
+## Table operations
+
+### List tables
+
+```
+SELECT table_name FROM information_schema.tables WHERE table_schema = 'iox'
+```
+
+Run this through `query_sql` (or `SHOW TABLES` via `query_influxql`) — there is no `GET /api/v3/configure/table` list endpoint. Before treating every row as a live table, see `references/quirks.md` → "13. `delete table` renames, doesn't remove".
+
+### Create table
+
+```
+POST /api/v3/configure/table
+Authorization: Bearer <admin-token>
+Content-Type: application/json
+
+{"db": "<name>", "table": "<name>", "tags": ["<tag-column>", ...], "fields": [{"name": "<field-column>", "type": "<field-type>"}, ...]}
+```
+
+**Response:** `200`, empty body.
+
+### Delete table
+
+```
+DELETE /api/v3/configure/table?db=<name>&table=<name>
+Authorization: Bearer <admin-token>
+```
+
+**Response:** `200`, empty body on the first delete. `409` if the table is already deleted.
+
+> **Delete renames, it doesn't remove.** The default (soft) delete renames the table to `<table>-<deleted_at_timestamp>` instead of dropping it. That renamed entry stays visible in `information_schema.tables` and `SHOW TABLES` output until a hard delete purges it — there is no API call that removes the tombstone directly. Pass `hard_delete_at=now` to purge immediately, or a timestamp to schedule it. See `references/quirks.md` → "13. `delete table` renames, doesn't remove".
+
 ## Token operations
 
 > **Endpoints differ between Core and Enterprise for resource tokens:**
