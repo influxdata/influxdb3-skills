@@ -58,6 +58,25 @@ On Core and Enterprise 3.11.5, one invalid line in the batch returns 400, and no
 Fix the invalid line and resend the whole batch.
 The v1 compatibility route is `/write`, not `/api/v1/write`.
 
+### Official clients write through `/api/v2/write` by default
+
+The official InfluxDB 3 clients send writes to the V2 API endpoint (`/api/v2/write`) by default, starting in these releases.
+So by default, one invalid line rejects the whole batch, and `accept_partial` has no effect.
+
+| Client | V2 default starting in | Write through `/api/v3/write_lp` instead |
+|---|---|---|
+| `influxdb3-python` | 0.20.0 | `write_use_v2_api=False` (or `WriteOptions(use_v2_api=False)`) |
+| `@influxdata/influxdb3-client` (JavaScript) | 2.3.0 | `useV2Api: false` in `writeOptions` or per-write options |
+| `influxdb3-go` | 2.15.0 (2.14.0 defaulted to the V3 endpoint) | `UseV2Api` write option set to `false` |
+| `influxdb3-java` | 1.10.0 | `useV2Api` write option set to `false` |
+| `InfluxDB3.Client` (C#) | 1.9.0 | `UseV2Api` write option set to `false` |
+
+The Python and JavaScript clients also read the `INFLUX_WRITE_USE_V2_API` environment variable.
+`no_sync` (`noSync`, `NoSync`) requires the V3 endpoint in every client.
+For InfluxDB 3 Core and Enterprise, opt into the V3 endpoint when you need partial writes or `no_sync`.
+Keep the default for InfluxDB Cloud Serverless, InfluxDB Cloud Dedicated, and InfluxDB Clustered.
+Check the client's README for the exact option syntax in the version the user runs.
+
 Match on the status code and the `data` array, not on the error message text.
 The message text differs between the docs and some releases.
 

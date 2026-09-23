@@ -137,7 +137,7 @@ Full auth details and `.env`-loader snippets per language: `references/connectin
 - **Verify the database exists before the first write.** v3 silently auto-creates databases on first write, which masks typos — a misspelled `INFLUXDB_DATABASE` becomes a brand-new empty DB with no error. Either create the DB explicitly during setup (§2) or have generated code list databases at startup and abort with a clear error if the target isn't there.
 - Use line protocol — never invent a "JSON write" path; v3 ingests line protocol.
 - Batch writes — ≥ 1,000 points or 1-second flush, whichever first.
-- Distinguish retriable (5xx, 429) from non-retriable (400, 401, 403, 404) errors. A 400 from `/api/v3/write_lp` can be a partial write: the valid lines are already stored, so resend only the rejected lines.
+- Distinguish retriable (5xx, 429) from non-retriable (400, 401, 403, 404) errors. A 400 from `/api/v3/write_lp` can be a partial write: the valid lines are already stored, so resend only the rejected lines. Recent official clients write through `/api/v2/write` by default, where one invalid line rejects the whole batch (`references/writing.md`).
 
 For depth: `references/writing.md`. For per-language batch-write code: same router as §4. For the auto-create footgun and the explicit "verify database exists" recipe: `references/connecting.md` → "The silent auto-create footgun".
 

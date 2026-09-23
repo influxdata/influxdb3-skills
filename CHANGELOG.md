@@ -19,6 +19,7 @@ Live evals on 3.11.5 are still pending.
 - `/api/v3/write_lp` accepts partial writes by default (`accept_partial=true`), so a 400 doesn't mean the whole batch was rejected. `writing.md`, `troubleshooting.md`, `quirks.md` entry 11, and `SKILL.md` said the opposite.
 - On Core and Enterprise 3.11.5 (live-verified), `/api/v2/write` and `/write` reject the whole batch when one line is invalid. The v1 compatibility route is `/write`, not `/api/v1/write`.
 - Added "no response" to the write error table as retriable. On 3.11.5, a write to a node stopped with `influxdb3 stop node` got a connection reset, not the 503 that the 3.11.0 release notes describe (live-verified).
+- The official clients write through `/api/v2/write` by default starting in influxdb3-python 0.20.0, JavaScript 2.3.0, Go 2.15.0, Java 1.10.0, and C# 1.9.0. `writing.md` and each client reference say how to opt into `/api/v3/write_lp` for partial writes and `no_sync`.
 - `tokens.md` notes that regenerating the operator token invalidates the old token immediately (live-verified on Core 3.11.5).
 - Added 403 to the write error table. Starting in 3.10.0, `/api/v2/write` returns 403, not 401, for a valid token without write permission.
 - Duplicate tag keys are rejected with 400 starting in 3.9.8, 3.10.3, and 3.11.0. Earlier versions accepted them and then crash-looped on WAL replay.

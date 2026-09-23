@@ -40,6 +40,8 @@ for i := 0; i < 1000; i++ {
 if err := client.WritePoints(ctx, points); err != nil { /* handle */ }
 ```
 
+`influxdb3-go` 2.15.0 and later writes through `/api/v2/write` by default (2.14.0 used the V3 endpoint), so one invalid line rejects the whole batch. For partial writes or `NoSync` on InfluxDB 3 Core or Enterprise, set the `UseV2Api` write option to `false`. See `references/writing.md` → "Official clients write through `/api/v2/write` by default".
+
 ## Parameterized SQL query
 
 ```go
