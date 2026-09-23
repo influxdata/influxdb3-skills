@@ -16,12 +16,12 @@ description: |
   table_batches AttributeError, cache lifecycle gotchas). Distinct from the
   influxdb3 skill, which covers connecting to and querying InfluxDB 3 from
   external apps — this skill is for code that runs INSIDE InfluxDB.
-version: 0.5.2
-last_verified: "2026-05-15"
-verified_against:
-  influxdb3_core: "3.8"
-  influxdb3_enterprise: "3.8"
-  influxdb3_pe_runtime: "3.8"
+metadata:
+  version: "0.6.0"
+  docs_checked: "2026-09-23"
+  docs_checked_against: "influxdb3-core 3.11.5, influxdb3-enterprise 3.11.5"
+  live_verified: "2026-05-15"
+  live_verified_against: "influxdb3-core 3.8, influxdb3-enterprise 3.8"
 ---
 
 # InfluxDB 3 Processing Engine Plugins Skill
@@ -141,21 +141,28 @@ When your plugin isn't behaving — trigger doesn't fire, errors in the logs, de
 
 Full reference: `references/troubleshooting.md`.
 
-## 11. What this skill does NOT cover (v0.5.0)
+## 11. What this skill does NOT cover
 
 If the developer asks about any of these, defer politely:
 
-- **Distributed cluster placement** (`--node-spec`, ingester vs query nodes, WAL fan-out, schedule-write-back patterns) → "v0.2.1 covers cluster patterns; not yet shipped."
-- **Air-gapped / `--package-manager disabled`** → "v0.3.0+ covers air-gapped configurations; for now, the embedded venv expects internet access for `influxdb3 install package`."
-- **Full Explorer-compatible plugin metadata schemas** → "v0.3.0+ covers the metadata-docstring schema for Explorer UI integration; for now, see `references/plugin-structure.md` → 'Plugin metadata docstring' for a pointer to the canonical schema."
+- **Distributed cluster placement** (`--node-spec`, ingester vs query nodes, WAL fan-out, schedule-write-back patterns) → not covered; route to the docs.
+- **Full air-gapped setup** (offline mirrors, custom plugin repos) → route to the docs. By default, `influxdb3 install package` needs internet access. To block runtime package installation, see `references/dependencies.md` → "Air-gapped / locked-down environments". The flag depends on the server version.
+- **Full Explorer-compatible plugin metadata schemas** → not covered; see `references/plugin-structure.md` → 'Plugin metadata docstring' for a pointer to the canonical schema."
 
 Sample deferral:
 
-> "Plugin distributed-cluster placement is on the roadmap but not yet covered (it's the v0.2.1 scope). For now, the official docs at https://docs.influxdata.com/influxdb3/enterprise/plugins/ cover the cluster patterns; in this skill I can help you with single-node plugin work."
+> "Plugin distributed-cluster placement isn't covered by this skill. The official docs at https://docs.influxdata.com/influxdb3/enterprise/plugins/ cover the cluster patterns; in this skill I can help you with single-node plugin work."
 
 ## When in doubt, fetch fresh docs
 
-If a question lands outside what's baked in (a recent CLI flag, a less-common runtime method, a new endpoint), WebFetch from a curated URL in `references/doc-urls.md`. Do not invent URLs.
+If a question lands outside what's baked in (a recent CLI flag, a less-common runtime method, a new endpoint), look it up in this order:
+
+1. The InfluxDB docs MCP server (`search_influxdata_knowledge_sources`), if it's connected.
+2. `influxdb3 <command> --help` on the user's server, to check which flags that binary accepts. Its descriptions and defaults can be wrong.
+3. A curated URL in `references/doc-urls.md`. Don't invent URLs.
+
+Flags and defaults change between releases, so don't state a flag or default value from memory.
+The same "trust the docs, report live discrepancies" rule from the `influxdb3` skill applies here.
 
 ## Cross-reference: the other skill
 

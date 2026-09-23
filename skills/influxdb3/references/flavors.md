@@ -1,6 +1,6 @@
 # InfluxDB 3 Flavors
 
-InfluxDB 3 ships in four flavors. Most code is portable across flavors when host and token are env-driven; this reference exists for the cases where they actually differ.
+This table compares InfluxDB 3 Core, InfluxDB 3 Enterprise, InfluxDB Cloud Serverless, and InfluxDB Cloud Dedicated. For InfluxDB 3 Cloud and InfluxDB Clustered, check their docs. Most code is portable across flavors when host and token are env-driven; this reference exists for the cases where they actually differ.
 
 ## Comparison table
 
@@ -14,8 +14,8 @@ InfluxDB 3 ships in four flavors. Most code is portable across flavors when host
 | **Query (InfluxQL)** | `POST /api/v3/query_influxql` | `POST /api/v3/query_influxql` | `POST /api/v3/query_influxql` | `POST /api/v3/query_influxql` |
 | **Multi-database** | yes | yes | yes (per bucket) | yes |
 | **Database creation** | HTTP API or CLI | HTTP API or CLI | UI / API (cloud-managed) | UI / API (cloud-managed) |
-| **Database creation API** | `POST /api/v3/configure/database` (HTTP) or `influxdb3 create database` (CLI) | Same as Core | Cloud console / management API | Cloud console / management API |
-| **Token creation API** | `POST /api/v3/configure/token` (HTTP) or `influxdb3 create token` (CLI) | Same as Core | Cloud console / management API | Cloud console / management API |
+| **Database creation API** | `POST /api/v3/configure/database` (HTTP) or `influxdb3 create database` (CLI) | Same as Core | Product UI or management API | Product UI or management API |
+| **Token creation API** | `POST /api/v3/configure/token` (HTTP) or `influxdb3 create token` (CLI) | Same as Core | Product UI or management API | Product UI or management API |
 
 ## Notable per-flavor gotchas
 

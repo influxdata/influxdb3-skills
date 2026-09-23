@@ -4,7 +4,7 @@ A Claude Code plugin that teaches Claude to write correct InfluxDB 3 code, manag
 
 Stands alone — no MCP server required.
 
-**Status:** v0.5.2. Two skills (`influxdb3` v0.5.2, `influxdb3-plugins` v0.5.2). Distributed as a Claude Code plugin from this repo. Version history in [`CHANGELOG.md`](CHANGELOG.md); roadmap in [What it does NOT cover yet](#what-it-does-not-cover-yet).
+**Status:** v0.6.0 (unreleased). Two skills, versioned together with the plugin. Distributed as a Claude Code plugin from this repo. Version history in [`CHANGELOG.md`](CHANGELOG.md); roadmap in [What it does NOT cover yet](#what-it-does-not-cover-yet).
 
 > **Reviewers:** if you've been invited to review this skill, start with [`TESTING.md`](TESTING.md) and your area-specific briefing under [`evals/reviewer-briefings/`](evals/reviewer-briefings/).
 
@@ -101,22 +101,23 @@ If you want to test it cleanly:
 
 When asked about any of the below, the skill defers to the official docs rather than guessing:
 
-- **Performance tuning** — slow queries, cardinality remediation, batch-size optimization. Planned for v0.5.0.
-- **v1/v2 → v3 migration helper** — v0.6.0.
-- **App-pattern templates** — IoT pipelines, dashboards, alerts/downsampling. v0.7.0.
-- **Cluster placement & multi-node patterns for plugins** — v0.2.1.
-- **Air-gapped setup** — v0.3.1.
-- **Cloud Serverless and Cloud Dedicated support** — these flavors use different APIs for token management, database management, and (in Serverless's case) writes/queries. Needs flavor-specific code paths beyond what's currently built. Roadmap, version TBD.
+- **Performance tuning** — slow queries, cardinality remediation, batch-size optimization.
+- **v1/v2 → v3 migration helper.**
+- **App-pattern templates** — IoT pipelines, dashboards, alerts/downsampling.
+- **Cluster placement & multi-node patterns for plugins.**
+- **Full air-gapped setup** — offline mirrors and custom plugin repos.
+- **Product-specific admin for InfluxDB Cloud Serverless, InfluxDB Cloud Dedicated, and InfluxDB Clustered** — these products use different APIs for token and database management. The skill routes those tasks to each product's docs.
+- **InfluxDB Cloud (TSM), InfluxDB Cloud 1, InfluxDB OSS v1, and InfluxDB OSS v2** — out of scope.
 
 ## Verifying the skill is fresh
 
-Each `SKILL.md`'s frontmatter includes `last_verified` and `verified_against` (per-client versions). If those dates are stale, the skill might be drifting from current client APIs — open an issue.
+Each `SKILL.md` records under `metadata:` the date and InfluxDB 3 versions its docs were checked against, and the date and versions it was last live-verified against, and, for `influxdb3`, the client library versions. If those are stale, the skill might be drifting from the product — open an issue.
 
 ## Contributing
 
 To make a change:
 
-1. Skim the design specs under [`docs/superpowers/specs/`](docs/superpowers/) (one per version) to understand prior scope decisions.
+1. Read the decision records in [`docs/decisions/`](docs/decisions/) to understand prior scope decisions.
 2. Edit the relevant `SKILL.md`, `references/`, or `examples/` file.
 3. Run the smoke tests in [`evals/smoke-prompts.md`](evals/smoke-prompts.md).
 4. Run the formal eval suite (`evals/prompts.jsonl`). Adversarial cases must be 100%.

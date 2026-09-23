@@ -31,16 +31,50 @@ For real-time streams, prefer the client's built-in batch-and-flush helper. For 
 | Status | Meaning | Retriable? |
 |---|---|---|
 | 200 / 204 | Success | n/a |
-| 400 | Line protocol parse error or schema-type conflict | **No** — fix the data and retry |
+| 400 | Line protocol parse error or schema-type conflict | **No** — fix the rejected lines and resend (see below for which lines) |
 | 401 | Auth failed | **No** — fix the token |
+| 403 | Token is valid but lacks write permission for the database | **No** — use a token with `write` on that database |
 | 404 | Database not found | **No** — create the DB or fix the env var |
 | 413 | Payload too large | **No** — reduce batch size |
 | 429 | Rate limited | **Yes** — exponential backoff with jitter |
 | 5xx | Server side | **Yes** — backoff with jitter |
+| No response (connection reset or refused) | The node is stopped or unreachable | **Yes** — back off, or send to another node |
 
-A 400 from a single bad line in a batch will reject the **whole batch** in v3. Either pre-validate, or split-and-retry on 400 to find the bad row.
+Before Core and Enterprise 3.10.0, `/api/v2/write` returned 401, not 403, for a valid token that lacks permission.
+Handle both codes as "fix the token."
 
-For symptom-by-symptom diagnosis (including the "whole-batch reject" gotcha and the split-and-retry pattern), see `references/troubleshooting.md` → "Write failures".
+### A 400 can mean a partial write
+
+`/api/v3/write_lp` accepts partial writes by default (`accept_partial=true`).
+InfluxDB writes the valid lines, rejects the invalid ones, and returns 400.
+The response body lists each rejected line with its line number.
+After a partial write, the valid lines are already stored.
+Resend only the corrected rejected lines, not the whole batch.
+
+With `accept_partial=false`, one invalid line rejects the whole batch.
+
+The `/api/v2/write` and `/write` compatibility endpoints behave differently.
+On Core and Enterprise 3.11.5, one invalid line in the batch returns 400, and none of the lines are written.
+Fix the invalid line and resend the whole batch.
+The v1 compatibility route is `/write`, not `/api/v1/write`.
+
+Match on the status code and the `data` array, not on the error message text.
+The message text differs between the docs and some releases.
+
+### Duplicate tag keys
+
+A point that repeats a tag key, such as `m,t=a,t=a f=1i`, returns 400.
+Core and Enterprise reject it starting in 3.9.8, 3.10.3, and 3.11.0.
+Earlier versions accepted the point, and the node then crash-looped on WAL replay.
+If the user runs an earlier version, validate tag keys client-side before writing.
+
+### `influxdb3 write` in scripts
+
+Starting in 3.10.0, `influxdb3 write` prints a throughput report on success instead of `success`.
+Scripts that parse the output for `success` break.
+Add `--quiet` (`-q`) to suppress all output, and don't parse the report.
+
+For symptom-by-symptom diagnosis, see `references/troubleshooting.md` → "Write failures".
 
 ## Type stickiness
 

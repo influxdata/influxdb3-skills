@@ -4,7 +4,33 @@ All notable changes to this skill will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased]
+## [Unreleased] — 0.6.0
+
+Content checked against the InfluxDB 3 Core and InfluxDB 3 Enterprise 3.11.5 docs and release notes.
+Live evals on 3.11.5 are still pending.
+
+### Boundaries
+- `influxdb3` names each product it covers in full: InfluxDB 3 Core, InfluxDB 3 Enterprise, InfluxDB 3 Cloud, InfluxDB Cloud Serverless, InfluxDB Cloud Dedicated, and InfluxDB Clustered. Core and Enterprise get full guidance. The other products route to their own docs for tokens, databases, and product-specific behavior.
+- InfluxDB Cloud (TSM), InfluxDB Cloud 1, InfluxDB OSS v1, and InfluxDB OSS v2 are out of scope. The description excludes them, and the skill points to their docs or to the InfluxDB docs MCP server.
+- Both skills look things up in this order: the InfluxDB docs MCP server, then the `influxdb3` CLI or InfluxDB 3 MCP server for live state, then curated doc URLs. Neither MCP server is required.
+- Both skills tell the agent not to state version-sensitive flags, defaults, or limits from memory, and to report observed behavior that contradicts the docs, with product and version. `--help` text alone doesn't count as evidence against the docs.
+
+### Fixed
+- `/api/v3/write_lp` accepts partial writes by default (`accept_partial=true`), so a 400 doesn't mean the whole batch was rejected. `writing.md`, `troubleshooting.md`, `quirks.md` entry 11, and `SKILL.md` said the opposite.
+- On Core and Enterprise 3.11.5 (live-verified), `/api/v2/write` and `/write` reject the whole batch when one line is invalid. The v1 compatibility route is `/write`, not `/api/v1/write`.
+- Added "no response" to the write error table as retriable. On 3.11.5, a write to a node stopped with `influxdb3 stop node` got a connection reset, not the 503 that the 3.11.0 release notes describe (live-verified).
+- `tokens.md` notes that regenerating the operator token invalidates the old token immediately (live-verified on Core 3.11.5).
+- Added 403 to the write error table. Starting in 3.10.0, `/api/v2/write` returns 403, not 401, for a valid token without write permission.
+- Duplicate tag keys are rejected with 400 starting in 3.9.8, 3.10.3, and 3.11.0. Earlier versions accepted them and then crash-looped on WAL replay.
+- `--package-manager` is deprecated in 3.10. Starting in 3.11.0, `--disable-package-management` blocks plugin package installation. `dependencies.md` now gives the flag for each version.
+- `quirks.md` entry 10 said `time` isn't a column of `system.processing_engine_logs`. Starting in 3.11.0, `time` is the physical column and `event_time` is a virtual alias. Examples keep `event_time`, which works on every version.
+- Asynchronous triggers with `--error-behavior retry` retry a limited number of times starting in 3.11.0, not indefinitely.
+
+### Packaging
+- Moved `version`, `last_verified`, and `verified_against` in both `SKILL.md` files under `metadata:`, as the Agent Skills spec requires. Docs-checked and live-verified versions are now recorded separately.
+- `docs/publishing.md` and the README describe the new metadata fields.
+
+### Earlier unreleased changes
 
 Findings from a hands-on test pass (local bring-up + sustained write/query load). All changes are in the `influxdb3` skill.
 

@@ -52,7 +52,7 @@ When your plugin isn't behaving. Symptom-keyed at the top; topic sections below.
 
 ## Plugin errors in `system.processing_engine_logs`
 
-The log table is in **the trigger's database**, with columns `event_time`, `trigger_name`, `log_level`, `log_text`. (NOT `time / plugin_name / level / message` — `quirks.md` entry 10.)
+The log table is in **the trigger's database**, with columns `event_time`, `trigger_name`, `log_level`, `log_text`. (NOT `plugin_name / level / message` — `quirks.md` entry 10. Starting in 3.11.0, `time` is the physical timestamp column and `event_time` is a virtual alias for it.)
 
 ```bash
 influxdb3 query -d "$INFLUXDB_DATABASE" --token "$INFLUXDB_TOKEN" \
@@ -110,9 +110,11 @@ The embedded venv is preserved across restarts (it lives at `<PLUGIN_DIR>/venv`)
 
 **Fix:** ensure `--plugin-dir` is consistent across restarts; verify the venv directory exists and is readable by the InfluxDB process.
 
-### Air-gapped / `--package-manager disabled`
+### Air-gapped / package management disabled
 
-`influxdb3 install package` fails because the server is offline. v0.3.1 covers air-gapped configuration. For now: pre-install dependencies before disabling the package manager.
+`influxdb3 install package` fails because the server is offline or package management is disabled.
+Pre-install dependencies before you disable package management.
+See `dependencies.md` → "Air-gapped / locked-down environments" for the flag to use on each version.
 
 ## Cache lifecycle gotchas
 

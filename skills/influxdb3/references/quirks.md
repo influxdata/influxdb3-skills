@@ -2,7 +2,7 @@
 
 A catalogue of behaviors that aren't in the official docs but customers will hit. Each entry: **What you'll see → Why it's that way → What to do.** Entries are bounded — only quirks that are (a) verified against a real release, (b) genuinely non-obvious, (c) likely to be hit in a customer's first month.
 
-> Verified against InfluxDB 3 Enterprise 3.8.4 on 2026-05-08. Cloud-flavor quirks may differ — see flavor-specific notes per entry.
+> Verified against InfluxDB 3 Enterprise 3.8.4 on 2026-05-08. Entries 10 and 11 were updated for 3.11.5 on 2026-09-23. Quirks can differ on InfluxDB 3 Cloud, InfluxDB Cloud Serverless, InfluxDB Cloud Dedicated, and InfluxDB Clustered — see flavor-specific notes per entry.
 
 ---
 
@@ -123,9 +123,12 @@ for row in system_tokens_rows:
 
 **What you'll see:** A query `SELECT time, plugin_name, level, message FROM system.processing_engine_logs` returns `Schema error: No field named plugin_name`.
 
-**Why:** The actual columns are `event_time` (timestamp), `trigger_name` (string), `log_level` (`INFO` / `WARN` / `ERROR` uppercase), `log_text` (string). The `time / plugin_name / level / message` names came from older docs that drifted.
+**Why:** The columns are `event_time` (timestamp), `trigger_name` (string), `log_level` (`INFO` / `WARN` / `ERROR` uppercase), and `log_text` (string).
+`plugin_name`, `level`, and `message` aren't columns.
+Starting in 3.11.0, the physical timestamp column is named `time`, and `event_time` is a virtual alias for it.
+`event_time` works on every version, so the examples use it.
 
-**What to do:** Use the verified column names. Reference: `skills/influxdb3-plugins/references/testing.md` → "Reading plugin logs".
+**What to do:** Use `event_time`, `trigger_name`, `log_level`, and `log_text`. Reference: `skills/influxdb3-plugins/references/testing.md` → "Reading plugin logs".
 
 ```sql
 SELECT event_time, log_level, log_text FROM system.processing_engine_logs
@@ -135,13 +138,19 @@ ORDER BY event_time DESC LIMIT 50;
 
 ---
 
-## 11. 400 from a write rejects the **whole batch**, not just the bad line
+## 11. A 400 from `/api/v3/write_lp` can still write most of the batch
 
-**What you'll see:** A batch of 1,000 line-protocol points returns `400 Bad Request` because line #347 has a parse error. The other 999 valid lines were NOT written.
+**What you'll see:** A batch of 1,000 line-protocol points returns `400 Bad Request` because line #347 has a parse error.
 
-**Why:** v3's write endpoint validates the whole payload before committing any of it. One malformed line aborts the entire request.
+**Why:** `/api/v3/write_lp` defaults to `accept_partial=true`.
+InfluxDB writes the 999 valid lines and rejects line #347.
+The response `data` array lists each rejected line.
+With `accept_partial=false`, one invalid line rejects the whole batch.
 
-**What to do:** Either pre-validate line protocol client-side, or implement split-and-retry on 400 to find the bad row. The error response usually names the offending line. Documented in `references/writing.md` → "Error handling".
+**What to do:** Don't resend the whole batch after a partial write, because that duplicates the lines already stored.
+Fix and resend only the lines listed in `data`.
+The `/api/v2/write` and `/write` compatibility endpoints behave differently: on 3.11.5, one invalid line rejects the whole batch.
+Documented in `references/writing.md` → "Error handling".
 
 ---
 

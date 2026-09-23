@@ -4,7 +4,7 @@
 
 | Token type | When created | Used for | Stored where |
 |---|---|---|---|
-| **Operator/admin token** | At server bootstrap (Core/Enterprise) or in the Cloud console (Cloud) | Admin operations: creating databases, creating other tokens, regenerating itself | Server bootstrap output (printed once) or Cloud console |
+| **Operator/admin token** | At server bootstrap (Core/Enterprise) or, for other products, as that product's docs describe | Admin operations: creating databases, creating other tokens, regenerating itself | Server bootstrap output (printed once) or the product's UI |
 | **Scoped resource token** | Created via `--permission` referencing a specific database | Application code: writing data, querying | The application's `INFLUXDB_TOKEN` env var, or its secret manager |
 | **Bootstrap operator token** *(self-hosted only)* | Auto-generated at first server start | One-time: create your "real" admin token, then revoke this | Save once, then discard |
 
@@ -18,7 +18,8 @@
 # Create a new named admin token
 influxdb3 create token --admin --name <name> --token "$INFLUXDB_TOKEN"
 
-# Regenerate the operator token (rotate the bootstrap admin)
+# Regenerate the operator token (rotate the bootstrap admin).
+# The old operator token stops working immediately (401).
 influxdb3 create token --admin --regenerate --token "$INFLUXDB_TOKEN"
 
 # With expiry
@@ -136,16 +137,16 @@ Reverse this order at your peril:
 - Create-then-delete-without-swap: you've leaked tokens (the old one is still valid for whoever sees it).
 - Swap-without-restart: long-running connections may keep using the old token until they reconnect.
 
-## Cloud-flavor specifics
+## Token sources by product
 
 | Flavor | Admin token source | Scoped token creation |
 |---|---|---|
 | Core | First server start prints it; or `influxdb3 create token --admin` | CLI or HTTP as above |
 | Enterprise | Same as Core | Same as Core |
-| Cloud Serverless | Cloud console → Tokens | Cloud console → Tokens, or management API |
-| Cloud Dedicated | Cloud Dedicated console → Tokens | Cloud console, or management API |
+| InfluxDB Cloud Serverless | InfluxDB Cloud Serverless UI → Tokens | InfluxDB Cloud Serverless UI → Tokens, or management API |
+| InfluxDB Cloud Dedicated | InfluxDB Cloud Dedicated console → Tokens | InfluxDB Cloud Dedicated console, or management API |
 
-Cloud-specific request shapes are **not yet runtime-verified for v0.3.0**; consult `references/doc-urls.md` for current Cloud docs. Verification queued for v0.3.1.
+For InfluxDB 3 Cloud and InfluxDB Clustered, see their docs. Request shapes for these products aren't live-verified. Route to that product's docs through `references/doc-urls.md`.
 
 ## Adversarial scenarios — what NOT to do
 

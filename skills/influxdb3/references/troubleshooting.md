@@ -54,6 +54,7 @@ When something stopped working. Symptom-keyed at the top; topic sections below. 
 
 - Application token (scoped) trying to do admin operations (create DB, create token). Use the admin token for admin work.
 - Admin token (with `*:*:*`) being used at the data plane unnecessarily. See `quirks.md` and `references/tokens.md` → "Adversarial scenarios" — the admin token at the data plane is a foot-gun even when it works.
+- A write token without `write` on the target database. Starting in 3.10.0, `/api/v2/write` returns 403 for this case. Earlier versions returned 401.
 - Permission scoped to a different database than you're writing to. Check `system.tokens.permissions` (remember the JSON-string parsing — `quirks.md` entry 4).
 
 **Fix:** create a scoped token with the right permissions for the operation. Reference: `references/tokens.md`.
@@ -115,18 +116,24 @@ done
 {"error":"partial write of line protocol occurred","data":[{"error_message":"...","line_number":347,"original_line":"sensor,host=server01 temp 70.0 ..."}]}
 ```
 
-**Critical: a 400 from a write rejects the WHOLE batch**, not just the bad line. The 999 valid lines beside line 347 also did NOT write. See `quirks.md` entry 11.
+**A 400 doesn't always mean nothing was written.**
+`/api/v3/write_lp` defaults to `accept_partial=true`.
+With that default, the valid lines beside line 347 were written, and only the lines in `data` were rejected.
+With `accept_partial=false`, the whole batch was rejected.
+On the `/api/v2/write` and `/write` compatibility endpoints, the whole batch was rejected.
+See `quirks.md` entry 11.
 
 **Diagnose:**
 
-- Read the `error_message` and `line_number` from the response. Common causes: missing space between tag set and field set, missing field value (e.g., `temp 70.0` should be `temp=70.0`), unquoted string in field value, integer/float type confusion (`temp=70` vs `temp=70i` vs `temp=70.0`).
-- For a large batch where the error response only names the first bad line, split the batch in half, retry each half — converges on the bad rows in O(log n).
+- Read each `error_message` and `line_number` in the response `data`. Common causes: missing space between tag set and field set, missing field value (for example, `temp 70.0` should be `temp=70.0`), unquoted string in field value, integer/float type confusion (`temp=70` vs `temp=70i` vs `temp=70.0`), and a repeated tag key (rejected starting in 3.9.8, 3.10.3, and 3.11.0).
+- Check which endpoint and `accept_partial` value the request used before you decide what to resend.
+- When the whole batch was rejected and the response names only the first bad line, split the batch in half and retry each half. This finds the bad lines in O(log n) requests.
 
-**Fix:** correct the line protocol; pre-validate client-side before sending in production.
+**Fix:** correct the rejected lines and resend only those after a partial write. Resend the corrected batch if the request used `accept_partial=false` or a compatibility endpoint. Pre-validate client-side before sending in production.
 
 ### 413 — payload too large
 
-**Diagnose:** batch size exceeds the server's per-request limit. Smaller default than you'd expect for some Cloud configurations.
+**Diagnose:** batch size exceeds the server's per-request limit. Limits differ by product; check the docs for the user's product.
 
 **Fix:** reduce batch size. Recommended: 1,000–10,000 points per write call (matches the v0.1.0 batching rule in `references/writing.md`).
 
@@ -140,7 +147,7 @@ done
 
 **Diagnose:** Server is overloaded or experiencing an internal error. Read path may still work while writes hang.
 
-**Fix:** retry with exponential backoff. If it persists across multiple minutes, restart the server (self-hosted) or open a support ticket (Cloud).
+**Fix:** retry with exponential backoff. If it persists across multiple minutes, restart the server (self-hosted) or open a support ticket (InfluxDB 3 Cloud, InfluxDB Cloud Serverless, InfluxDB Cloud Dedicated).
 
 ### Schema-type stickiness
 

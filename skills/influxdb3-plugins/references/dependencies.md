@@ -56,7 +56,17 @@ The package must already be installed in the plugin venv before the trigger fire
 
 ## Air-gapped / locked-down environments
 
-Start the server with `--package-manager disabled` to block runtime package installation:
+The flag that blocks runtime package installation depends on the server version.
+Check that the user's binary accepts the flag (`influxdb3 serve --help` lists it) before you generate a start command.
+
+| Server version | Flag | Behavior |
+|---|---|---|
+| 3.11.0 and later | `--disable-package-management` (env `INFLUXDB3_DISABLE_PACKAGE_MANAGEMENT`) | The server never creates or changes a virtual environment and never runs `pip`. Package-install API calls are rejected. You manage the virtual environment yourself and point the server at it with `VIRTUAL_ENV`. Takes precedence over `--package-manager`. |
+| 3.10.x | `--package-manager disabled` | `--package-manager` is deprecated in 3.10, and the server prints a deprecation warning. `disabled` still blocks package-install API calls. |
+| Earlier than 3.10 | `--package-manager disabled` | Blocks package-install API calls. |
+
+The 3.11.0 release notes add `--disable-package-management`, but the reference docs don't describe it yet.
+The behavior in the first row comes from the 3.11.5 `--help` text and hasn't been behavior-tested.
 
 ```bash
 influxdb3 serve \
@@ -64,15 +74,17 @@ influxdb3 serve \
   --object-store file \
   --data-dir ~/.influxdb3 \
   --plugin-dir ~/.plugins \
-  --package-manager disabled
+  --disable-package-management
 ```
 
-When disabled:
+Starting in 3.10, `pip` is always the package installer, and `uv` is no longer used.
+
+When package installation is blocked:
 - Existing pre-installed packages still work.
 - The Processing Engine still runs triggers normally.
-- New `influxdb3 install package` calls and the HTTP install endpoint are blocked.
+- New `influxdb3 install package` calls and the HTTP install endpoint are rejected.
 
-**Pre-install everything you need before disabling.** This pattern is for compliance environments that prohibit runtime package installation. Full air-gapped configuration (offline mirrors, custom plugin repos, etc.) is the v0.3.0 scope.
+**Pre-install everything you need before you block installation.** This pattern is for compliance environments that prohibit runtime package installation. Full air-gapped configuration (offline mirrors, custom plugin repos, and so on) is out of scope; see the docs.
 
 ## Where to fetch more
 

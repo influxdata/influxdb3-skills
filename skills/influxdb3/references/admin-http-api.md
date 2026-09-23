@@ -6,7 +6,7 @@ This is the wire-format ground truth for InfluxDB 3 admin operations. Per-langua
 
 ## Auth
 
-All admin endpoints require: `Authorization: Bearer <admin-token>`. The admin token comes from server bootstrap (Core/Enterprise) or the Cloud console (Cloud). **Never inline.** Read from `INFLUXDB_TOKEN` env or a secret manager.
+All admin endpoints require: `Authorization: Bearer <admin-token>`. The admin token comes from server bootstrap (Core/Enterprise) or, for other products, from the process that product's docs describe. **Never inline.** Read from `INFLUXDB_TOKEN` env or a secret manager.
 
 ## Database operations
 
@@ -166,13 +166,13 @@ The structured form's `resource_type` enum is `"db"` or `"system"`; `actions` en
 
 | Operation | Core | Enterprise | Cloud Serverless | Cloud Dedicated |
 |---|---|---|---|---|
-| Database CRUD | `/api/v3/configure/database` | Same | Cloud console / management API | Cloud console / management API |
-| Resource token create | `/api/v3/configure/token` | `/api/v3/enterprise/configure/token` | Cloud console / management API | Cloud console / management API |
-| Admin token create | `/api/v3/configure/token/named_admin` | Same | Cloud console / management API | Cloud console / management API |
-| Delete token | `/api/v3/configure/token?token_name=<name>` | Same | Cloud console / management API | Cloud console / management API |
-| List tokens | SQL on `system.tokens` (`_internal`) | Same | (different — see Cloud docs) | (different — see Cloud docs) |
+| Database CRUD | `/api/v3/configure/database` | Same | Product UI or management API | Product UI or management API |
+| Resource token create | `/api/v3/configure/token` | `/api/v3/enterprise/configure/token` | Product UI or management API | Product UI or management API |
+| Admin token create | `/api/v3/configure/token/named_admin` | Same | Product UI or management API | Product UI or management API |
+| Delete token | `/api/v3/configure/token?token_name=<name>` | Same | Product UI or management API | Product UI or management API |
+| List tokens | SQL on `system.tokens` (`_internal`) | Same | (different — see the product docs) | (different — see the product docs) |
 
-Cloud-flavor request shapes are **not yet runtime-verified for v0.3.0**. Verification is queued for v0.3.1 alongside the Cloud-instance live test environment. For now, see `references/doc-urls.md` for current Cloud docs.
+Request shapes for InfluxDB Cloud Serverless and InfluxDB Cloud Dedicated aren't live-verified. Route to that product's docs through `references/doc-urls.md`.
 
 ## Error codes
 
