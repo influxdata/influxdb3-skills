@@ -148,11 +148,10 @@ Each `SKILL.md` records under `metadata:` the date and InfluxDB 3 versions its d
 
 To make a change:
 
-1. Read the decision records in [`docs/decisions/`](docs/decisions/) to understand prior scope decisions.
-2. Edit the relevant `SKILL.md`, `references/`, or `examples/` file.
-3. Run the smoke tests in [`evals/smoke-prompts.md`](evals/smoke-prompts.md).
-4. Run the formal eval suite (`evals/prompts.jsonl`). Adversarial cases must be 100%.
-5. Open a PR.
+1. Edit the relevant `SKILL.md`, `references/`, or `examples/` file. Follow the evidence rules in [`docs/publishing.md`](docs/publishing.md).
+2. Use full product names, never "Cloud" alone, and keep skill text agent-neutral.
+3. Run the checks in [Validate](#validate) and the eval suite in [`evals/README.md`](evals/README.md). Adversarial cases must pass 100%.
+4. Open a PR.
 
 Reviewer-onboarding details, including the four-area review split for the current MVP review pass, are in [`TESTING.md`](TESTING.md).
 

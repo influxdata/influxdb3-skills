@@ -1,11 +1,41 @@
-# Publishing / Releasing this Skill
+# Releasing the skills
 
-Local-only for v1. These steps describe the release flow, so that v1.1 and beyond go cleanly even before public distribution.
+## When to release
+
+The release notes for InfluxDB 3 Core and Enterprise are the cue to review the skills.
+Before publication, product management provides internal release notes; after, use the published docs-v2 release notes.
+Scope each update by what changed, not by the database version: a patch release can change behavior.
+
+All skills share the plugin version ([ADR-0001](decisions/0001-single-package-versioning.md)).
+
+- **Patch:** corrections that don't change skill boundaries or expected agent behavior.
+- **Minor:** changes to boundaries, routing, or triggers, or a new capability.
+
+## Evidence rules
+
+- Trust the InfluxData docs until observed behavior on a named edition and exact version contradicts them.
+- `--help` text shows which flags a binary accepts. Its descriptions and defaults aren't evidence against the docs; settle those conflicts with a behavior test or an engineering consult.
+- Use release notes to find changes, not as the only source for stable guidance.
+- When a discrepancy is confirmed, fix the docs, the skill, and the InfluxDB 3 MCP server, not only the skill.
+- Record each changed product claim in the claims ledger with edition, version, source, and evidence state (Documented, Live-verified, Derived, Unknown).
+- Don't write support ranges such as `>=3.8`. Record the exact versions checked, and note the version where behavior changed.
+
+## Update for an InfluxDB release
+
+1. Read the release notes and list the changes that touch the skills. Also compare `docs_checked_against` with the new version, so earlier gaps surface.
+2. For each change, read the reference and how-to pages in docs-v2 (`content/`), including their version annotations.
+3. Match each change against the claims ledger: confirmed, refuted, unknown, or stale.
+4. Probe a live server only where the docs are silent or conflict, and record the result as a claim.
+5. Update the skills. Don't hardcode version-sensitive values.
+6. Add an eval prompt for each changed behavior.
+7. Run the affected evals, and grade them with a reviewer.
+8. File docs, InfluxDB 3 MCP server, and skill defects.
+9. Release with the checklist below.
 
 ## Per-release checklist
 
-1. **Bump the version everywhere it appears.** All skills share the plugin version (see `docs/decisions/0001-single-package-versioning.md`):
-   - `.claude-plugin/plugin.json` `version`
+1. **Bump the version everywhere it appears.** `scripts/check-versions.sh` checks that they match:
+   - `plugin.json` and `.claude-plugin/plugin.json` `version`
    - `metadata.version` in each `skills/*/SKILL.md`
 
 2. **Update the verification metadata** under `metadata:` in each `SKILL.md`:
@@ -18,7 +48,7 @@ Local-only for v1. These steps describe the release flow, so that v1.1 and beyon
    - https://github.com/InfluxCommunity/influxdb3-java
    - https://github.com/InfluxCommunity/influxdb3-csharp
 
-3. **Re-run runnable examples** against a live instance (Core + at least one Cloud flavor):
+3. **Re-run runnable examples** against a live InfluxDB 3 Core or Enterprise instance:
 
    ```bash
    for d in skills/influxdb3/examples/{python,javascript,go,java,csharp,http}; do
@@ -33,7 +63,7 @@ Local-only for v1. These steps describe the release flow, so that v1.1 and beyon
    - Adversarial pass rate < 100%
    - Aggregate triggering+routing pass rate < 90%
 
-6. **Update `CHANGELOG.md`** with the new version's `Added` / `Changed` / `Fixed` / `Deprecated` / `Removed` sections.
+6. **Update `CHANGELOG.md`.** Separate packaging changes, documentation-grounded changes, and live-verified behavior changes.
 
 7. **Update `docs/eval-history.md`** with the new run's per-category pass rates.
 
@@ -52,7 +82,7 @@ Local-only for v1. These steps describe the release flow, so that v1.1 and beyon
 Once per quarter, even if the skill hasn't changed:
 
 1. Rerun all examples and the eval suite.
-2. Update `last_verified` and `verified_against:` to current.
+2. Update the verification metadata in each `SKILL.md`.
 3. Open an issue for any client-version-driven breakage and fix.
 
 ## When a client ships a breaking change
@@ -79,7 +109,7 @@ When releasing a version that includes plugin-skill changes:
 
    For each, `influxdb3 delete trigger --force` after verification to leave the instance clean.
 
-3. **Re-run the new smoke prompts (#13–#17)** in fresh Claude Code sessions per the existing smoke-test process.
+3. **Re-run the new smoke prompts (#13–#17)** in fresh agent sessions per the existing smoke-test process.
 
 4. **Re-run the formal eval suite** including the 10 new v0.2.0 prompts. Adversarial pass rate must be 100%.
 
@@ -89,9 +119,7 @@ When releasing a version that includes plugin-skill changes:
 
 When releasing a version that includes `influxdb3` skill admin changes:
 
-1. **Bump versions:**
-   - `.claude-plugin/plugin.json` `version`
-   - `skills/influxdb3/SKILL.md` `version`, `last_verified`
+1. **Bump versions and metadata** as in the per-release checklist.
 
 2. **Pre-release orphan check** (mandatory):
 
@@ -107,7 +135,7 @@ When releasing a version that includes `influxdb3` skill admin changes:
 
 4. **Post-release orphan check** (mandatory): same as step 2; both lists must again be empty. Failures here block the tag.
 
-5. **Re-run smoke prompts (#18–#22)** in fresh Claude Code sessions per the existing process.
+5. **Re-run smoke prompts (#18–#22)** in fresh agent sessions per the existing process.
 
 6. **Re-run formal eval suite** including the 8 new admin prompts. Adversarial pass rate must be 100%.
 
@@ -115,10 +143,7 @@ When releasing a version that includes `influxdb3` skill admin changes:
 
 When releasing a version that includes troubleshooting changes:
 
-1. **Bump versions:**
-   - `.claude-plugin/plugin.json` `version`
-   - `skills/influxdb3/SKILL.md` `version`, `last_verified`
-   - `skills/influxdb3-plugins/SKILL.md` `version`, `last_verified`
+1. **Bump versions and metadata** as in the per-release checklist.
 
 2. **Pre-release orphan check** (mandatory; broadened to include troubleshooting demo patterns):
 
@@ -147,6 +172,6 @@ print([t['name'] for t in data if t.get('name', '').startswith('$pattern')])
 
 5. **Post-release orphan check** (mandatory): same as step 2; all three lists must again be empty. Failures here block the tag.
 
-6. **Re-run smoke prompts (#23–#27)** in fresh Claude Code sessions, with special attention to #27 (the customer-pasted token redaction case).
+6. **Re-run smoke prompts (#23–#27)** in fresh agent sessions, with special attention to #27 (the customer-pasted token redaction case).
 
 7. **Re-run formal eval suite** including the 6 new troubleshooting prompts. Adversarial pass rate must be 100%.

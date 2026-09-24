@@ -23,10 +23,8 @@ and exact version, not per plugin release.
 
 ## Decision
 Version the plugin as a single package. All bundled skills share one
-release version; skills are not versioned independently. See the
-release and versioning strategy in `influxdata/docs-skills` for the full scheme (release
-version vs. capability evidence matrix, milestone table, beta/stable
-gates).
+release version; skills are not versioned independently. See `docs/publishing.md` for when to release a
+patch or a minor version.
 
 ## Alternatives Considered
 

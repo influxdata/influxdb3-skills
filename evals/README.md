@@ -3,7 +3,7 @@
 Two layers:
 
 1. **Manual smoke tests** — `smoke-prompts.md`, run by hand against a live InfluxDB 3 instance.
-2. **Formal eval suite** — `prompts.jsonl`, run via `anthropic-skills:skill-creator`'s eval harness.
+2. **Formal eval suite** — `prompts.jsonl`, run with `claude plugin eval`.
 
 ## Pre-reqs
 
@@ -29,9 +29,12 @@ less evals/smoke-prompts.md
 
 ## Formal eval suite
 
-Use the `anthropic-skills:skill-creator` skill — invoke it in a Claude Code session and ask:
+`prompts.jsonl` is the harness-neutral source. Build the cases, then run them:
 
-> "Run the eval suite at evals/prompts.jsonl against the influxdb3 skill at skills/influxdb3/SKILL.md and write the results to evals/results/eval-<date>.json."
+```sh
+node evals/build-claude-cases.mjs
+claude plugin eval ./ --runs 1
+```
 
 The harness scores each prompt on triggering, routing, API correctness, and security. See `prompts.jsonl` for the per-prompt criteria.
 
