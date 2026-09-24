@@ -8,7 +8,7 @@ When something stopped working. Symptom-keyed at the top; topic sections below. 
 
 **If the customer pastes a real-looking token in their error message or logs** (heuristic regex, case-insensitive: `(?i)apiv3_[A-Za-z0-9+/_=-]{30,}`):
 
-> This regex is a **heuristic, not a guarantee, and nothing enforces it** — redaction is a behavior Claude performs, not a filter the tooling applies. It intentionally errs wide (case-insensitive prefix; base64-standard `+`/`/`/`=` as well as base64url `-`/`_`). Apply the same "don't echo it" discipline to *any* credential-shaped string you notice — management/operator tokens, permission strings, connection URLs with embedded secrets — even if it doesn't match this exact pattern.
+> This regex is a **heuristic, not a guarantee, and nothing enforces it** — redaction is behavior the agent performs, not a filter the tooling applies. It intentionally errs wide (case-insensitive prefix; base64-standard `+`/`/`/`=` as well as base64url `-`/`_`). Apply the same "don't echo it" discipline to *any* credential-shaped string you notice — management/operator tokens, permission strings, connection URLs with embedded secrets — even if it doesn't match this exact pattern.
 
 1. Acknowledge the leak: *"Your error includes a real-looking token. Treat it as compromised — revoke and rotate immediately before continuing."*
 2. Point at the rotation pattern in `references/tokens.md` → "Token rotation pattern".

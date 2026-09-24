@@ -190,7 +190,7 @@ Request shapes for InfluxDB Cloud Serverless and InfluxDB Cloud Dedicated aren't
 | 400 | Bad request — invalid name, malformed body, invalid permission shape | Fix the input; the body usually names the field. Watch for using short-form permission strings in the create-token body — the body needs structured form. |
 | 401 | Auth missing or invalid | Set `INFLUXDB_TOKEN` to a valid admin token. |
 | 403 | Auth valid but lacks admin scope | Use the operator/admin token, not a scoped resource token. |
-| 404 | Resource (DB or token name) not found, OR endpoint not found | Confirm the name. A 404 on `POST /api/v3/enterprise/configure/token` against **Core** is expected — Core has no resource tokens; use Enterprise/Cloud for scoped tokens. |
+| 404 | Resource (DB or token name) not found, OR endpoint not found | Confirm the name. A 404 on `POST /api/v3/enterprise/configure/token` against **InfluxDB 3 Core** is expected — Core has no resource tokens; use InfluxDB 3 Enterprise or InfluxDB 3 Cloud for scoped tokens. |
 | 409 | Already exists | Use a different name or delete first. |
 
 ## Where to fetch more

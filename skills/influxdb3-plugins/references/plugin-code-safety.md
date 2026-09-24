@@ -7,7 +7,7 @@ own configuration and token files. Deploying a plugin therefore requires an
 admin token, and a deployed plugin is effectively arbitrary code execution
 inside the server. Generated plugin code has to be held to that standard.
 
-These rules are about the code Claude *writes into a plugin*, not about the
+These rules are about the code an agent *writes into a plugin*, not about the
 server's deploy-time permission checks (which are covered in
 `references/installing.md`).
 

@@ -11,7 +11,7 @@
 # Reads INFLUXDB_HOST and INFLUXDB_TOKEN (admin) from env.
 # Generates the test DB name at runtime so multiple runs don't collide.
 #
-# Note: requires Enterprise or Cloud — it creates scoped resource tokens via
+# Note: requires InfluxDB 3 Enterprise or InfluxDB 3 Cloud — it creates scoped resource tokens via
 # /api/v3/enterprise/configure/token. It does NOT run on Core: Core has no
 # resource tokens (POST /api/v3/configure/token returns 404), so step 3 fails.
 # Database CRUD and delete-token endpoints are identical across Core and Enterprise.

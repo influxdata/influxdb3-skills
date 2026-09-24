@@ -10,7 +10,7 @@
 
 **The most important rule:** application code reads a **scoped resource token**, never the admin token. The admin token is for admin operations only.
 
-> **Scoped resource tokens are an Enterprise / Cloud feature — Core does not have them** (verified against Core 3.10.0). On Core, `influxdb3 create token` offers only `--admin` (no `--permission`), and `POST /api/v3/configure/token` returns 404 — **every Core token is an admin token**, and Core has no RBAC. So the "use a scoped token for app code" rule below is the right pattern on Enterprise and Cloud; on Core you cannot follow it, and the practical mitigation is to run Core in a trusted context and treat *any* Core token as full-admin (one leak = total compromise). The scoped-token CLI/HTTP examples in this file apply to Enterprise/Cloud.
+> **Scoped resource tokens are an InfluxDB 3 Enterprise and InfluxDB 3 Cloud feature — InfluxDB 3 Core does not have them** (verified against Core 3.10.0). On Core, `influxdb3 create token` offers only `--admin` (no `--permission`), and `POST /api/v3/configure/token` returns 404 — **every Core token is an admin token**, and Core has no RBAC. So the "use a scoped token for app code" rule below is the right pattern on InfluxDB 3 Enterprise and InfluxDB 3 Cloud; on Core you cannot follow it, and the practical mitigation is to run Core in a trusted context and treat *any* Core token as full-admin (one leak = total compromise). The scoped-token CLI/HTTP examples in this file apply to InfluxDB 3 Enterprise and InfluxDB 3 Cloud.
 
 ## CLI
 
