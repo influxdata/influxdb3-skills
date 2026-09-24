@@ -1,21 +1,19 @@
 ---
 name: influxdb3-plugins
-description: |
-  Use when the developer is writing, installing, testing, troubleshooting,
-  or debugging an InfluxDB 3 Processing Engine plugin (Python code that runs
-  inside InfluxDB 3 Core or Enterprise). Triggers on the runtime API surface
-  (influxdb3_local, LineBuilder, TableBatch, Cache), the three plugin entry
-  points (process_writes, process_scheduled_call, process_request), the
-  influxdb3 trigger CLI (influxdb3 create trigger, influxdb3 test wal_plugin,
-  influxdb3 install package, --trigger-spec, --plugin-dir, --upload, gh:
-  prefix), the trigger spec syntax (table:, all_tables, every:, cron:,
-  request:), the /api/v3/configure/processing_engine_trigger and
-  /api/v3/plugins/files HTTP endpoints, and plugin troubleshooting
-  symptoms (trigger doesn't fire, plugin errors in
-  system.processing_engine_logs, ImportError on dependencies,
-  table_batches AttributeError, cache lifecycle gotchas). Distinct from the
-  influxdb3 skill, which covers connecting to and querying InfluxDB 3 from
-  external apps — this skill is for code that runs INSIDE InfluxDB.
+description: >-
+  Use when writing, installing, testing, or debugging an InfluxDB 3
+  Processing Engine plugin: Python code that runs inside InfluxDB 3 Core or
+  Enterprise. Triggers on the runtime API (influxdb3_local, LineBuilder,
+  TableBatch, Cache), the entry points process_writes,
+  process_scheduled_call, and process_request, the trigger CLI (influxdb3
+  create trigger, influxdb3 test wal_plugin, influxdb3 install package,
+  --trigger-spec, --plugin-dir, --upload, the gh: prefix), trigger specs
+  (table:, all_tables, every:, cron:, request:), the
+  /api/v3/configure/processing_engine_trigger and /api/v3/plugins/files
+  endpoints, and plugin symptoms: a trigger that doesn't fire, errors in
+  system.processing_engine_logs, ImportError on dependencies, table_batches
+  AttributeError, or cache surprises. For external apps that connect to
+  InfluxDB 3, use influxdb3 instead.
 metadata:
   version: "0.7.0"
   docs_checked: "2026-09-23"

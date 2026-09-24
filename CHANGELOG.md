@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Added a root `plugin.json` in the Agent Plugins format, so agents other than Claude Code can install the repo.
 - The README gives install steps for Claude Code, Codex, and other agents.
 - Removed Claude-specific wording from skill text.
+- Shortened both skill descriptions to fit the Agent Skills 1024-character limit, and rewrote `influxdb3/SKILL.md` in plainer style. The `influxdb3` description no longer targets InfluxDB OSS v1 or v2, InfluxDB Cloud (TSM), InfluxDB Cloud 1, or Flux. Agents answer those directly. If the skill loads for one of them, its body still routes to the docs MCP server and `llms-full.txt`.
 - Added CI: the Agent Skills reference validator on each skill, a check that all versions match, and a link check. Added Dependabot for GitHub Actions.
 
 ## 0.6.0 (unreleased)
