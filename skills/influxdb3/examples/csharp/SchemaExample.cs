@@ -24,8 +24,6 @@ public static class SchemaExample {
                         .SetTag("region", region)
                         .SetField("temperature", 70.0 + (minute % 5))
                         .SetField("humidity", 40.0 + (hostIdx % 3))
-                        // gpu_id is HIGH cardinality → field, not tag.
-                        .SetField("gpu_id", $"gpu-{region}-{hostIdx}-{minute}")
                         .SetTimestamp(ts));
                 }
             }

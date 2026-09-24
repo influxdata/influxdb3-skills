@@ -153,11 +153,11 @@ For depth (time idioms with `DATE_BIN`, pagination, parameterization per languag
 ## 7. Schema design
 
 **Three rules:**
-- **Tags** are indexed identity — small, bounded sets of values used for `GROUP BY` and filtering.
-- **Fields** are measurement values — anything that varies over time, and anything high-cardinality.
-- **High-cardinality identifiers (UUIDs, user IDs, request IDs) are fields, not tags.**
+- **Tags** identify the data's source or context: `host`, `region`, device IDs. A row's identity is its table, tags, and timestamp.
+- **Fields** hold measured values.
+- **An identifier that tells sources apart is a tag, not a field.** InfluxDB 3 has no tag-cardinality limit, so InfluxDB v1/v2 cardinality advice doesn't apply.
 
-For the cardinality decision rule, naming conventions, and common-mistakes section: `references/schema-design.md`.
+For the decision rule, naming conventions, and common mistakes: `references/schema-design.md`.
 
 ## 8. When in doubt, fetch fresh docs
 

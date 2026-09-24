@@ -38,8 +38,6 @@ func main() {
 					SetTag("region", region).
 					SetField("temperature", 70.0+float64(minute%5)).
 					SetField("humidity", 40.0+float64(hostIdx%3)).
-					// gpu_id is HIGH cardinality → field, not tag.
-					SetField("gpu_id", fmt.Sprintf("gpu-%s-%d-%d", region, hostIdx, minute)).
 					SetTimestamp(ts)
 				points = append(points, p)
 			}

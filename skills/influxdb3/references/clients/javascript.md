@@ -34,7 +34,7 @@ await client.write(points);
 
 Default rule: batch ≥ 1,000 points or flush every 1 second.
 
-> **InfluxDB Cloud Serverless:** writes go to the v2-compatibility endpoint `/api/v2/write` (not `/api/v3/write_lp` as in Core / Enterprise / Cloud Dedicated). `@influxdata/influxdb3-client` 2.3.0 and later writes through `/api/v2/write` by default for every product, so one invalid line rejects the whole batch. For partial writes or `noSync` on InfluxDB 3 Core or Enterprise, set `useV2Api: false`. If you drop down to raw HTTP for InfluxDB Cloud Serverless, you need the v2 path and the `INFLUXDB_ORG` env var. See `references/writing.md` → "Official clients write through `/api/v2/write` by default". See `references/flavors.md` for the full per-flavor matrix and `references/clients/http.md` for the raw-HTTP shapes.
+> **InfluxDB Cloud Serverless:** writes go to the v2-compatibility endpoint `/api/v2/write`. `@influxdata/influxdb3-client` 2.3.0 and later writes through `/api/v2/write` by default for every product, so one invalid line rejects the whole batch. For partial writes or `noSync` on InfluxDB 3 Core or Enterprise, set `useV2Api: false`. If you drop down to raw HTTP for InfluxDB Cloud Serverless, you need the v2 path and the `INFLUXDB_ORG` env var. See `references/writing.md` → "Official clients write through `/api/v2/write` by default". See `references/flavors.md` for the full per-flavor matrix and `references/clients/http.md` for the raw-HTTP shapes.
 
 ## Parameterized SQL query
 

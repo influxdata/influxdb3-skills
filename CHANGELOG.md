@@ -23,6 +23,8 @@ Live evals on 3.11.5 are still pending.
 - `tokens.md` notes that regenerating the operator token invalidates the old token immediately (live-verified on Core 3.11.5).
 - Added 403 to the write error table. Starting in 3.10.0, `/api/v2/write` returns 403, not 401, for a valid token without write permission.
 - Duplicate tag keys are rejected with 400 starting in 3.9.8, 3.10.3, and 3.11.0. Earlier versions accepted them and then crash-looped on WAL replay.
+- InfluxDB Cloud Serverless and InfluxDB Cloud Dedicated have no `/api/v3` endpoints. They write through `/api/v2/write` and query through Flight or the v1 `/query` endpoint. `flavors.md` said Cloud Dedicated had the same v3 API as Core, and the flavor-detection snippets probed a Serverless `/api/v3/databases` endpoint that doesn't exist. `flavors.md` is now the one place that lists per-product endpoints.
+- Schema guidance no longer applies InfluxDB v1/v2 cardinality advice. InfluxDB 3 supports unlimited tag cardinality, and a row is identified by its tags and timestamp, so identifiers such as `gpu_id` are tags. As fields, GPUs on one host would overwrite each other.
 - `--package-manager` is deprecated in 3.10. Starting in 3.11.0, `--disable-package-management` blocks plugin package installation. `dependencies.md` now gives the flag for each version.
 - `quirks.md` entry 10 said `time` isn't a column of `system.processing_engine_logs`. Starting in 3.11.0, `time` is the physical column and `event_time` is a virtual alias. Examples keep `event_time`, which works on every version.
 - Asynchronous triggers with `--error-behavior retry` retry a limited number of times starting in 3.11.0, not indefinitely.

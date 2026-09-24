@@ -201,19 +201,10 @@ def detect_flavor(host: str, token: str) -> str | None:
         except requests.exceptions.RequestException:
             pass  # probe failed; fall through
 
-    # Step 4: Cloud Serverless — try listing databases via Serverless endpoint
-    serverless_url = f"{host}/api/v3/databases"
-    try:
-        r3 = requests.get(
-            serverless_url, headers=headers_with_token, timeout=10
-        )
-        if r3.status_code == 200:
-            return "InfluxDB 3 Cloud Serverless"
-        if r3.status_code in (401, 403):
-            # Token is wrong for Serverless; cannot distinguish further
-            return None
-    except requests.exceptions.RequestException:
-        pass  # not Serverless; fall through
+    # Step 4: Cloud Serverless — host pattern. Cloud Serverless has no
+    # /api/v3 endpoints, so these snippets check the documented host instead.
+    if "cloud2.influxdata.com" in host:
+        return "InfluxDB 3 Cloud Serverless"
 
     # Step 5: Cloud Dedicated — URL pattern
     if "influxdb.io" in host:
@@ -305,21 +296,10 @@ async function detectFlavor(host, token) {
     }
   }
 
-  // Step 4: Cloud Serverless — try listing databases via Serverless endpoint
-  const serverlessUrl = `${baseHost}/api/v3/databases`;
-  try {
-    const r3 = await fetch(serverlessUrl, {
-      headers: authHeaders,
-      signal: AbortSignal.timeout(10000),
-    });
-    if (r3.status === 200) {
-      return "InfluxDB 3 Cloud Serverless";
-    }
-    if (r3.status === 401 || r3.status === 403) {
-      return null;
-    }
-  } catch {
-    // not Serverless; fall through
+  // Step 4: Cloud Serverless — host pattern. Cloud Serverless has no
+  // /api/v3 endpoints, so these snippets check the documented host instead.
+  if (baseHost.includes("cloud2.influxdata.com")) {
+    return "InfluxDB 3 Cloud Serverless";
   }
 
   // Step 5: Cloud Dedicated — URL pattern

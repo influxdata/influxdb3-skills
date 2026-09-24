@@ -251,7 +251,6 @@ Slow queries, slow writes, cardinality remediation, batch-size tuning — full c
 - **Slow query, no time filter** → add `WHERE time > now() - INTERVAL '...'`. Almost always fixes it.
 - **Slow query, unbounded `SELECT *`** → add `LIMIT <n>`. v0.1.0's `querying.md` covers this.
 - **Slow write, large batches** → split into 1,000–10,000-point batches per write call.
-- **Cardinality blowup symptom** (`series cardinality exceeded`) → high-cardinality value used as a tag. Move it to a field. v0.1.0's `schema-design.md` covers cardinality.
 
 For deeper analysis, defer to v0.5.0. Do not try to debug query plans, batching strategy, or cardinality remediation in this skill.
 
