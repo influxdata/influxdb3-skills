@@ -26,7 +26,7 @@ description: |
   routes the question to the InfluxDB Documentation MCP server and the
   product's LLM-friendly docs instead of answering from memory.
 metadata:
-  version: "0.6.0"
+  version: "0.7.0"
   docs_checked: "2026-09-23"
   docs_checked_against: "influxdb3-core 3.11.5, influxdb3-enterprise 3.11.5"
   live_verified: "2026-05-24"
@@ -38,7 +38,7 @@ metadata:
 
 ## 1. What this skill is for
 
-This skill teaches Claude to write correct InfluxDB 3 code for **connect & authenticate, write data, query data, and schema design**, in Python, JavaScript/TypeScript, Go, Java, C#, and raw HTTP.
+This skill teaches the agent to write correct InfluxDB 3 code for **connect & authenticate, write data, query data, and schema design**, in Python, JavaScript/TypeScript, Go, Java, C#, and raw HTTP.
 
 **Products and depth:**
 
@@ -81,7 +81,7 @@ Two things to get right before issuing a start command (both detailed in `refere
 - **Enterprise needs a license.** A bare `serve` fails fast with `No interactive TTY detected. Cannot prompt for email.` — ask the developer for their license email and type, then pass `--license-email` + `--license-type`.
 - **Pick the object store.** Default is `file` (needs `--data-dir`); `memory` is RAM-only and unsafe for sustained writes or restarts.
 
-For InfluxDB 3 Cloud, InfluxDB Cloud Serverless, or InfluxDB Cloud Dedicated, the developer signs up at https://www.influxdata.com/products/influxdb-overview/. Claude does not create accounts on the user's behalf — direct them to sign up themselves, then continue with §2 once they have credentials. For InfluxDB Clustered, route to its install docs.
+For InfluxDB 3 Cloud, InfluxDB Cloud Serverless, or InfluxDB Cloud Dedicated, the developer signs up at https://www.influxdata.com/products/influxdb-overview/. Don't create accounts on the user's behalf — direct them to sign up themselves, then continue with §2 once they have credentials. For InfluxDB Clustered, route to its install docs.
 
 ## 2. First-time setup checklist
 
@@ -250,7 +250,7 @@ When something stopped working — connection errors, writes not landing where e
 **Four rules:**
 - **Redact first, diagnose second.** If the customer pasted a real-looking token (regex `apiv3_[A-Za-z0-9_-]{30,}`), acknowledge the leak, recommend immediate rotation via `references/tokens.md`, then proceed without echoing **any portion** of the token — not the full string, not a prefix, not a suffix, not a "first 8 characters" sample. Refer to it as "the token in your error" or `<redacted>`.
 - **Always check for silent auto-create misroute** when a write "succeeded" but the data isn't visible — list databases the token can see and look for typo'd siblings (`references/troubleshooting.md` → "Silent auto-create misroute").
-- **Run the diagnostic toolkit** at `examples/diagnose/` when the symptom is unclear. It produces a one-page health report that's the right thing to paste into Claude.
+- **Run the diagnostic toolkit** at `examples/diagnose/` when the symptom is unclear. It produces a one-page health report that's the right thing to paste into the conversation.
 - **Defer performance questions** — slow query / slow write / cardinality remediation are out of scope here. Quick triage (add a time filter, add a LIMIT, batch in 1k–10k chunks) is fine; deeper analysis defers.
 
 **Symptom → section:**

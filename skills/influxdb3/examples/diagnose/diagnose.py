@@ -7,7 +7,7 @@ Runs a one-page health check:
   - If admin scope: create diagnose_<ts> DB, write a smoke point, query it back, delete the DB
   - If non-admin: skip the write smoke; report "diagnostic limited to read-side"
 
-Output is the first thing a customer should paste to Claude when something feels off.
+Output is the first thing a customer should paste to their agent when something feels off.
 
 Reads INFLUXDB_HOST and INFLUXDB_TOKEN from env or .env.
 """

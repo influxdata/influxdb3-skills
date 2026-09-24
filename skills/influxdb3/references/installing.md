@@ -2,7 +2,7 @@
 
 For users who installed the `claude-influxdb3` plugin but don't have a server yet. Covers Core and Enterprise on macOS / Linux. Two paths: official install script (recommended for first-time / single-machine), or Docker (recommended if you want isolation).
 
-> **Cloud Serverless and Cloud Dedicated** are managed services — they're not installed locally. Sign up at https://www.influxdata.com/products/influxdb-overview/ for those flavors. Once you have credentials, return to `references/connecting.md`. Claude does not create accounts on your behalf.
+> **Cloud Serverless and Cloud Dedicated** are managed services — they're not installed locally. Sign up at https://www.influxdata.com/products/influxdb-overview/ for those flavors. Once you have credentials, return to `references/connecting.md`. The agent doesn't create accounts on your behalf.
 
 > **Already have an instance running?** Skip to `SKILL.md` §2 (First-time setup checklist).
 

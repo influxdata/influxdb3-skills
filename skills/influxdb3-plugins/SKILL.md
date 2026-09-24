@@ -17,7 +17,7 @@ description: |
   influxdb3 skill, which covers connecting to and querying InfluxDB 3 from
   external apps — this skill is for code that runs INSIDE InfluxDB.
 metadata:
-  version: "0.6.0"
+  version: "0.7.0"
   docs_checked: "2026-09-23"
   docs_checked_against: "influxdb3-core 3.11.5, influxdb3-enterprise 3.11.5"
   live_verified: "2026-05-15"
@@ -28,7 +28,7 @@ metadata:
 
 ## 1. What this skill is for
 
-This skill teaches Claude to write, install, and test InfluxDB 3 Processing Engine plugins — Python code that runs **inside** InfluxDB 3 Core and Enterprise to react to writes, schedules, or HTTP requests.
+This skill teaches the agent to write, install, and test InfluxDB 3 Processing Engine plugins — Python code that runs **inside** InfluxDB 3 Core and Enterprise to react to writes, schedules, or HTTP requests.
 
 It is for plugin code that lives in the server's plugin venv. For external application code that connects to InfluxDB 3 from outside (Python/JS/Go/Java/C#/HTTP), use the sibling `influxdb3` skill instead.
 

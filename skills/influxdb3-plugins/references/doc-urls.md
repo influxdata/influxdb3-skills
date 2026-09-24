@@ -1,6 +1,6 @@
 # Curated Documentation URLs (Processing Engine plugins)
 
-When the skill content does not cover a developer's plugin question — or when the answer might be version-sensitive — Claude is allowed to WebFetch from this list. **Do not invent URLs that aren't on this list.** If you need a doc that's not here, ask the developer for the URL or note that the answer requires fresh research.
+When the skill content does not cover a developer's plugin question — or when the answer might be version-sensitive — fetch from this list. **Do not invent URLs that aren't on this list.** If you need a doc that's not here, ask the developer for the URL or note that the answer requires fresh research.
 
 ## Processing Engine concept docs
 

@@ -1,6 +1,6 @@
 # Diagnostic toolkit
 
-`diagnose.py` runs a one-page health check on your InfluxDB 3 instance. Useful when something feels off and you want a sanity check before pasting an error into Claude.
+`diagnose.py` runs a one-page health check on your InfluxDB 3 instance. Useful when something feels off and you want a sanity check before you paste an error into your agent.
 
 ## What it does
 

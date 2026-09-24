@@ -4,7 +4,16 @@ All notable changes to this skill will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased] — 0.6.0
+## [Unreleased] — 0.7.0
+
+### Packaging
+- Renamed the plugin from `claude-influxdb3` to `influxdb3-skills`, and its marketplace from `influxdata` to `influxdata-influxdb3`. Skill names don't change.
+- Added a root `plugin.json` in the Agent Plugins format, so agents other than Claude Code can install the repo.
+- The README gives install steps for Claude Code, Codex, and other agents.
+- Removed Claude-specific wording from skill text.
+- Added CI: the Agent Skills reference validator on each skill, a check that all versions match, and a link check. Added Dependabot for GitHub Actions.
+
+## 0.6.0 (unreleased)
 
 Content checked against the InfluxDB 3 Core and InfluxDB 3 Enterprise 3.11.5 docs and release notes.
 Live evals on 3.11.5 are still pending.

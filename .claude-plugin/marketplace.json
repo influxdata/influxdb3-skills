@@ -1,14 +1,15 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
-  "name": "influxdata",
-  "description": "InfluxData plugins for Claude Code",
+  "name": "influxdata-influxdb3",
+  "description": "InfluxData agent skills for InfluxDB 3.",
   "owner": {
     "name": "InfluxData"
   },
   "plugins": [
     {
-      "name": "claude-influxdb3",
+      "name": "influxdb3-skills",
       "source": "./",
+      "description": "Agent skills for InfluxDB 3: write correct application code (connect, write, query, schema design), develop, install, and test Processing Engine plugins, manage databases and tokens, and troubleshoot InfluxDB 3 Core and InfluxDB 3 Enterprise, with routing to the docs for other InfluxDB products.",
       "homepage": "https://github.com/influxdata/claude-skill-for-influxdb3"
     }
   ]
