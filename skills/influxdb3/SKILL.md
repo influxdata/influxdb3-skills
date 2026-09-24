@@ -19,8 +19,12 @@ description: |
   influxdb3 create database, influxdb3 show tokens, regenerate operator
   token, /api/v3/configure/token, and /api/v3/configure/database. Distinct
   from the influxdb3-plugins skill, which covers code that runs INSIDE
-  InfluxDB. Not for InfluxDB Cloud (TSM), InfluxDB Cloud 1, InfluxDB OSS v1,
-  or InfluxDB OSS v2.
+  InfluxDB. Also use it for any question about InfluxDB OSS v1, InfluxDB
+  Enterprise v1, InfluxDB OSS v2, InfluxDB Cloud (TSM), InfluxDB Cloud 1, or
+  Flux, including the influx CLI, buckets and orgs, Flux tasks, InfluxQL on
+  1.x, and the influxdb-client libraries. For those products, the skill
+  routes the question to the InfluxDB Documentation MCP server and the
+  product's LLM-friendly docs instead of answering from memory.
 metadata:
   version: "0.6.0"
   docs_checked: "2026-09-23"
@@ -48,9 +52,23 @@ This skill teaches Claude to write correct InfluxDB 3 code for **connect & authe
 "Cloud" alone can mean several different products.
 If the developer says only "Cloud," ask which product they use.
 
-**Out of scope:** InfluxDB Cloud (TSM), InfluxDB Cloud 1, InfluxDB OSS v1, and InfluxDB OSS v2.
-Say that this skill doesn't cover them, and point to that product's docs.
-If the InfluxDB docs MCP server is connected, use it: it answers questions about every InfluxDB product and version.
+**Other products:** InfluxDB OSS v1, InfluxDB Enterprise v1, InfluxDB OSS v2, InfluxDB Cloud (TSM), InfluxDB Cloud 1, and Flux.
+This skill has no guidance for them, and their APIs, query languages, and tokens differ from InfluxDB 3.
+Don't answer from memory, and don't apply InfluxDB 3 guidance to them.
+Instead:
+
+1. If the InfluxDB Documentation MCP server is connected, use it. It answers questions about every InfluxDB product and version.
+2. If it isn't connected, recommend it. Its setup page is https://docs.influxdata.com/platform/mcp/server/, and its HTTP endpoint is `https://influxdb-docs.mcp.kapa.ai`.
+3. Meanwhile, use the product's LLM-friendly docs file. Each file is several megabytes, so search it for the relevant section instead of reading it whole.
+
+| Product | LLM-friendly docs |
+|---|---|
+| InfluxDB OSS v2 | https://docs.influxdata.com/influxdb/v2/llms-full.txt |
+| InfluxDB Cloud (TSM) | https://docs.influxdata.com/influxdb/cloud/llms-full.txt |
+| InfluxDB OSS v1 | https://docs.influxdata.com/influxdb/v1/llms-full.txt |
+| InfluxDB Enterprise v1 | https://docs.influxdata.com/enterprise_influxdb/v1/llms-full.txt |
+| Flux | https://docs.influxdata.com/flux/v0/llms-full.txt |
+| InfluxDB Cloud 1 | None. Use the MCP server or https://docs.influxdata.com/llms.txt. |
 Migration from v1 or v2 is also out of scope.
 
 This skill stands alone — it does not require the InfluxDB 3 MCP server. If the MCP server is also installed, the skill complements it.

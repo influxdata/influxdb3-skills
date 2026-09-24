@@ -11,7 +11,7 @@ Live evals on 3.11.5 are still pending.
 
 ### Boundaries
 - `influxdb3` names each product it covers in full: InfluxDB 3 Core, InfluxDB 3 Enterprise, InfluxDB 3 Cloud, InfluxDB Cloud Serverless, InfluxDB Cloud Dedicated, and InfluxDB Clustered. Core and Enterprise get full guidance. The other products route to their own docs for tokens, databases, and product-specific behavior.
-- InfluxDB Cloud (TSM), InfluxDB Cloud 1, InfluxDB OSS v1, and InfluxDB OSS v2 are out of scope. The description excludes them, and the skill points to their docs or to the InfluxDB docs MCP server.
+- For InfluxDB OSS v1, InfluxDB Enterprise v1, InfluxDB OSS v2, InfluxDB Cloud (TSM), InfluxDB Cloud 1, and Flux, the skill routes questions to the InfluxDB Documentation MCP server and each product's `llms-full.txt` instead of answering from memory. The description names these products so the skill fires for them.
 - Both skills look things up in this order: the InfluxDB docs MCP server, then the `influxdb3` CLI or InfluxDB 3 MCP server for live state, then curated doc URLs. Neither MCP server is required.
 - Both skills tell the agent not to state version-sensitive flags, defaults, or limits from memory, and to report observed behavior that contradicts the docs, with product and version. `--help` text alone doesn't count as evidence against the docs.
 
