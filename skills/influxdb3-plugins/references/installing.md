@@ -133,14 +133,14 @@ The server enforces:
 - **Symlink escape protection** — symlinks that resolve outside `--plugin-dir` are rejected.
 - **Admin-only deploys** — non-admin tokens cannot upload, update, or create triggers.
 
-The v0.1.0 rule still applies — **never inline a token in generated commands or scripts**. Tokens come from `INFLUXDB_TOKEN` env or `args` passed to the plugin (per `references/connecting.md` in the v0.1.0 skill).
+**Never inline a token in generated commands or scripts.** Tokens come from `INFLUXDB_TOKEN` env or `args` passed to the plugin (per `references/connecting.md` in the `influxdb3` skill).
 
 **What the server does *not* protect against** (admin-token-gated, but code-execution-equivalent once reached — an admin token on InfluxDB is effectively arbitrary code in the server process):
 - **`gh:` / `--plugin-repo`** fetch and run remote code with no integrity check (above).
 - **`influxdb3 install package`** installs from public PyPI with no typosquat protection, and extra arguments reach `pip` verbatim (e.g. a redirected `--index-url`) — see `references/dependencies.md`.
 - **A deployed plugin is unsandboxed** — `references/plugin-code-safety.md`.
 
-**Plugin hardening flags** (verified against 3.10.0):
+**Plugin hardening flags** (3.10.0 and later):
 - `--plugin-dir-only` — disables `gh:` fetches and `--upload`, restricting plugins to files already placed in `--plugin-dir` (server-side placement, path 2). This is the single most effective lockdown for plugin sourcing. **Enterprise only** — not available on Core, where the admin token is the entire boundary for plugin sourcing.
 - `--restrict-plugin-triggers-to` — limits which trigger types may be created (`[possible values: wal, schedule, request]`). **Available on both Core and Enterprise.**
 

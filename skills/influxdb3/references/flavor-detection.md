@@ -324,9 +324,9 @@ Record the answer in context and continue. For Cloud Dedicated and Clustered you
 
 ---
 
-## Notes on the Live Enterprise 3.8.4 Sample
+## Sample `/ping` response
 
-The confirmed response from a real Enterprise 3.8.4 instance:
+From Enterprise 3.8.4:
 
 ```
 GET /ping  →  200 OK

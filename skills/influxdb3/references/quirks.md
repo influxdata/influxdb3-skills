@@ -2,7 +2,7 @@
 
 A catalogue of behaviors that aren't in the official docs but customers will hit. Each entry: **What you'll see → Why it's that way → What to do.** Entries are bounded — only quirks that are (a) verified against a real release, (b) genuinely non-obvious, (c) likely to be hit in a customer's first month.
 
-> Verified against InfluxDB 3 Enterprise 3.8.4 on 2026-05-08. Entries 10 and 11 were updated for 3.11.5 on 2026-09-23. Quirks can differ on InfluxDB 3 Cloud, InfluxDB Cloud Serverless, InfluxDB Cloud Dedicated, and InfluxDB Clustered — see flavor-specific notes per entry.
+> Quirks can differ on InfluxDB 3 Cloud, InfluxDB Cloud Serverless, InfluxDB Cloud Dedicated, and InfluxDB Clustered — see flavor-specific notes per entry.
 
 ---
 
@@ -76,16 +76,13 @@ for row in system_tokens_rows:
 
 ---
 
-## 6. Resource-token endpoint differs Core vs Enterprise
+## 6. Resource-token creation fails on Core
 
-**What you'll see:** A `POST /api/v3/configure/token` succeeds on Core but returns 404 on Enterprise (or vice versa).
+**What you'll see:** On Core, a resource-token create request returns 404, or `influxdb3 create token --permission` is rejected.
 
-**Why:**
-- **Core** uses `POST /api/v3/configure/token` for resource tokens.
-- **Enterprise** uses `POST /api/v3/enterprise/configure/token` for resource tokens (different path).
-- Admin token creation, delete-token, and database CRUD endpoints are identical on both.
+**Why:** Core has admin tokens only. See `references/tokens.md` → "InfluxDB 3 Core: admin tokens only."
 
-**What to do:** Detect the flavor (`references/flavor-detection.md`) before generating admin code. Examples in `examples/admin-*` target Enterprise; the README in each example notes the one-line swap for Core.
+**What to do:** Detect the flavor (`references/flavor-detection.md`) before generating admin code. The `examples/admin-*` scripts require Enterprise or InfluxDB 3 Cloud.
 
 ---
 
@@ -93,7 +90,7 @@ for row in system_tokens_rows:
 
 **What you'll see:** Two related surprises. (a) `influxdb3 delete database <name> --force` errors with `error: unexpected argument '--force' found` — that flag doesn't exist. (b) In a script / non-interactive shell (no TTY), a bare `influxdb3 delete database <name>` prints `Are you sure you want to delete "<name>"?` and then fails with `Delete command failed: Cannot proceed without confirmation` (exit 1).
 
-**Why:** As of 3.10 the CLI added an interactive confirmation prompt; the flag to skip it is `-y`/`--yes`, not `--force`. (Verified against 3.10.0 on both Core and Enterprise; earlier docs described deletion as non-interactive-by-default — that no longer holds for the CLI.) The HTTP API `DELETE /api/v3/configure/database?db=<name>` has **no** prompt and is unaffected.
+**Why:** Starting in 3.10, the CLI prompts for confirmation; the flag to skip it is `-y`/`--yes`, not `--force`. The HTTP API `DELETE /api/v3/configure/database?db=<name>` has **no** prompt and is unaffected.
 
 **What to do:** For scripting/automation, pass `-y` (or `--yes`): `influxdb3 delete database <name> -y --token "$INFLUXDB_TOKEN"`. Combine with `--hard-delete <when>` (`never` / `now` / `default` / `<timestamp>`) or `--data-only` for advanced cases. Pattern documented in `references/databases.md`. Or call the HTTP API, which never prompts.
 

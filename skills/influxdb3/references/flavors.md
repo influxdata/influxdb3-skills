@@ -10,21 +10,21 @@ Most code is portable across flavors when host and token are env-driven; this re
 |---|---|---|---|---|
 | **Default port** | `8181` | `8181` (per node) | 443 (TLS) | 443 (TLS) |
 | **Host pattern** | configurable, often `localhost:8181` | configurable cluster | `https://<region>-<id>.cloud2.influxdata.com` | customer-specific hostname |
-| **Token type** | database / admin token | database / admin token (with RBAC) | management + database tokens | management + database tokens |
+| **Token type** | admin tokens only | admin + resource (database, system) tokens | management + database tokens | management + database tokens |
 | **Write endpoint** | `POST /api/v3/write_lp` | `POST /api/v3/write_lp` | `POST /api/v2/write` (or v1 `/write`) | `POST /api/v2/write` (or v1 `/write`) |
 | **Query** | `/api/v3/query_sql`, `/api/v3/query_influxql`, or Flight | Same as Core | Flight (SQL or InfluxQL), or v1 `/query` (InfluxQL) | Same as Cloud Serverless |
 | **Multi-database** | yes | yes | yes (per bucket) | yes |
 | **Database creation** | HTTP API or CLI | HTTP API or CLI | UI / API (cloud-managed) | UI / API (cloud-managed) |
 | **Database creation API** | `POST /api/v3/configure/database` (HTTP) or `influxdb3 create database` (CLI) | Same as Core | Product UI or management API | Product UI or management API |
-| **Token creation API** | `POST /api/v3/configure/token` (HTTP) or `influxdb3 create token` (CLI) | Same as Core | Product UI or management API | Product UI or management API |
+| **Token creation API** | Admin only: `POST /api/v3/configure/token/named_admin` (HTTP) or `influxdb3 create token --admin` (CLI) | Admin: same as Core. Resource: `POST /api/v3/enterprise/configure/token` or `influxdb3 create token --permission` | Product UI or management API | Product UI or management API |
 
 ## Notable per-flavor gotchas
 
 ### Core
-Single-node, open source. No RBAC. Tokens are scoped per database. Default object-store is local disk; `--object-store=memory` is fine for testing only.
+Single-node, open source. Admin tokens only: no resource tokens and no RBAC (`references/tokens.md` → "InfluxDB 3 Core: admin tokens only"). Default object-store is local disk; `--object-store=memory` is fine for testing only.
 
 ### Enterprise
-Multi-node cluster. RBAC and replication are first-class. Same v3 HTTP API as Core; the differences are operational (cluster, observability) rather than client-facing.
+Multi-node cluster with replication. Adds resource tokens with per-database and system permissions. User authentication and RBAC are a preview in 3.10.0 and later, off by default. Otherwise the same v3 HTTP API as Core; the other differences are operational (cluster, observability) rather than client-facing.
 
 ### Cloud Serverless
 No `/api/v3` endpoints. Write through `/api/v2/write`.

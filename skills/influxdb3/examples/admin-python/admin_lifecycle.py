@@ -3,10 +3,8 @@
 Exercises a full token + database lifecycle (10 steps).
 Cleanup runs in a try/finally so partial failures don't orphan tokens or DBs.
 
-Requires InfluxDB 3 Enterprise or InfluxDB 3 Cloud: it creates scoped resource tokens via
-/api/v3/enterprise/configure/token. This does NOT run on Core — Core has no
-resource tokens (POST /api/v3/configure/token returns 404; the CLI has no
---permission), so step 3 fails there. Database CRUD, delete-token, and
+Requires InfluxDB 3 Enterprise or InfluxDB 3 Cloud: step 3 creates a resource
+token, and Core has none (references/tokens.md). Database CRUD, delete-token, and
 list-tokens-via-SQL are otherwise identical across Core and Enterprise.
 """
 from __future__ import annotations

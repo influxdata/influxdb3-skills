@@ -100,7 +100,7 @@ influxdb3 query \
   "SELECT event_time, trigger_name, log_level, log_text FROM system.processing_engine_logs ORDER BY event_time DESC LIMIT 50"
 ```
 
-Columns (verified against InfluxDB 3 Enterprise 3.8.4):
+Columns:
 
 | Column | Type | Purpose |
 |---|---|---|

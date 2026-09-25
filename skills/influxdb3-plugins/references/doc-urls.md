@@ -33,8 +33,4 @@ When the skill content does not cover a developer's plugin question — or when 
 | Topic | URL | When to fetch |
 |---|---|---|
 | Official + community plugins | https://github.com/influxdata/influxdb3_plugins | Real-world plugin patterns; the `gh:` prefix resolves here by default |
-| Reference architecture (cluster) | https://github.com/influxdata/influxdb3-ref-network-telemetry | 5-node Enterprise cluster reference (v0.2.1 territory; listed here so it's discoverable) |
-
-## Last verified
-
-This URL list was last verified on **2026-05-07**. If you find a broken link, log it in `evals/results/` and update this file as part of the next quarterly refresh.
+| Reference architecture (cluster) | https://github.com/influxdata/influxdb3-ref-network-telemetry | 5-node Enterprise cluster reference |
