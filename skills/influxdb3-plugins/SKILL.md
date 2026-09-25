@@ -87,7 +87,7 @@ Three paths:
 
 Full reference + HTTP API equivalents + security: `references/installing.md`.
 
-**Security:** plugin upload, update, and trigger creation all require an **admin token**. Path traversal (`..`, absolute paths) is blocked by the server. The v0.1.0 rule still applies — never inline `INFLUXDB_TOKEN` in generated commands or scripts.
+**Security:** plugin upload, update, and trigger creation all require an **admin token**. Path traversal (`..`, absolute paths) is blocked by the server. Never inline `INFLUXDB_TOKEN` in generated commands or scripts.
 
 ## 6.5. Plugin code safety (unsandboxed — read before writing plugin code)
 

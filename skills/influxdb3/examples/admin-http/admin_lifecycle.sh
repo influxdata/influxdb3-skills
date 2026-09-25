@@ -11,9 +11,8 @@
 # Reads INFLUXDB_HOST and INFLUXDB_TOKEN (admin) from env.
 # Generates the test DB name at runtime so multiple runs don't collide.
 #
-# Note: requires InfluxDB 3 Enterprise or InfluxDB 3 Cloud — it creates scoped resource tokens via
-# /api/v3/enterprise/configure/token. It does NOT run on Core: Core has no
-# resource tokens (POST /api/v3/configure/token returns 404), so step 3 fails.
+# Note: requires InfluxDB 3 Enterprise or InfluxDB 3 Cloud: step 3 creates a
+# resource token, and Core has none (references/tokens.md).
 # Database CRUD and delete-token endpoints are identical across Core and Enterprise.
 set -euo pipefail
 

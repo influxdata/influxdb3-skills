@@ -36,7 +36,7 @@ var points = Enumerable.Range(0, 1000).Select(_ =>
 await client.WritePointsAsync(points);
 ```
 
-`InfluxDB3.Client` 1.9.0 and later writes through `/api/v2/write` by default, so one invalid line rejects the whole batch. For partial writes or `NoSync` on InfluxDB 3 Core or Enterprise, set the `UseV2Api` write option to `false`. See `references/writing.md` → "Official clients write through `/api/v2/write` by default".
+`InfluxDB3.Client` 1.9.0+ writes through `/api/v2/write` by default, so one invalid line rejects the whole batch. For partial writes or `NoSync` on InfluxDB 3 Core or Enterprise, set the `UseV2Api` write option to `false`. See `references/writing.md` → "Official clients write through `/api/v2/write` by default".
 
 ## Parameterized SQL query
 

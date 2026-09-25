@@ -3,9 +3,8 @@
 // Exercises a full token + database lifecycle (10 steps).
 // Cleanup runs in a try/finally so partial failures don't orphan tokens or DBs.
 //
-// Requires InfluxDB 3 Enterprise or InfluxDB 3 Cloud (creates scoped resource tokens via
-// /api/v3/enterprise/configure/token). Does NOT run on Core — Core has no
-// resource tokens (POST /api/v3/configure/token returns 404), so step 3 fails.
+// Requires InfluxDB 3 Enterprise or InfluxDB 3 Cloud: step 3 creates a resource
+// token, and Core has none (references/tokens.md).
 
 import 'dotenv/config';
 

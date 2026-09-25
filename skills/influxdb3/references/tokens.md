@@ -5,12 +5,29 @@
 | Token type | When created | Used for | Stored where |
 |---|---|---|---|
 | **Operator/admin token** | At server bootstrap (Core/Enterprise) or, for other products, as that product's docs describe | Admin operations: creating databases, creating other tokens, regenerating itself | Server bootstrap output (printed once) or the product's UI |
-| **Scoped resource token** | Created via `--permission` referencing a specific database | Application code: writing data, querying | The application's `INFLUXDB_TOKEN` env var, or its secret manager |
+| **Scoped resource token** *(Enterprise and InfluxDB 3 Cloud only)* | Created via `--permission` referencing a specific database | Application code: writing data, querying | The application's `INFLUXDB_TOKEN` env var, or its secret manager |
 | **Bootstrap operator token** *(self-hosted only)* | Auto-generated at first server start | One-time: create your "real" admin token, then revoke this | Save once, then discard |
 
-**The most important rule:** application code reads a **scoped resource token**, never the admin token. The admin token is for admin operations only.
+**The most important rule:** application code reads a **scoped resource token** where supported, or a named admin token on Core. The operator token is for admin operations only
 
-> **Scoped resource tokens are an InfluxDB 3 Enterprise and InfluxDB 3 Cloud feature — InfluxDB 3 Core does not have them** (verified against Core 3.10.0). On Core, `influxdb3 create token` offers only `--admin` (no `--permission`), and `POST /api/v3/configure/token` returns 404 — **every Core token is an admin token**, and Core has no RBAC. So the "use a scoped token for app code" rule below is the right pattern on InfluxDB 3 Enterprise and InfluxDB 3 Cloud; on Core you cannot follow it, and the practical mitigation is to run Core in a trusted context and treat *any* Core token as full-admin (one leak = total compromise). The scoped-token CLI/HTTP examples in this file apply to InfluxDB 3 Enterprise and InfluxDB 3 Cloud.
+## InfluxDB 3 Core: admin tokens only
+
+This section is the skill's single source for Core token behavior.
+Other files link here instead of restating it.
+
+- InfluxDB 3 Core has no resource tokens and no RBAC.
+  Every Core token is an admin token.
+- Resource tokens are an InfluxDB 3 Enterprise and InfluxDB 3 Cloud feature.
+  The scoped-token rule above, and the scoped-token CLI and HTTP examples in this file, apply only to those products.
+- On Core, `influxdb3 create token` offers only `--admin`, not `--permission`.
+  Core has no resource-token endpoint.
+  On Core, `/api/v3/configure/token` accepts only `DELETE`, and `/api/v3/enterprise/configure/token` doesn't exist.
+- A Core application authenticates with an admin token.
+  Run Core in a trusted context, and treat any Core token as full admin.
+  One leaked token compromises the whole instance.
+- Give each Core application its own named admin token, not the operator token:
+  `influxdb3 create token --admin --name <app> --token <admin-token>`, with optional `--expiry`.
+  You can then delete or replace one application's token without regenerating the operator token, which deactivates the old one for every client that uses it.
 
 ## CLI
 
@@ -119,10 +136,10 @@ The CLI's short-form string and the HTTP body's structured object encode the sam
 
 ## HTTP API
 
-See `references/admin-http-api.md` for full request/response shapes including the Core-vs-Enterprise endpoint divergence:
+See `references/admin-http-api.md` for full request/response shapes:
 
-- **Resource (scoped) token create — Enterprise only:** `POST /api/v3/enterprise/configure/token`. **Core does not support resource tokens** — `POST /api/v3/configure/token` returns 404 on Core 3.10.0 (see the flavor callout above).
-- Admin token create (both): `POST /api/v3/configure/token/named_admin`
+- Resource token create (Enterprise and InfluxDB 3 Cloud): `POST /api/v3/enterprise/configure/token`. Core has none; see "InfluxDB 3 Core: admin tokens only."
+- Named admin token create (both): `POST /api/v3/configure/token/named_admin` with body `{"token_name": "<name>"}`
 - Delete token (both): `DELETE /api/v3/configure/token?token_name=<name>`
 - List tokens: SQL on `system.tokens`
 
@@ -144,19 +161,19 @@ Reverse this order at your peril:
 
 | Flavor | Admin token source | Scoped token creation |
 |---|---|---|
-| Core | First server start prints it; or `influxdb3 create token --admin` | CLI or HTTP as above |
-| Enterprise | Same as Core | Same as Core |
+| Core | First server start prints it; or `influxdb3 create token --admin` | None. See "InfluxDB 3 Core: admin tokens only." |
+| Enterprise | Same as Core | CLI or HTTP as above |
 | InfluxDB Cloud Serverless | InfluxDB Cloud Serverless UI → Tokens | InfluxDB Cloud Serverless UI → Tokens, or management API |
 | InfluxDB Cloud Dedicated | InfluxDB Cloud Dedicated console → Tokens | InfluxDB Cloud Dedicated console, or management API |
 
-For InfluxDB 3 Cloud and InfluxDB Clustered, see their docs. Request shapes for these products aren't live-verified. Route to that product's docs through `references/doc-urls.md`.
+For InfluxDB 3 Cloud and InfluxDB Clustered, see their docs. Route to that product's docs through `references/doc-urls.md`.
 
 ## Adversarial scenarios — what NOT to do
 
 | Anti-pattern | Why | Do this instead |
 |---|---|---|
 | Inline the admin token in a CI script | Anyone with read access to the repo or CI logs has full control of your InfluxDB instance | Read from `INFLUXDB_TOKEN` env or secret manager |
-| Use the admin token at the data plane (writes, queries) | One leak = total compromise; admin scope is far broader than the app needs | Create a scoped resource token; use that |
+| Use the admin token at the data plane (writes, queries) | One leak = total compromise; admin scope is far broader than the app needs | Create a scoped resource token; use that. On Core, you can't; see "InfluxDB 3 Core: admin tokens only." |
 | Store the token in a Python `Cache` from a Processing Engine plugin | The `Cache` is in-memory and gets restarted; tokens in plugin code are visible to anyone with read on the plugin file | Pass tokens via `args` (CLI `--trigger-arguments`) or by reading env on the server |
 | Per-end-user tokens in a multi-tenant SaaS | InfluxDB tokens are per-application, not per-user — creating thousands of tokens explodes operationally | Authenticate the end user in your app, then proxy the InfluxDB call with one app-scoped token |
 

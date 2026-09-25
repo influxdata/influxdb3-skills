@@ -9,7 +9,7 @@ When the skill content does not cover a developer's question — or when the ans
 | Flavor | URL | When to fetch |
 |---|---|---|
 | Core | https://docs.influxdata.com/influxdb3/core/ | Default for self-hosted single-node setups; Core-specific config and admin |
-| Enterprise | https://docs.influxdata.com/influxdb3/enterprise/ | Multi-node, replication, RBAC |
+| Enterprise | https://docs.influxdata.com/influxdb3/enterprise/ | Multi-node, replication, resource tokens |
 | Cloud Serverless | https://docs.influxdata.com/influxdb3/cloud-serverless/ | Cloud-Serverless–specific endpoints, auth, write path quirks |
 | Cloud Dedicated | https://docs.influxdata.com/influxdb3/cloud-dedicated/ | Dedicated cluster setup, custom hosts |
 
@@ -32,7 +32,3 @@ When the skill content does not cover a developer's question — or when the ans
 | Go | https://github.com/InfluxCommunity/influxdb3-go | Same |
 | Java | https://github.com/InfluxCommunity/influxdb3-java | Same |
 | C# | https://github.com/InfluxCommunity/influxdb3-csharp | Same |
-
-## Last verified
-
-This URL list was last verified on **2026-04-29**. If you find a broken link, log it in `evals/results/` and update this file as part of the next quarterly refresh.

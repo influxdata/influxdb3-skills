@@ -74,7 +74,7 @@ If the developer has no InfluxDB 3 server running, including when the binary is 
 Before you give a start command, get these two things right. `references/installing.md` has the details.
 
 - **Enterprise needs a license.** A bare `serve` fails with `No interactive TTY detected. Cannot prompt for email.` Ask the developer for their license email and type, then pass `--license-email` and `--license-type`.
-- **Pick the object store.** The default is `file`, which needs `--data-dir`. `memory` is RAM-only and unsafe for sustained writes or restarts.
+- **Pick the object store.** `--object-store` is required and has no default (3.2.1+). Use `file` with `--data-dir` for local work. `memory` is RAM-only and unsafe for sustained writes or restarts.
 
 For InfluxDB 3 Cloud, InfluxDB Cloud Serverless, or InfluxDB Cloud Dedicated, the developer signs up at https://www.influxdata.com/products/influxdb-overview/.
 Don't create accounts for the developer.
@@ -89,10 +89,10 @@ For InfluxDB Clustered, route to its install docs.
 
 Before you generate application code, walk the developer through each item and confirm it's true:
 
-- [ ] **The server is reachable.** `curl -H "Authorization: Bearer <token>" <host>/ping` returns 200 with an `x-influxdb-build` header. `/ping` is auth-gated on 3.10 and later. An unauthenticated 401 still confirms that the server is up.
+- [ ] **The server is reachable.** `curl -H "Authorization: Bearer <token>" <host>/ping` returns 200 with an `x-influxdb-build` header. `/ping` is auth-gated (3.10+). An unauthenticated 401 still confirms that the server is up.
 - [ ] **An admin token exists.** For Core and Enterprise, it's the operator token printed at first start, or one created with `influxdb3 create token --admin`. For other products, follow that product's token docs.
 - [ ] **The target database exists.** Check with `influxdb3 show databases --token <admin-token>` or `GET /api/v3/configure/database?format=json`. Create it with `influxdb3 create database <name> --token <admin-token>` or `POST /api/v3/configure/database` with body `{"db":"<name>"}`.
-- [ ] **An application token exists** with read and write on that database. For InfluxDB 3 Enterprise and InfluxDB 3 Cloud, best practice is a scoped token, not the admin token: `influxdb3 create token --permission "db:<name>:read,write" --token <admin-token>`. InfluxDB 3 Core has no scoped tokens or RBAC, so the application uses an admin token. Keep Core in a trusted context and treat every Core token as full-admin. See `references/tokens.md`.
+- [ ] **An application token exists** with read and write on that database. For InfluxDB 3 Enterprise and InfluxDB 3 Cloud, best practice is a scoped token, not the admin token: `influxdb3 create token --permission "db:<name>:read,write" --name <app> --token <admin-token>`. Core has admin tokens only (§11).
 - [ ] **`.gitignore` excludes `.env`.**
 - [ ] **`.env.example` is committed, and `.env` isn't.**
 - [ ] **Env vars are set:** `INFLUXDB_HOST`, `INFLUXDB_TOKEN`, `INFLUXDB_DATABASE`, and `INFLUXDB_ORG` only for InfluxDB Cloud Serverless writes.
@@ -103,7 +103,7 @@ Before you generate application code, walk the developer through each item and c
 A write to a misnamed database, such as `senor_data` instead of `sensor_data`, reports success and creates a new, wrong database.
 Checking that the database exists before the first write is the only protection.
 
-**Order for Core and Enterprise:** start the server, create the admin token (the bootstrap needs no existing token), create the database, create a scoped app token on Enterprise (recommended) or use the admin token on Core, set env vars, then generate code.
+**Order for Core and Enterprise:** start the server, create the admin token (the bootstrap needs no existing token), create the database, create an app token (scoped on Enterprise, a named admin token on Core), set env vars, then generate code.
 
 **Order for other InfluxDB 3 products:** create the database (or bucket), create a scoped token, set env vars, then generate code.
 Each product has its own UI or management API for the first two steps, so route to that product's docs for them.
@@ -216,7 +216,8 @@ Example reply:
 ## 11. Token management
 
 - The admin (operator) token comes from server bootstrap on Core and Enterprise. For other products, it comes from the process in that product's docs. Application code never reads it directly.
-- On InfluxDB 3 Enterprise and InfluxDB 3 Cloud, application code uses **scoped resource tokens** with permissions like `db:<dbname>:read,write`. Create them with the admin token, and rotate them. InfluxDB 3 Core has no scoped tokens or RBAC, so a Core application authenticates with an admin token (`references/tokens.md`).
+- On InfluxDB 3 Enterprise and InfluxDB 3 Cloud, application code uses **scoped resource tokens** with permissions like `db:<dbname>:read,write`. Create them with the admin token, and rotate them.
+- **InfluxDB 3 Core has admin tokens only**, with no resource tokens and no RBAC. Don't generate `--permission` or resource-token API calls for Core. Give each Core application its own named admin token. Details: `references/tokens.md` → "InfluxDB 3 Core: admin tokens only."
 - Rotate in this order: **create the new token, swap the secret or env var, then revoke the old token.** The reverse order causes downtime or worse.
 - The create response shows a new token's secret **once**. Capture it right away; the server can't return it later.
 
@@ -224,7 +225,7 @@ Example reply:
 |---|---|
 | Create, list, or delete tokens with the CLI | `references/tokens.md` → CLI section |
 | Automate token rotation in CI or scripts | `references/tokens.md` → "Token rotation pattern" and `examples/admin-<lang>/` |
-| HTTP wire format (resource tokens are available in InfluxDB 3 Enterprise and InfluxDB 3 Cloud, but not Core) | `references/admin-http-api.md` |
+| HTTP wire format | `references/admin-http-api.md` |
 
 The "never inline a token" rule (§4) applies even more to admin tokens.
 

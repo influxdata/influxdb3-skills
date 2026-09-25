@@ -2,7 +2,7 @@
 
 When something stopped working. Symptom-keyed at the top; topic sections below. For non-obvious behaviors that aren't really "broken" (just confusingly designed), see `references/quirks.md`. For plugin-runtime troubleshooting, see the sibling skill at `skills/influxdb3-plugins/references/troubleshooting.md`.
 
-> Verified against InfluxDB 3 Enterprise 3.8.4 on 2026-05-08. For Cloud Serverless / Cloud Dedicated, signals may differ — see `references/flavors.md`.
+> For Cloud Serverless / Cloud Dedicated, signals may differ — see `references/flavors.md`.
 
 ## Token redaction rule
 
@@ -54,7 +54,7 @@ reading it:
 | Orphan databases / tokens after a script crash | [Admin failures](#admin-failures) |
 | Permission-string typo rejected | [Admin failures](#admin-failures) |
 | `delete token` syntax error | `references/quirks.md` → entry 8 |
-| Slow query / slow write | [Performance hints (defer to v0.5.0)](#performance-hints) |
+| Slow query / slow write | [Performance hints (quick triage only)](#performance-hints) |
 | Plugin trigger doesn't fire | sibling skill: `influxdb3-plugins/references/troubleshooting.md` |
 
 ## Auth failures
@@ -77,10 +77,10 @@ reading it:
 
 - Application token (scoped) trying to do admin operations (create DB, create token). Use the admin token for admin work.
 - Admin token (with `*:*:*`) being used at the data plane unnecessarily. See `quirks.md` and `references/tokens.md` → "Adversarial scenarios" — the admin token at the data plane is a foot-gun even when it works.
-- A write token without `write` on the target database. Starting in 3.10.0, `/api/v2/write` returns 403 for this case. Earlier versions returned 401.
+- A write token without `write` on the target database. `/api/v2/write` returns 403 for this case (3.10.0+); earlier releases return 401.
 - Permission scoped to a different database than you're writing to. Check `system.tokens.permissions` (remember the JSON-string parsing — `quirks.md` entry 4).
 
-**Fix:** create a scoped token with the right permissions for the operation. Reference: `references/tokens.md`.
+**Fix:** on Enterprise or InfluxDB 3 Cloud, create a scoped token with the right permissions; on Core, use a named admin token because Core has no scoped tokens. Reference: `references/tokens.md`.
 
 ### HTTP 404 — host
 
@@ -148,7 +148,7 @@ See `quirks.md` entry 11.
 
 **Diagnose:**
 
-- Read each `error_message` and `line_number` in the response `data`. Common causes: missing space between tag set and field set, missing field value (for example, `temp 70.0` should be `temp=70.0`), unquoted string in field value, integer/float type confusion (`temp=70` vs `temp=70i` vs `temp=70.0`), and a repeated tag key (rejected starting in 3.9.8, 3.10.3, and 3.11.0).
+- Read each `error_message` and `line_number` in the response `data`. Common causes: missing space between tag set and field set, missing field value (for example, `temp 70.0` should be `temp=70.0`), unquoted string in field value, integer/float type confusion (`temp=70` vs `temp=70i` vs `temp=70.0`), and a repeated tag key (rejected in 3.9.8+, 3.10.3+, and 3.11.0+).
 - Check which endpoint and `accept_partial` value the request used before you decide what to resend.
 - When the whole batch was rejected and the response names only the first bad line, split the batch in half and retry each half. This finds the bad lines in O(log n) requests.
 
@@ -158,7 +158,7 @@ See `quirks.md` entry 11.
 
 **Diagnose:** batch size exceeds the server's per-request limit. Limits differ by product; check the docs for the user's product.
 
-**Fix:** reduce batch size. Recommended: 1,000–10,000 points per write call (matches the v0.1.0 batching rule in `references/writing.md`).
+**Fix:** reduce batch size. Recommended: 1,000–10,000 points per write call (matches the batching rule in `references/writing.md`).
 
 ### 429 — rate limited
 
@@ -195,7 +195,7 @@ See `quirks.md` entry 11.
 
 ### Schema mismatch (`No field named X`)
 
-**Diagnose:** the field name in the query doesn't match the measurement's schema. Most common case is the v0.4.0 issue where someone queries `system.processing_engine_logs` with the wrong column names (see `quirks.md` entry 10).
+**Diagnose:** the field name in the query doesn't match the measurement's schema. The most common case is a query on `system.processing_engine_logs` with the wrong column names (see `quirks.md` entry 10).
 
 **Fix:** check the actual schema:
 
@@ -269,13 +269,13 @@ print([t['name'] for t in data if t['name'].startswith('<your-test-prefix>')])
 
 ## Performance hints
 
-Slow queries, slow writes, cardinality remediation, batch-size tuning — full coverage in v0.5.0 (deferred). Quick triage:
+Slow queries, slow writes, cardinality remediation, batch-size tuning — this skill covers quick triage only:
 
 - **Slow query, no time filter** → add `WHERE time > now() - INTERVAL '...'`. Almost always fixes it.
-- **Slow query, unbounded `SELECT *`** → add `LIMIT <n>`. v0.1.0's `querying.md` covers this.
+- **Slow query, unbounded `SELECT *`** → add `LIMIT <n>`. `references/querying.md` covers this.
 - **Slow write, large batches** → split into 1,000–10,000-point batches per write call.
 
-For deeper analysis, defer to v0.5.0. Do not try to debug query plans, batching strategy, or cardinality remediation in this skill.
+Do not try to debug query plans, batching strategy, or cardinality remediation in this skill.
 
 ## Where to fetch more
 

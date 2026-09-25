@@ -2,7 +2,7 @@
 
 `admin_lifecycle.sh` exercises the full token + database lifecycle for InfluxDB 3 **Enterprise** via the HTTP API. Reads `INFLUXDB_HOST` and `INFLUXDB_TOKEN` (admin) from env or `.env`.
 
-> **Requires InfluxDB 3 Enterprise or InfluxDB 3 Cloud.** The script creates scoped resource tokens via `/api/v3/enterprise/configure/token`. It does **not** run on Core — Core has no resource tokens (that path returns 404; the CLI has no `--permission`), so step 3 fails there. Everything else (database CRUD, delete-token, list-tokens-via-SQL) is identical across flavors.
+> **Requires InfluxDB 3 Enterprise or InfluxDB 3 Cloud.** The script creates scoped resource tokens via `/api/v3/enterprise/configure/token`. Core has no resource tokens, so it doesn't run on Core (`references/tokens.md`). Everything else (database CRUD, delete-token, list-tokens-via-SQL) is identical across flavors.
 
 ## What it does
 
@@ -34,7 +34,6 @@ cp .env.example .env  # then edit with real values
 
 - **Do not** copy this script into a production CI workflow without changing the test-DB name pattern. The `admin_test_http_<ts>` pattern is for development only.
 - **Do** generalize the trap-based cleanup pattern into your real provisioning scripts.
-- **Core can't run this example** (no resource tokens); use it against InfluxDB 3 Enterprise or InfluxDB 3 Cloud.
 
 ## Where to fetch more
 
