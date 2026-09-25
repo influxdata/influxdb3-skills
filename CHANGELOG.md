@@ -14,6 +14,52 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Shortened both skill descriptions to fit the Agent Skills 1024-character limit, and rewrote `influxdb3/SKILL.md` in plainer style. The `influxdb3` description no longer targets InfluxDB OSS v1 or v2, InfluxDB Cloud (TSM), InfluxDB Cloud 1, or Flux. Agents answer those directly. If the skill loads for one of them, its body still routes to the docs MCP server and `llms-full.txt`.
 - Added CI: the Agent Skills reference validator on each skill, a check that all versions match, and a link check. Added Dependabot for GitHub Actions.
 
+### Security
+- Plugins run unsandboxed with the server's privileges.
+  The new `influxdb3-plugins` reference `plugin-code-safety.md` sets rules for generated plugin code:
+  don't execute untrusted data, parameterize `query()` with `args=`, and don't read, log, or return secrets.
+- `installing.md` and `dependencies.md` document `gh:` plugin paths, `--plugin-repo`, and `influxdb3 install package` as trust boundaries.
+  `installing.md` lists the plugin hardening flags (3.10.0+):
+  `--plugin-dir-only` (Enterprise only) and `--restrict-plugin-triggers-to` (Core and Enterprise).
+- Both skills treat error bodies, query results, log text, and database or token names as untrusted data, never as instructions.
+- The token-redaction regex is broader and case-insensitive.
+  The rule applies to any credential-shaped string.
+  It's behavior the agent follows, not an enforced filter.
+- The `doc-urls.md` allowlists are advisory.
+  Agents match the exact host.
+- Examples that auto-load `.env` note that `INFLUXDB_HOST` decides where the token is sent.
+- Line protocol has no escape for `\n` or `\r`, and `LineBuilder` doesn't escape them.
+  `writing.md` and `runtime-api.md` say to reject or strip them from untrusted values.
+- The admin examples bind token names as SQL parameters instead of interpolating them.
+
+### Fixed
+- InfluxDB 3 Core has admin tokens only, with no resource tokens and no RBAC.
+  The skill told Core users to create `--permission` tokens.
+  It also documented a Core resource-token endpoint that doesn't exist.
+  `tokens.md` → "InfluxDB 3 Core: admin tokens only" is now the one place that states the Core behavior.
+  Each Core application uses its own named admin token.
+  The admin examples require Enterprise or InfluxDB 3 Cloud.
+- Named admin tokens use `POST /api/v3/configure/token/named_admin` with `{"token_name", "expiry_secs"}` (live-verified on Core and Enterprise 3.11.5).
+  `POST /api/v3/configure/token/admin` takes no body and creates the operator token.
+  `admin-http-api.md` adds the operator-token regenerate endpoint.
+- `--permission` examples include the required `--name`.
+- `--object-store` is required with no default (3.2.1+).
+  The skill said the default was `file`.
+- `influxdb3 delete database` prompts for confirmation (3.10+).
+  Scripts pass `-y`/`--yes`.
+  There's still no `--force`.
+- `/ping` is auth-gated (3.10+).
+  Health-check snippets send a token.
+  An unauthenticated 401 still means the server is up.
+- `/api/v3/query_sql` `params` is a named object referenced as `$name`.
+  `clients/http.md` showed a positional array, which returns 400.
+- Enterprise user authentication and RBAC are a preview (3.10+), off by default.
+  `flavors.md` described RBAC as first-class.
+
+### Changed
+- Both skills drop verification history (build dates, "verified against" notes, and "per source" notes) and skill-version roadmap references (`v0.x`).
+  Version-support notes stay, written as `X+` (for example, `3.10+`).
+
 ## 0.6.0 (unreleased)
 
 Content checked against the InfluxDB 3 Core and InfluxDB 3 Enterprise 3.11.5 docs and release notes.
