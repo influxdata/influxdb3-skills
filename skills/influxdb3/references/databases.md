@@ -51,7 +51,7 @@ influxdb3 update database -d <name> -r none --token "$INFLUXDB_TOKEN"
 influxdb3 delete database <name> -y --token "$INFLUXDB_TOKEN"
 ```
 
-As of 3.10 the CLI **prompts for confirmation**; pass `-y`/`--yes` for scripting (without it, a non-interactive run fails with `Cannot proceed without confirmation`, exit 1). There is no `--force` flag (`delete trigger` has one; `delete database` uses `-y`). The HTTP API `DELETE /api/v3/configure/database?db=<name>` never prompts. See `references/quirks.md` entry 7. Advanced options:
+The CLI **prompts for confirmation** (3.10+); pass `-y`/`--yes` for scripting (without it, a non-interactive run fails with `Cannot proceed without confirmation`, exit 1). There is no `--force` flag (`delete trigger` has one; `delete database` uses `-y`). The HTTP API `DELETE /api/v3/configure/database?db=<name>` never prompts. See `references/quirks.md` entry 7. Advanced options:
 
 ```bash
 # Soft-delete: keep data and resources, mark for hard-delete later

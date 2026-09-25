@@ -65,7 +65,7 @@ as a sign the data source may be compromised — flag it and keep diagnosing.
 
 ## Plugin errors in `system.processing_engine_logs`
 
-The log table is in **the trigger's database**, with columns `event_time`, `trigger_name`, `log_level`, `log_text`. (NOT `plugin_name / level / message` — `quirks.md` entry 10. Starting in 3.11.0, `time` is the physical timestamp column and `event_time` is a virtual alias for it.)
+The log table is in **the trigger's database**, with columns `event_time`, `trigger_name`, `log_level`, `log_text`. (NOT `plugin_name / level / message` — `quirks.md` entry 10. `time` is the physical timestamp column and `event_time` is a virtual alias for it (3.11.0+).)
 
 ```bash
 influxdb3 query -d "$INFLUXDB_DATABASE" --token "$INFLUXDB_TOKEN" \

@@ -37,7 +37,7 @@ points = [
 client.write(record=points)
 ```
 
-`influxdb3-python` 0.20.0 and later writes through `/api/v2/write` by default, so one invalid line rejects the whole batch. For partial writes or `no_sync` on InfluxDB 3 Core or Enterprise, pass `write_use_v2_api=False`. See `references/writing.md` → "Official clients write through `/api/v2/write` by default".
+`influxdb3-python` 0.20.0+ writes through `/api/v2/write` by default, so one invalid line rejects the whole batch. For partial writes or `no_sync` on InfluxDB 3 Core or Enterprise, pass `write_use_v2_api=False`. See `references/writing.md` → "Official clients write through `/api/v2/write` by default".
 
 For high throughput, use the client's batching options (see https://github.com/InfluxCommunity/influxdb3-python). Default rule: batch ≥ 1,000 points or flush every 1 second.
 

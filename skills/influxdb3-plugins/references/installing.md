@@ -140,7 +140,7 @@ The server enforces:
 - **`influxdb3 install package`** installs from public PyPI with no typosquat protection, and extra arguments reach `pip` verbatim (e.g. a redirected `--index-url`) — see `references/dependencies.md`.
 - **A deployed plugin is unsandboxed** — `references/plugin-code-safety.md`.
 
-**Plugin hardening flags** (3.10.0 and later):
+**Plugin hardening flags** (3.10.0+):
 - `--plugin-dir-only` — disables `gh:` fetches and `--upload`, restricting plugins to files already placed in `--plugin-dir` (server-side placement, path 2). This is the single most effective lockdown for plugin sourcing. **Enterprise only** — not available on Core, where the admin token is the entire boundary for plugin sourcing.
 - `--restrict-plugin-triggers-to` — limits which trigger types may be created (`[possible values: wal, schedule, request]`). **Available on both Core and Enterprise.**
 

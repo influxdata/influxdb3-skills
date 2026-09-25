@@ -77,7 +77,7 @@ reading it:
 
 - Application token (scoped) trying to do admin operations (create DB, create token). Use the admin token for admin work.
 - Admin token (with `*:*:*`) being used at the data plane unnecessarily. See `quirks.md` and `references/tokens.md` → "Adversarial scenarios" — the admin token at the data plane is a foot-gun even when it works.
-- A write token without `write` on the target database. Starting in 3.10.0, `/api/v2/write` returns 403 for this case. Earlier versions returned 401.
+- A write token without `write` on the target database. `/api/v2/write` returns 403 for this case (3.10.0+); earlier releases return 401.
 - Permission scoped to a different database than you're writing to. Check `system.tokens.permissions` (remember the JSON-string parsing — `quirks.md` entry 4).
 
 **Fix:** create a scoped token with the right permissions for the operation. Core has no scoped tokens. Reference: `references/tokens.md`.
@@ -148,7 +148,7 @@ See `quirks.md` entry 11.
 
 **Diagnose:**
 
-- Read each `error_message` and `line_number` in the response `data`. Common causes: missing space between tag set and field set, missing field value (for example, `temp 70.0` should be `temp=70.0`), unquoted string in field value, integer/float type confusion (`temp=70` vs `temp=70i` vs `temp=70.0`), and a repeated tag key (rejected starting in 3.9.8, 3.10.3, and 3.11.0).
+- Read each `error_message` and `line_number` in the response `data`. Common causes: missing space between tag set and field set, missing field value (for example, `temp 70.0` should be `temp=70.0`), unquoted string in field value, integer/float type confusion (`temp=70` vs `temp=70i` vs `temp=70.0`), and a repeated tag key (rejected in 3.9.8+, 3.10.3+, and 3.11.0+).
 - Check which endpoint and `accept_partial` value the request used before you decide what to resend.
 - When the whole batch was rejected and the response names only the first bad line, split the batch in half and retry each half. This finds the bad lines in O(log n) requests.
 

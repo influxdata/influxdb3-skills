@@ -90,7 +90,7 @@ for row in system_tokens_rows:
 
 **What you'll see:** Two related surprises. (a) `influxdb3 delete database <name> --force` errors with `error: unexpected argument '--force' found` — that flag doesn't exist. (b) In a script / non-interactive shell (no TTY), a bare `influxdb3 delete database <name>` prints `Are you sure you want to delete "<name>"?` and then fails with `Delete command failed: Cannot proceed without confirmation` (exit 1).
 
-**Why:** Starting in 3.10, the CLI prompts for confirmation; the flag to skip it is `-y`/`--yes`, not `--force`. The HTTP API `DELETE /api/v3/configure/database?db=<name>` has **no** prompt and is unaffected.
+**Why:** The CLI prompts for confirmation (3.10+); the flag to skip it is `-y`/`--yes`, not `--force`. The HTTP API `DELETE /api/v3/configure/database?db=<name>` has **no** prompt and is unaffected.
 
 **What to do:** For scripting/automation, pass `-y` (or `--yes`): `influxdb3 delete database <name> -y --token "$INFLUXDB_TOKEN"`. Combine with `--hard-delete <when>` (`never` / `now` / `default` / `<timestamp>`) or `--data-only` for advanced cases. Pattern documented in `references/databases.md`. Or call the HTTP API, which never prompts.
 
@@ -122,7 +122,7 @@ for row in system_tokens_rows:
 
 **Why:** The columns are `event_time` (timestamp), `trigger_name` (string), `log_level` (`INFO` / `WARN` / `ERROR` uppercase), and `log_text` (string).
 `plugin_name`, `level`, and `message` aren't columns.
-Starting in 3.11.0, the physical timestamp column is named `time`, and `event_time` is a virtual alias for it.
+The physical timestamp column is named `time`, and `event_time` is a virtual alias for it (3.11.0+).
 `event_time` works on every version, so the examples use it.
 
 **What to do:** Use `event_time`, `trigger_name`, `log_level`, and `log_text`. Reference: `skills/influxdb3-plugins/references/testing.md` → "Reading plugin logs".

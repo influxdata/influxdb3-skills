@@ -21,10 +21,10 @@ Most code is portable across flavors when host and token are env-driven; this re
 ## Notable per-flavor gotchas
 
 ### Core
-Single-node, open source. Admin tokens only: no resource tokens and no RBAC (`references/tokens.md` → "InfluxDB 3 Core: admin tokens only"). Default object-store is local disk; `--object-store=memory` is fine for testing only.
+Single-node, open source. Admin tokens only: no resource tokens and no RBAC (`references/tokens.md` → "InfluxDB 3 Core: admin tokens only"). `--object-store` is required with no default (3.2.1+); `--object-store=memory` is fine for testing only.
 
 ### Enterprise
-Multi-node cluster with replication. Adds resource tokens with per-database and system permissions. User authentication and RBAC are a preview in 3.10.0 and later, off by default. Otherwise the same v3 HTTP API as Core; the other differences are operational (cluster, observability) rather than client-facing.
+Multi-node cluster with replication. Adds resource tokens with per-database and system permissions. User authentication and RBAC are a preview (3.10.0+), off by default. Otherwise the same v3 HTTP API as Core; the other differences are operational (cluster, observability) rather than client-facing.
 
 ### Cloud Serverless
 No `/api/v3` endpoints. Write through `/api/v2/write`.

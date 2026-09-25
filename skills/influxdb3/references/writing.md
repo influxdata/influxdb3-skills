@@ -85,13 +85,13 @@ The message text differs between the docs and some releases.
 ### Duplicate tag keys
 
 A point that repeats a tag key, such as `m,t=a,t=a f=1i`, returns 400.
-Core and Enterprise reject it starting in 3.9.8, 3.10.3, and 3.11.0.
-Earlier versions accepted the point, and the node then crash-looped on WAL replay.
+Core and Enterprise reject it in 3.9.8+, 3.10.3+, and 3.11.0+.
+Earlier releases accepted the point, and the node then crash-looped on WAL replay.
 If the user runs an earlier version, validate tag keys client-side before writing.
 
 ### `influxdb3 write` in scripts
 
-Starting in 3.10.0, `influxdb3 write` prints a throughput report on success instead of `success`.
+`influxdb3 write` prints a throughput report on success (3.10.0+); earlier releases print `success`.
 Scripts that parse the output for `success` break.
 Add `--quiet` (`-q`) to suppress all output, and don't parse the report.
 
