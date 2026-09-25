@@ -8,7 +8,7 @@
 | **Scoped resource token** *(Enterprise and InfluxDB 3 Cloud only)* | Created via `--permission` referencing a specific database | Application code: writing data, querying | The application's `INFLUXDB_TOKEN` env var, or its secret manager |
 | **Bootstrap operator token** *(self-hosted only)* | Auto-generated at first server start | One-time: create your "real" admin token, then revoke this | Save once, then discard |
 
-**The most important rule:** application code reads a **scoped resource token**, never the admin token. The admin token is for admin operations only.
+**The most important rule:** application code reads a **scoped resource token** where supported, or a named admin token on Core. The operator token is for admin operations only
 
 ## InfluxDB 3 Core: admin tokens only
 
