@@ -106,7 +106,9 @@ In Claude Code, remove the published marketplace first, because both use the nam
 /plugin install influxdb3-skills@influxdata-influxdb3
 ```
 
-After you edit files, run `/plugin marketplace update influxdata-influxdb3` and `/plugin update influxdb3-skills@influxdata-influxdb3`.
+Claude Code reads a local marketplace from the directory's working tree, so it uses whatever branch is checked out.
+To test a branch, check it out or add its worktree directory as the marketplace.
+After you edit files, start a new session to load the changes.
 
 ### Validate
 
