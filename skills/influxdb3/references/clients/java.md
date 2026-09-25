@@ -6,7 +6,7 @@
 <dependency>
   <groupId>com.influxdb</groupId>
   <artifactId>influxdb3-java</artifactId>
-  <version>1.9.0</version>
+  <version>1.11.1</version>
 </dependency>
 <dependency>
   <groupId>io.github.cdimascio</groupId>
@@ -16,6 +16,15 @@
 ```
 
 > Pin to the latest stable. `references/doc-urls.md` → Java for the current release.
+
+## JVM flags
+
+Queries go through Apache Arrow Flight, which needs these JVM options:
+
+- `--add-opens=java.base/java.nio=ALL-UNNAMED` on JDK 17+.
+- `--sun-misc-unsafe-memory-access=allow` on newer JDKs that restrict `sun.misc.Unsafe` (observed on JDK 27). Without it, the first query fails with `ClassCastException: class io.netty.buffer.PooledDirectByteBuf cannot be cast to class io.netty.buffer.PooledUnsafeDirectByteBuf`. JDKs before 23 don't accept this flag.
+
+With `mvn exec:java`, the code runs in Maven's JVM, so pass the options in `MAVEN_OPTS`.
 
 ## Construct the client
 
