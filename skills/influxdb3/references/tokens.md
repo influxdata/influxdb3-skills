@@ -4,11 +4,11 @@
 
 | Token type | When created | Used for | Stored where |
 |---|---|---|---|
-| **Operator/admin token** | At server bootstrap (Core/Enterprise) or, for other products, as that product's docs describe | Admin operations: creating databases, creating other tokens, regenerating itself | Server bootstrap output (printed once) or the product's UI |
+| **Operator token** (`_admin`) | The first `influxdb3 create token --admin` on a new Core or Enterprise server; for other products, as that product's docs describe | Admin operations: creating databases and other tokens. It can't be deleted; regenerate it to rotate it | Printed once at creation, or the product's UI |
+| **Named admin token** | `influxdb3 create token --admin --name <name>` | Admin automation, and application code on Core | The consumer's secret manager or env var |
 | **Scoped resource token** *(Enterprise and InfluxDB 3 Cloud only)* | Created via `--permission` referencing a specific database | Application code: writing data, querying | The application's `INFLUXDB_TOKEN` env var, or its secret manager |
-| **Bootstrap operator token** *(self-hosted only)* | Auto-generated at first server start | One-time: create your "real" admin token, then revoke this | Save once, then discard |
 
-**The most important rule:** application code reads a **scoped resource token** where supported, or a named admin token on Core. The operator token is for admin operations only
+**The most important rule:** application code reads a **scoped resource token** where supported, or a named admin token on Core. The operator token is for admin operations only.
 
 ## InfluxDB 3 Core: admin tokens only
 

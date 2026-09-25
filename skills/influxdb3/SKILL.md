@@ -21,7 +21,7 @@ metadata:
   docs_checked_against: "influxdb3-core 3.11.5, influxdb3-enterprise 3.11.5"
   live_verified: "2026-05-24"
   live_verified_against: "influxdb3-core 3.9, influxdb3-enterprise 3.9"
-  clients_verified_against: "influxdb3-python 0.19, influxdb3-js 2.2, influxdb3-go 2.14, influxdb3-java 1.9, influxdb3-csharp 1.8"
+  clients_verified_against: "influxdb3-python 0.21, influxdb3-js 2.4, influxdb3-go 2.17, influxdb3-java 1.11, influxdb3-csharp 1.10"
 ---
 
 # InfluxDB 3
