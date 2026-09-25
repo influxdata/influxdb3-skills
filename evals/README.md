@@ -12,7 +12,7 @@ Two layers:
   - Cloud Serverless or Cloud Dedicated test bucket
   - Local Enterprise running at `http://localhost:8181`
 - `INFLUXDB_HOST`, `INFLUXDB_TOKEN`, `INFLUXDB_DATABASE` set in your shell.
-- The plugin installed and loaded (`/plugin` shows `claude-influxdb3` as enabled — see top-level [`TESTING.md`](../TESTING.md) for the marketplace install flow).
+- The plugin installed and loaded (`/plugin` shows `influxdb3-skills` as enabled — see top-level [`TESTING.md`](../TESTING.md) for the marketplace install flow).
 
 ## Manual smoke tests
 

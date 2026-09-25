@@ -9,8 +9,8 @@
 
 ## Setup confirmation
 
-- [ ] Plugin installed via `/plugin marketplace add ~/Projects/claude-influxdb3` + `/plugin install claude-influxdb3@influxdata`
-- [ ] `/plugin` shows `claude-influxdb3` as installed and enabled
+- [ ] Plugin installed via `/plugin marketplace add ~/Projects/influxdb3-skills` + `/plugin install influxdb3-skills@influxdata-influxdb3`
+- [ ] `/plugin` shows `influxdb3-skills` as installed and enabled
 - [ ] InfluxDB 3 instance reachable: `curl $INFLUXDB_HOST/ping` returns 200
 - [ ] `$INFLUXDB_TOKEN` set to an operator/admin token
 - [ ] `$INFLUXDB_DATABASE` set to `claude_skill_test` (or equivalent throwaway name)
