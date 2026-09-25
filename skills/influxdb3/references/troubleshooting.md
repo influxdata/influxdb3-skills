@@ -80,7 +80,7 @@ reading it:
 - A write token without `write` on the target database. `/api/v2/write` returns 403 for this case (3.10.0+); earlier releases return 401.
 - Permission scoped to a different database than you're writing to. Check `system.tokens.permissions` (remember the JSON-string parsing — `quirks.md` entry 4).
 
-**Fix:** create a scoped token with the right permissions for the operation. Core has no scoped tokens. Reference: `references/tokens.md`.
+**Fix:** on Enterprise or InfluxDB 3 Cloud, create a scoped token with the right permissions; on Core, use a named admin token because Core has no scoped tokens. Reference: `references/tokens.md`.
 
 ### HTTP 404 — host
 
