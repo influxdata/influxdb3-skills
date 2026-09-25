@@ -85,10 +85,12 @@ public static class AdminLifecycle
             r.EnsureSuccessStatusCode();
     }
 
-    static async Task<JsonDocument> QuerySqlAsync(string db, string q)
+    static async Task<JsonDocument> QuerySqlAsync(string db, string q, IDictionary<string, object>? queryParams = null)
     {
         using var req = Authed(HttpMethod.Post, "/api/v3/query_sql");
-        var body = JsonSerializer.Serialize(new { db, q });
+        var payload = new Dictionary<string, object> { ["db"] = db, ["q"] = q };
+        if (queryParams != null) payload["params"] = queryParams; // bind values as $name — never concatenate into q
+        var body = JsonSerializer.Serialize(payload);
         req.Content = new StringContent(body, Encoding.UTF8, "application/json");
         using var r = await _http.SendAsync(req);
         r.EnsureSuccessStatusCode();
@@ -142,7 +144,8 @@ public static class AdminLifecycle
             if (sc1 < 200 || sc1 >= 300) throw new Exception($"write returned {sc1}");
 
             Console.WriteLine($"==> step 5: list tokens via SQL, find {tokenA}");
-            using (var doc = await QuerySqlAsync("_internal", $"SELECT name FROM system.tokens WHERE name = '{tokenA}'"))
+            using (var doc = await QuerySqlAsync("_internal", "SELECT name FROM system.tokens WHERE name = $name",
+                       new Dictionary<string, object> { ["name"] = tokenA }))
             {
                 int matches = 0;
                 foreach (var el in doc.RootElement.EnumerateArray())

@@ -19,7 +19,7 @@ Create a new trigger that connects a plugin to a database event. Positional argu
 | `--run-asynchronous` | no | Allow multiple instances of this trigger to run concurrently. Default is synchronous. |
 | `--error-behavior <log\|retry\|disable>` | no | What happens when the plugin raises. Default `log`. |
 | `--disabled` | no | Create the trigger in disabled state. |
-| `--node-spec <spec>` | no | Cluster placement (default `all`). Multi-node territory; v0.2.1 will cover this. |
+| `--node-spec <spec>` | no | Cluster placement (default `all`). This skill doesn't cover multi-node placement. |
 | `--token <admin-token>` | yes | Admin token (or `INFLUXDB3_AUTH_TOKEN` env). |
 
 Example:

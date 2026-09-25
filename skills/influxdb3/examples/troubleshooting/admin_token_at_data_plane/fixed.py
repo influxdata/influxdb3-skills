@@ -19,7 +19,7 @@ from dotenv import load_dotenv
 
 
 def create_scoped_token(host: str, admin_token: str, name: str, db: str) -> str:
-    """Enterprise resource-token endpoint. For Core, use /api/v3/configure/token."""
+    """Enterprise and InfluxDB 3 Cloud only. Core has no resource tokens (references/tokens.md)."""
     r = requests.post(
         f"{host}/api/v3/enterprise/configure/token",
         headers={"Authorization": f"Bearer {admin_token}", "Content-Type": "application/json"},

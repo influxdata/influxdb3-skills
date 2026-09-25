@@ -13,7 +13,7 @@
 | Variable | Required | Notes |
 |---|---|---|
 | `INFLUXDB_HOST` | yes | Full URL including scheme and port; e.g., `http://localhost:8181` for Core or `https://us-east-1-1.cloud2.influxdata.com` for Cloud Serverless |
-| `INFLUXDB_TOKEN` | yes | Database-scoped or admin token; never inline |
+| `INFLUXDB_TOKEN` | yes | Database-scoped token, or a named admin token on Core; never inline |
 | `INFLUXDB_DATABASE` | yes | The database (Core/Enterprise) or bucket (InfluxDB Cloud Serverless) name |
 | `INFLUXDB_ORG` | no | Only needed for v2-style endpoints (Cloud Serverless write path); leave unset elsewhere |
 
@@ -34,8 +34,9 @@ These steps happen ONCE, on the server side, before any application code:
    - CLI: `influxdb3 create database <name> --token <admin-token> --host http://localhost:8181`
    - Or HTTP: `POST /api/v3/configure/database` with `Authorization: Bearer <admin-token>` and body `{"db":"<name>"}`.
    - Full reference and HTTP API equivalents: `references/databases.md`.
-5. **(Recommended)** Create a database-scoped token for the application instead of reusing the admin token:
-   - CLI: `influxdb3 create token --permission "db:<name>:read,write" --token <admin-token>`
+5. **(Recommended)** Create a token for the application instead of reusing the operator token:
+   - Enterprise: `influxdb3 create token --permission "db:<name>:read,write" --name <app> --token <admin-token>`
+   - Core has admin tokens only: `influxdb3 create token --admin --name <app> --token <admin-token>` (`references/tokens.md` → "InfluxDB 3 Core: admin tokens only")
    - This is the token the application reads from `INFLUXDB_TOKEN`.
    - Full reference, including the safe rotation pattern: `references/tokens.md`.
 

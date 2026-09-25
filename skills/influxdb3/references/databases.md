@@ -2,9 +2,9 @@
 
 ## What this covers
 
-Provisioning and managing InfluxDB 3 databases via CLI and HTTP API. For application code that *uses* a database (writing data, querying), see the v0.1.0 connecting/writing/querying references.
+Provisioning and managing InfluxDB 3 databases via CLI and HTTP API. For application code that *uses* a database (writing data, querying), see `references/connecting.md`, `references/writing.md`, and `references/querying.md`.
 
-> All operations here require an **admin token**. Use a scoped resource token for application code; use the admin token only for these admin operations. See `references/tokens.md`.
+> All operations here require an **admin token**. Use a scoped resource token for application code, and use the admin token only for these admin operations. Core has no scoped tokens. See `references/tokens.md`.
 
 ## Lifecycle
 
@@ -48,23 +48,23 @@ influxdb3 update database -d <name> -r none --token "$INFLUXDB_TOKEN"
 ### Delete
 
 ```bash
-influxdb3 delete database <name> --token "$INFLUXDB_TOKEN"
+influxdb3 delete database <name> -y --token "$INFLUXDB_TOKEN"
 ```
 
-The CLI's `delete database` is **non-interactive by default** — there is no `--force` flag. Advanced options:
+The CLI **prompts for confirmation** (3.10+); pass `-y`/`--yes` for scripting (without it, a non-interactive run fails with `Cannot proceed without confirmation`, exit 1). There is no `--force` flag (`delete trigger` has one; `delete database` uses `-y`). The HTTP API `DELETE /api/v3/configure/database?db=<name>` never prompts. See `references/quirks.md` entry 7. Advanced options:
 
 ```bash
 # Soft-delete: keep data and resources, mark for hard-delete later
-influxdb3 delete database <name> --hard-delete never --token "$INFLUXDB_TOKEN"
+influxdb3 delete database <name> -y --hard-delete never --token "$INFLUXDB_TOKEN"
 
 # Hard-delete now (default)
-influxdb3 delete database <name> --hard-delete now --token "$INFLUXDB_TOKEN"
+influxdb3 delete database <name> -y --hard-delete now --token "$INFLUXDB_TOKEN"
 
 # Delete only data (keep tokens, triggers, caches, schema)
-influxdb3 delete database <name> --data-only --token "$INFLUXDB_TOKEN"
+influxdb3 delete database <name> -y --data-only --token "$INFLUXDB_TOKEN"
 
 # Delete data + tables, keep DB-level resources (tokens, triggers)
-influxdb3 delete database <name> --data-only --remove-tables --token "$INFLUXDB_TOKEN"
+influxdb3 delete database <name> -y --data-only --remove-tables --token "$INFLUXDB_TOKEN"
 ```
 
 ## HTTP API
@@ -77,7 +77,7 @@ See `references/admin-http-api.md` for the full endpoint reference. Quick summar
 | Create | `POST /api/v3/configure/database` body `{"db": "<name>"}` |
 | Delete | `DELETE /api/v3/configure/database?db=<name>` |
 
-Database CRUD is **identical across Core and Enterprise** (verified against Enterprise 3.8.4; Core uses the same paths per source).
+Database CRUD is **identical across Core and Enterprise**.
 
 ## Per-flavor differences
 
@@ -99,10 +99,10 @@ InfluxDB 3 silently auto-creates a database on first write to a name that doesn'
 2. Fix the env var or the typo in code so future writes target the correct name.
 3. Once you've confirmed writes are now flowing to the correct DB, drop the typo'd one:
    ```bash
-   influxdb3 delete database <typo_name> --token "$INFLUXDB_TOKEN"
+   influxdb3 delete database <typo_name> -y --token "$INFLUXDB_TOKEN"
    ```
 
-For prevention guidance, see v0.1.0's setup checklist in `SKILL.md` §2 and `references/connecting.md` → "The silent auto-create footgun".
+For prevention guidance, see the setup checklist in `SKILL.md` §2 and `references/connecting.md` → "The silent auto-create footgun".
 
 ## Reserved or problematic names
 

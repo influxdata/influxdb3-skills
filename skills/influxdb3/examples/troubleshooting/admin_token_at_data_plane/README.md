@@ -29,6 +29,8 @@ If the token your application uses appears in that list, it's an admin token. Th
 
 `fixed.py` shows the structure: provision a scoped resource token at deploy time using the admin token, store the SCOPED token as the application's secret, use only the scoped token for runtime writes. The admin token stays in the deploy/CI environment only.
 
+This fix requires InfluxDB 3 Enterprise or InfluxDB 3 Cloud. On Core, every token is an admin token; see `references/tokens.md` → "InfluxDB 3 Core: admin tokens only."
+
 For production rotation see `references/tokens.md` → "Token rotation pattern".
 
 ## Run

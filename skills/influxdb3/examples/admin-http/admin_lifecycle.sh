@@ -11,11 +11,17 @@
 # Reads INFLUXDB_HOST and INFLUXDB_TOKEN (admin) from env.
 # Generates the test DB name at runtime so multiple runs don't collide.
 #
-# Note: this example targets Enterprise (uses /api/v3/enterprise/configure/token).
-# For Core, change the resource-token create endpoint to /api/v3/configure/token.
+# Note: requires InfluxDB 3 Enterprise or InfluxDB 3 Cloud: step 3 creates a
+# resource token, and Core has none (references/tokens.md).
 # Database CRUD and delete-token endpoints are identical across Core and Enterprise.
 set -euo pipefail
 
+# Trust boundary: INFLUXDB_HOST and this auto-sourced .env decide where the
+# ADMIN token is sent. Every request below (including the trap-based cleanup
+# DELETEs, which fire even on Ctrl-C) attaches `Authorization: Bearer
+# $INFLUXDB_TOKEN` to "$INFLUXDB_HOST/..." with no host validation — a poisoned
+# env or a hostile .env in this directory would exfiltrate an admin token. Only
+# run against a host you control; don't source a .env you didn't write.
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 [[ -f "$script_dir/.env" ]] && { set -a; source "$script_dir/.env"; set +a; }
 
@@ -75,9 +81,10 @@ curl -sS -X POST "$INFLUXDB_HOST/api/v3/write_lp?db=$TEST_DB&precision=second" \
   --data-binary "lifecycle_test,host=h1 value=1.0 $NOW" -w "  HTTP %{http_code}\n" -o /dev/null
 
 echo "==> step 5: list tokens via SQL, find $TOKEN_A"
+# Bind the name as a $name parameter (named object, not string-concatenated into q).
 curl_admin -X POST "$INFLUXDB_HOST/api/v3/query_sql" \
   -H "Content-Type: application/json" \
-  -d "{\"db\": \"_internal\", \"q\": \"SELECT name FROM system.tokens WHERE name = '$TOKEN_A'\"}" \
+  -d "{\"db\": \"_internal\", \"q\": \"SELECT name FROM system.tokens WHERE name = \$name\", \"params\": {\"name\": \"$TOKEN_A\"}}" \
   | python3 -c "
 import json, sys
 rows = json.load(sys.stdin)

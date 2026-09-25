@@ -100,7 +100,7 @@ influxdb3 query \
   "SELECT event_time, trigger_name, log_level, log_text FROM system.processing_engine_logs ORDER BY event_time DESC LIMIT 50"
 ```
 
-Columns (verified against InfluxDB 3 Enterprise 3.8.4):
+Columns:
 
 | Column | Type | Purpose |
 |---|---|---|
@@ -130,7 +130,7 @@ Set on `influxdb3 create trigger` (or `trigger_settings.error_behavior` via the 
 | Flag | Effect |
 |---|---|
 | `--error-behavior log` *(default)* | Errors are logged to `system.processing_engine_logs` and stdout; the trigger keeps running. **Pick this for development.** |
-| `--error-behavior retry` | The plugin is re-invoked on error. Useful for transient external dependencies (a flaky API, a brief network blip). For an asynchronous trigger (`--run-asynchronous`), starting in 3.11.0, a failed invocation retries a limited number of times and is then discarded. Earlier versions retried without limit. Check the release notes for the user's version for the exact limit. |
+| `--error-behavior retry` | The plugin is re-invoked on error. Useful for transient external dependencies (a flaky API, a brief network blip). For an asynchronous trigger (`--run-asynchronous`), a failed invocation retries a limited number of times and is then discarded (3.11.0+); earlier releases retry without limit. Check the release notes for the user's version for the exact limit. |
 | `--error-behavior disable` | The trigger auto-disables on the first error. Pick this for "fail loud" critical paths where silent log failures are unacceptable. |
 
 ## Inspecting cache state

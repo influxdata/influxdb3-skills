@@ -121,17 +121,15 @@ If you already have a license file, pass `--license-file <path>` and skip `--lic
 
 > **ASK for the license — don't run a bare `serve`.** On a new/fresh cluster (no cached license), ask the developer for their license email and type before generating the start command, then pass `--license-email` + `--license-type` (use their real email, not the placeholder). A license-less non-interactive start **fails fast** with `No interactive TTY detected. Cannot prompt for email.` — it does not hang; supplying `--license-email` is what avoids the prompt. Note: `--object-store memory` can't cache the license, so prefer a file store (below).
 
-## Object store: `file` is the default; avoid `memory` for anything you run more than once
+## Object store: required; use `file`, and avoid `memory` for anything you run more than once
 
-`--object-store` selects where the catalog and Parquet data live. It **defaults to `file`** (local filesystem, requires `--data-dir <path>`). Supported backends:
+`--object-store` selects where the catalog and Parquet data live. It's **required and has no default** (3.2.1+), so every `serve` command must set it. Supported backends:
 
 | `--object-store` | Data | When to use |
 |---|---|---|
-| `file` (default) | On disk under `--data-dir` (Parquet + catalog) | **Local/dev default.** Survives restarts; license caches once; RAM stays bounded. Requires `--data-dir`. |
+| `file` | On disk under `--data-dir` (Parquet + catalog) | **Local/dev choice.** Survives restarts; license caches once; RAM stays bounded. Requires `--data-dir`. |
 | `s3` / `google` / `azure` | Remote object store | Production and shared/multi-node storage. Each takes its own flags (`--bucket`, region/credentials) — see `doc-urls.md`. |
 | `memory` | **RAM only, nothing on disk** | Brief throwaway tests only. |
-
-> **`serve --help` is wrong here:** it claims the default is `memory`; the real default is `file` (confirmed in source and at runtime).
 
 > **Warning:** `memory` holds *all* data in RAM — under sustained writes it grows unbounded and can OOM the host, and it won't cache the Enterprise license. For load generation or anything you'll restart, use `file` with a temp `--data-dir` (`rm -rf` it when done).
 
