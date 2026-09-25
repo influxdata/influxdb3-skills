@@ -22,24 +22,24 @@ Pick the path that matches you.
 In Claude Code, run:
 
 ```
-/plugin marketplace add influxdata/claude-skill-for-influxdb3
-/plugin install claude-influxdb3@influxdata
+/plugin marketplace add influxdata/influxdb3_skills
+/plugin install influxdb3-skills@influxdata-influxdb3
 ```
 
-Verify with `/plugin` — you should see **`claude-influxdb3`** listed as installed and enabled. If it doesn't show up right away, run `/reload-plugins`. No full restart needed.
+Verify with `/plugin` — you should see **`influxdb3-skills`** listed as installed and enabled. If it doesn't show up right away, run `/reload-plugins`. No full restart needed.
 
 **Hit an auth error on the first command?** That means GitHub credentials aren't cached. Run `gh auth login` (choose GitHub.com → HTTPS), then retry.
 
 ### Option B — From a file (no GitHub account needed)
 
-If you don't have GitHub access, ask your contact for the **`claude-skill-for-influxdb3.zip`** file (it'll come over Slack).
+If you don't have GitHub access, ask your contact for the **`influxdb3_skills.zip`** file (it'll come over Slack).
 
-1. **Unzip it to a stable location** — e.g. `~/Downloads/claude-skill-for-influxdb3`. Pick somewhere permanent, *not* a temp folder: Claude Code references the plugin by this path, so if you move or delete it later, the plugin stops working.
+1. **Unzip it to a stable location** — e.g. `~/Downloads/influxdb3_skills`. Pick somewhere permanent, *not* a temp folder: Claude Code references the plugin by this path, so if you move or delete it later, the plugin stops working.
 2. In Claude Code, run (substitute your actual unzip path):
 
    ```
-   /plugin marketplace add ~/Downloads/claude-skill-for-influxdb3
-   /plugin install claude-influxdb3@influxdata
+   /plugin marketplace add ~/Downloads/influxdb3_skills
+   /plugin install influxdb3-skills@influxdata-influxdb3
    ```
 
 3. Verify with `/plugin`; run `/reload-plugins` if it doesn't appear immediately.
@@ -79,7 +79,7 @@ A 👍 "this just worked" is as useful to us as a 👎 — both are data.
 
 ## 5. How to report (30 seconds)
 
-- **File a quick issue:** https://github.com/influxdata/claude-skill-for-influxdb3/issues/new
+- **File a quick issue:** https://github.com/influxdata/influxdb3_skills/issues/new
 - **Or drop a note in** `#project-influxdb3-claude-skill`
 
 Please include:

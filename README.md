@@ -17,7 +17,7 @@ The plugin contains two skills. Each loads automatically when its topics come up
 - **Get InfluxDB 3 running** — Core and Enterprise install (official script + Docker), operator-token bootstrap, `/ping` verification. For users who don't have a server yet.
 - **Connect & authenticate** — env-var driven, never inlines tokens, `.gitignore` enforcement.
 - **Detect Core vs. Enterprise** — auto-probe `/ping` and inspect the `x-influxdb-build` and `x-influxdb-version` response headers, with a polite ask-the-user fallback when ambiguous.
-- **Write data** — line protocol, batching rules, retriable vs. non-retriable error handling, the whole-batch-rejects-on-one-bad-line gotcha.
+- **Write data** — line protocol, batching rules, retriable vs. non-retriable error handling, and which write endpoints accept partial writes.
 - **Query data** — v3 SQL by default, parameterized user input, sensible pagination, time-bucket patterns.
 - **Design schemas** — tag-vs-field decisions, cardinality guidance, naming conventions, type stability.
 - **Provision databases** — create / list / update (retention) / delete via CLI and HTTP API.
@@ -49,7 +49,7 @@ so any agent that supports the format can load them.
 ### Claude Code
 
 ```text
-/plugin marketplace add influxdata/claude-skill-for-influxdb3
+/plugin marketplace add influxdata/influxdb3_skills
 /plugin install influxdb3-skills@influxdata-influxdb3
 ```
 
@@ -67,7 +67,7 @@ To update later:
 ### Codex
 
 ```sh
-codex plugin marketplace add influxdata/claude-skill-for-influxdb3
+codex plugin marketplace add influxdata/influxdb3_skills
 codex plugin add influxdb3-skills@influxdata-influxdb3
 ```
 
@@ -82,7 +82,7 @@ To install the skills into any agent that reads Agent Skills, use the
 [`skills` CLI](https://github.com/vercel-labs/skills):
 
 ```sh
-npx skills add influxdata/claude-skill-for-influxdb3
+npx skills add influxdata/influxdb3_skills
 ```
 
 Or copy the directories under `skills/` to the location where your agent reads skills.
@@ -94,7 +94,7 @@ If you don't have InfluxDB 3 running yet, ask your agent. The skill walks you th
 To install your working copy instead of the published version, clone the repo:
 
 ```bash
-git clone https://github.com/influxdata/claude-skill-for-influxdb3.git ~/Projects/influxdb3-skills
+git clone https://github.com/influxdata/influxdb3_skills.git ~/Projects/influxdb3-skills
 ```
 
 In Claude Code, remove the published marketplace first, because both use the name `influxdata-influxdb3`:
@@ -106,7 +106,9 @@ In Claude Code, remove the published marketplace first, because both use the nam
 /plugin install influxdb3-skills@influxdata-influxdb3
 ```
 
-After you edit files, run `/plugin marketplace update influxdata-influxdb3` and `/plugin update influxdb3-skills@influxdata-influxdb3`.
+Claude Code reads a local marketplace from the directory's working tree, so it uses whatever branch is checked out.
+To test a branch, check it out or add its worktree directory as the marketplace.
+After you edit files, start a new session to load the changes.
 
 ### Validate
 

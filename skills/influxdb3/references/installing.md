@@ -1,6 +1,6 @@
 # Installing InfluxDB 3 (Core & Enterprise)
 
-For users who installed the `claude-influxdb3` plugin but don't have a server yet. Covers Core and Enterprise on macOS / Linux. Two paths: official install script (recommended for first-time / single-machine), or Docker (recommended if you want isolation).
+For users who installed the `influxdb3-skills` plugin but don't have a server yet. Covers Core and Enterprise on macOS / Linux. Two paths: official install script (recommended for first-time / single-machine), or Docker (recommended if you want isolation).
 
 > **Cloud Serverless and Cloud Dedicated** are managed services — they're not installed locally. Sign up at https://www.influxdata.com/products/influxdb-overview/ for those flavors. Once you have credentials, return to `references/connecting.md`. The agent doesn't create accounts on your behalf.
 

@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased] — 0.7.0
 
 ### Packaging
-- Renamed the plugin from `claude-influxdb3` to `influxdb3-skills`, and its marketplace from `influxdata` to `influxdata-influxdb3`. Skill names don't change.
+- Renamed the repo from `influxdata/claude-skill-for-influxdb3` to `influxdata/influxdb3_skills`, the plugin from `claude-influxdb3` to `influxdb3-skills`, and its marketplace from `influxdata` to `influxdata-influxdb3`. Skill names don't change.
 - Added a root `plugin.json` in the Agent Plugins format, so agents other than Claude Code can install the repo.
 - The README gives install steps for Claude Code, Codex, and other agents.
 - Removed Claude-specific wording from skill text.

@@ -10,7 +10,7 @@
       "name": "influxdb3-skills",
       "source": "./",
       "description": "Agent skills for InfluxDB 3: write correct application code (connect, write, query, schema design), develop, install, and test Processing Engine plugins, manage databases and tokens, and troubleshoot InfluxDB 3 Core and InfluxDB 3 Enterprise, with routing to the docs for other InfluxDB products.",
-      "homepage": "https://github.com/influxdata/claude-skill-for-influxdb3"
+      "homepage": "https://github.com/influxdata/influxdb3_skills"
     }
   ]
 }
