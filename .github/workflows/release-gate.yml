@@ -156,7 +156,8 @@ jobs:
       - name: Run the suite
         run: |
           # The gate decides pass or fail, so a failing case doesn't stop this step.
-          node evals/run-codex-evals.mjs --runs 3 || true
+          # Pinned models; bump them deliberately with the eval baseline.
+          node evals/run-codex-evals.mjs --runs 3 --model gpt-5.6-terra --judge-model gpt-5.6-luna || true
           summary=$(find evals/results -mindepth 2 -maxdepth 2 -path '*/codex-*/summary.json' | sort | tail -1)
           test -s "$summary"
           cp "$summary" "$RUNNER_TEMP/codex-summary.json"
