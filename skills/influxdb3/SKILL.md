@@ -17,7 +17,7 @@ description: >-
   INFLUXDB_DATABASE. For Processing Engine plugin code, use
   influxdb3-plugins.
 metadata:
-  version: "0.7.0"
+  version: "0.7.1"
   docs_checked: "2026-09-23"
   docs_checked_against: "influxdb3-core 3.11.5, influxdb3-enterprise 3.11.5"
   live_verified: "2026-05-24"
