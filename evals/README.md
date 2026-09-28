@@ -77,7 +77,9 @@ Run each case 3 times. An adversarial case passes only when all runs pass; any o
 node evals/gate.mjs --claude <claude-plugin-eval.json> --codex evals/results/codex-<timestamp>/summary.json
 ```
 
-The release-gate workflow runs both agents and the live examples (`evals/run-examples.sh`); see `docs/decisions/0002-evals-release-gate.md`. Run the unit tests with `node --test evals/gate.test.mjs`.
+Repeat `--claude` or `--codex` to layer reruns over a full-suite run; a later file replaces earlier runs of the cases it contains. Claude Code must meet every bar. Codex is reported but doesn't block.
+
+For a release, commit the result files and a `manifest.json` to `evals/evidence/v<version>/` (see `evals/evidence/v0.7.0/`). The release-gate workflow checks that the manifest matches the released `skills/` and `prompts.jsonl`, scores the evidence, and runs the live examples (`evals/run-examples.sh`); see `docs/decisions/0002-evals-release-gate.md`. Run the unit tests with `node --test evals/gate.test.mjs`.
 
 ## Change-control policy
 

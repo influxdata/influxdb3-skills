@@ -1,11 +1,13 @@
 #!/usr/bin/env node
 // Score eval results against the release pass bar.
 //
-//   node evals/gate.mjs [--claude <result.json>] [--codex <summary.json>] [--prompts evals/prompts.jsonl]
+//   node evals/gate.mjs [--claude <result.json>]... [--codex <summary.json>]... [--prompts evals/prompts.jsonl]
 //
 // --claude takes `claude plugin eval --json` output; --codex takes the
-// summary.json that evals/run-codex-evals.mjs writes. Each agent is scored
-// separately, and the gate passes only when every given agent meets every bar.
+// summary.json that evals/run-codex-evals.mjs writes. Repeat a flag to layer
+// reruns over a full-suite run: a later file replaces earlier runs of the cases
+// it contains. Each agent is scored separately. Claude Code must meet every
+// bar; Codex is reported but doesn't block.
 // Writes a Markdown report to stdout (and to $GITHUB_STEP_SUMMARY when set) and
 // exits 1 on a miss. The bar is documented in evals/README.md and
 // docs/decisions/0002-evals-release-gate.md.
@@ -50,6 +52,13 @@ export function runsFromCodex(summary) {
   return runs;
 }
 
+// Layer run maps: a later map replaces an earlier map's runs, case by case.
+export function mergeRuns(maps) {
+  const merged = new Map();
+  for (const runs of maps) for (const [id, caseRuns] of runs) merged.set(id, caseRuns);
+  return merged;
+}
+
 // A case passes when all runs pass (adversarial) or a strict majority pass (others).
 // A missing case or a case with no runs fails.
 export function scoreCase(testCase, runs) {
@@ -91,37 +100,40 @@ export function report(agent, { cases, bars, pass }, note) {
   return lines.join('\n');
 }
 
-const USAGE = 'Usage: node evals/gate.mjs [--claude <result.json>] [--codex <summary.json>] [--prompts <file>]';
+const USAGE = 'Usage: node evals/gate.mjs [--claude <result.json>]... [--codex <summary.json>]... [--prompts <file>]';
 
 function main(argv) {
-  const opts = { claude: null, codex: null, prompts: new URL('./prompts.jsonl', import.meta.url) };
+  const opts = { claude: [], codex: [], prompts: new URL('./prompts.jsonl', import.meta.url) };
   for (let i = 0; i < argv.length; i += 1) {
-    if (argv[i] === '--claude') opts.claude = argv[++i];
-    else if (argv[i] === '--codex') opts.codex = argv[++i];
+    if (argv[i] === '--claude') opts.claude.push(argv[++i]);
+    else if (argv[i] === '--codex') opts.codex.push(argv[++i]);
     else if (argv[i] === '--prompts') opts.prompts = argv[++i];
     else {
       console.error(`unknown argument '${argv[i]}'\n${USAGE}`);
       return 2;
     }
   }
-  if (!opts.claude && !opts.codex) {
+  if (!opts.claude.length && !opts.codex.length) {
     console.error(USAGE);
     return 2;
   }
   const prompts = readPrompts(readFileSync(opts.prompts, 'utf8'));
   const sections = [];
   let pass = true;
-  if (opts.claude) {
-    const result = JSON.parse(readFileSync(opts.claude, 'utf8'));
-    const scored = score(prompts, runsFromClaude(result));
+  const read = (file) => JSON.parse(readFileSync(file, 'utf8'));
+  if (opts.claude.length) {
+    const results = opts.claude.map(read);
+    const scored = score(prompts, mergeRuns(results.map(runsFromClaude)));
     pass &&= scored.pass;
-    sections.push(report('Claude Code', scored, `Cost: $${(result.costUsd ?? 0).toFixed(2)}. Claude Code ${result.claudeVersion ?? '?'}.`));
+    const cost = results.reduce((sum, r) => sum + (r.costUsd ?? 0), 0);
+    const versions = [...new Set(results.map((r) => r.claudeVersion ?? '?'))].join(', ');
+    sections.push(report('Claude Code', scored, `Cost: $${cost.toFixed(2)}. Claude Code ${versions}.`));
   }
-  if (opts.codex) {
-    const summary = JSON.parse(readFileSync(opts.codex, 'utf8'));
-    const scored = score(prompts, runsFromCodex(summary));
-    pass &&= scored.pass;
-    sections.push(report('Codex', scored, `Model: ${summary.model ?? '?'}.`));
+  if (opts.codex.length) {
+    const summaries = opts.codex.map(read);
+    const scored = score(prompts, mergeRuns(summaries.map(runsFromCodex)));
+    const models = [...new Set(summaries.map((s) => s.model ?? '?'))].join(', ');
+    sections.push(report('Codex (advisory, does not block)', scored, `Model: ${models}.`));
   }
   const text = `## Evals release gate: ${pass ? 'PASS' : 'FAIL'}\n\n${sections.join('\n\n')}\n`;
   process.stdout.write(text);

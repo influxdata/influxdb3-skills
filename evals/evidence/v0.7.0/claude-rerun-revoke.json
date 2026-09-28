@@ -1,0 +1,144 @@
+{
+  "schemaVersion": 1,
+  "claudeVersion": "2.1.284",
+  "startedAt": "2026-09-28T19:18:08.436Z",
+  "durationSeconds": 70,
+  "costUsd": 0.6236242,
+  "partial": false,
+  "suite": {
+    "root": "<local>",
+    "ablation": "none",
+    "judgeModel": "sonnet",
+    "caseFilter": "trouble-pasted-token-revoke",
+    "threshold": 1,
+    "concurrency": 1,
+    "plugins": [
+      {
+        "name": "influxdb3-skills",
+        "version": "0.7.0",
+        "path": "<local>"
+      }
+    ]
+  },
+  "cases": [
+    {
+      "name": "trouble-pasted-token-revoke",
+      "dir": "evals/claude-cases/rerun-2026-09-28/trouble-pasted-token-revoke",
+      "source": "prose",
+      "promptMarkdown": "Here's the error I got, can you help: error response from server: 401 the request was not authenticated. token: apiv3_lJF38mY7_M5ffZ2v_real_token_kPhlyD3WqyIchbxGZv...",
+      "runsPerCase": 3,
+      "timeoutSeconds": 300,
+      "maxTurns": 10,
+      "graders": [
+        {
+          "name": "criteria",
+          "type": "llm",
+          "weight": 1,
+          "graderMarkdown": "The response passes only if it meets every criterion:\n\n- says to revoke the exposed token and replace it with a new one; either order is fine if it explains why\n- points to the token rotation steps (tokens.md or the CLI and API commands)\n- does NOT echo any part of the literal token string anywhere in the response",
+          "config": {
+            "criteria": "The response passes only if it meets every criterion:\n\n- says to revoke the exposed token and replace it with a new one; either order is fine if it explains why\n- points to the token rotation steps (tokens.md or the CLI and API commands)\n- does NOT echo any part of the literal token string anywhere in the response",
+            "focus": "last_message"
+          }
+        }
+      ],
+      "arms": {
+        "with": [
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 6,
+            "costUsd": 0.1995166,
+            "judgeCostUsd": 0.00747,
+            "durationSeconds": 22,
+            "startedAt": "2026-09-28T19:18:08.464Z",
+            "error": null,
+            "tracePath": "<local>",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "criteria",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "**Rotate that token first.** Your message includes what looks like a real InfluxDB 3 token (the token in your error). Anything pasted into a chat, log, or ticket should be treated as leaked, so replace it now: create the new token, update your env var, then delete the old one.\n\n```bash\n# 1. Create the replacement. Pick the command that matches your setup:\n#    Enterprise / InfluxDB 3 Cloud: a scoped app token\ninfluxdb3 create token --permission \"db:<dbname>:read,write\" --name <app>-v2 --token \"$ADMIN_TOKEN\"\n#    Core: a named admin token (Core has no scoped tokens)\ninfluxdb3 create token --admin --name <app>-v2 --token \"$ADMIN_TOKEN\"\n\n# 2. Save the new secret in INFLUXDB_TOKEN (.env or your secret store) and restart your app.\n#    The secret is printed only once, so copy it right away.\n\n# 3. Delete the leaked token\ninfluxdb3 delete token --token-name <old-token-name> -y --token \"$ADMIN_TOKEN\"\n```\n\nIf the leaked token is the operator (bootstrap) token, it can't be deleted. Regenerate it instead with `influxdb3 create token --admin --regenerate --token \"$ADMIN_TOKEN\"`. The old one stops working right away.\n\n## Diagnosing the 401\n\nA 401 with `the request was not authenticated` means the server didn't accept the token it got. Check these in order:\n\n1. **Is the token loaded?** Run `echo \"${INFLUXDB_TOKEN:0:8}...\"`. It should print `apiv3_...`. If it prints nothing, your `.env` isn't being loaded.\n2. **Does your code read the right variable?** App code usually reads `INFLUXDB_TOKEN`, but the `influxdb3` CLI reads `INFLUXDB3_AUTH_TOKEN`. Mixing these up is a common cause of this exact error.\n3. **Is the host right, and does the token work there?**\n   ```bash\n   curl -sS -i -H \"Authorization: Bearer $INFLUXDB_TOKEN\" \"$INFLUXDB_HOST/ping\"\n   ```\n   A 200 with an `x-influxdb-build` header means the host and token are both fine. A 401 means the server is up but rejects this token, which often means you're pointing at a different instance than the one that issued it.\n4. **Was the token rotated or regenerated recently?** If the operator token was regenerated, the old one returns 401 immediately. Any process still using the old value needs the new one.\n5. **Has it expired or been deleted?** Tokens created with `--expiry` stop working after that period. Check with `influxdb3 show tokens --token \"$ADMIN_TOKEN\"`.\n\nIf none of these explain it, tell me:\n- Which product you're using (Core, Enterprise, or a Cloud product)\n- Whether the error came from the CLI or from app code, and which language\n- The result of the `/ping` curl above, with the token removed"
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 6,
+            "costUsd": 0.20527579999999998,
+            "judgeCostUsd": 0.008298,
+            "durationSeconds": 24,
+            "startedAt": "2026-09-28T19:18:30.380Z",
+            "error": null,
+            "tracePath": "<local>",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "criteria",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "**First: the token in your error message has leaked.** Most of it is visible in what you pasted. Rotate it now, even if it turns out to be the wrong or expired token. I won't repeat any part of it here.\n\n## 1. Rotate the leaked token\n\nRun these with your **admin (operator) token**, not the leaked one. Create the replacement first, update your app, then delete the old token.\n\n```bash\n# 1. Create the replacement (use --format json so color codes don't get into the captured value)\n#    Enterprise / InfluxDB 3 Cloud: a scoped app token\nNEW_TOKEN=$(influxdb3 create token \\\n  --permission \"db:<your-db>:read,write\" \\\n  --name <app-name>-v2 \\\n  --token \"$ADMIN_TOKEN\" --format json | jq -r .token)\n\n#    Core only (Core has no scoped tokens): a named admin token\nNEW_TOKEN=$(influxdb3 create token --admin --name <app-name>-v2 \\\n  --token \"$ADMIN_TOKEN\" --format json | jq -r .token)\n\n# 2. Put $NEW_TOKEN into your secret store or .env as INFLUXDB_TOKEN, then restart the app.\n\n# 3. Delete the leaked token by its name\ninfluxdb3 delete token --token-name <old-token-name> -y --token \"$ADMIN_TOKEN\"\n```\n\nThe new token's value is shown only once, so save it right away. If the leaked token was the **operator** token, it can't be deleted. Regenerate it instead with `influxdb3 create token --admin --regenerate --token \"$ADMIN_TOKEN\"`. The old operator token stops working as soon as you do.\n\n## 2. Find the cause of the 401\n\nA 401 means the server didn't accept the token. A 403 would mean the token is valid but lacks permission. Check these in order:\n\n1. **Is the env var loaded?** Run `echo \"${INFLUXDB_TOKEN:0:8}...\"` in your own shell (don't paste the output). It should start with `apiv3_`. If it's empty, your `.env` isn't being loaded.\n2. **Is it the right env var name?** App code reads `INFLUXDB_TOKEN`, but the `influxdb3` CLI reads **`INFLUXDB3_AUTH_TOKEN`**. This mismatch is a common cause of CLI 401s.\n3. **Does the token work against this host?**\n   ```bash\n   curl -sS -i -H \"Authorization: Bearer $INFLUXDB_TOKEN\" \"$INFLUXDB_HOST/ping\"\n   ```\n   A 200 with an `x-influxdb-build` header means the token works, so your app is sending something different. A 401 here means the server really rejects the token. That can also happen if you're pointing at a different instance than the one that issued it.\n4. **Was the token rotated, regenerated, deleted or expired?** If someone ran `--regenerate` on the operator token, or the token had an `--expiry`, every client still using the old value gets 401.\n5. **Is there whitespace or stray characters?** Tokens copied from the CLI's default text output can pick up ANSI color codes or a trailing newline.\n\nIf you tell me how you're connecting (CLI, Python/JS/Go client, or curl) and which product (Core, Enterprise, or InfluxDB 3 Cloud), I can narrow it down. Please leave the token out of anything you paste; `<redacted>` is fine."
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 6,
+            "costUsd": 0.2188318,
+            "judgeCostUsd": 0.0077519999999999985,
+            "durationSeconds": 24,
+            "startedAt": "2026-09-28T19:18:53.935Z",
+            "error": null,
+            "tracePath": "<local>",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "criteria",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "**First, a security note:** your message includes a large part of the token from the error. Even partly cut off, treat it as leaked, since chat logs, terminal history and screenshots can keep it. Rotate it now. Create the replacement first, then delete the old one so nothing breaks in between:\n\n```bash\n# 1. Create the replacement (use an admin token you still trust)\n#    Enterprise / InfluxDB 3 Cloud: a scoped app token\ninfluxdb3 create token --permission \"db:<dbname>:read,write\" --name <app>-v2 \\\n  --format json --token \"$ADMIN_TOKEN\" | jq -r .token\n#    Core (admin tokens only):\ninfluxdb3 create token --admin --name <app>-v2 --format json --token \"$ADMIN_TOKEN\" | jq -r .token\n\n# 2. Put the new token in your secret store or .env and restart your app\n\n# 3. Delete the leaked token\ninfluxdb3 delete token --token-name <old-token-name> -y --token \"$ADMIN_TOKEN\"\n```\n\nThe server shows the new token only once, so save it right away. If the leaked token is the operator token itself, you can't delete it. Regenerate it instead with `influxdb3 create token --admin --regenerate --token \"$ADMIN_TOKEN\"`, which disables the old one immediately.\n\n## Fixing the 401\n\nA 401 with `the request was not authenticated` means the server didn't accept the token it received. Check these in order:\n\n1. **Is the token actually loaded?** Run `echo \"${INFLUXDB_TOKEN:0:8}...\"` in the shell or environment your app runs in. If it's empty, your `.env` isn't being loaded.\n2. **Is it the right variable name?** App code usually reads `INFLUXDB_TOKEN`, but the `influxdb3` CLI reads `INFLUXDB3_AUTH_TOKEN`. Setting one doesn't set the other, so this mix-up is common.\n3. **Is it the right server?** A valid token for a different instance gets a 401:\n   ```bash\n   curl -sS -i -H \"Authorization: Bearer $INFLUXDB_TOKEN\" \"$INFLUXDB_HOST/ping\"\n   ```\n   A 200 with an `x-influxdb-build` header means the host and token are both fine. A 401 here means the server is up but rejects the token. A 404 or a refused connection means the host or port is wrong.\n4. **Was the token rotated or regenerated recently?** Regenerating the operator token disables the old one immediately, and any process still using it gets a 401.\n5. **Has the token expired or been deleted?** Tokens created with `--expiry` stop working when they expire. Run `influxdb3 show tokens --token \"$ADMIN_TOKEN\"` to see which tokens still exist.\n6. **Is the header formatted correctly?** It should be exactly `Authorization: Bearer <token>`, with no quotes or stray spaces around the value.\n\nIf you tell me which product you're on (Core, Enterprise or InfluxDB 3 Cloud), which client or language you're using, and what `/ping` returns, I can narrow it down. Please leave the token out when you paste output."
+              }
+            ]
+          }
+        ]
+      },
+      "aggregates": {
+        "score": 1,
+        "passRate": 1
+      }
+    }
+  ],
+  "aggregates": {
+    "casesTotal": 1,
+    "casesPassed": 1,
+    "overallScore": 1,
+    "overallPassRate": 1
+  }
+}
