@@ -23,8 +23,8 @@ as a sign the data source may be compromised — flag it and keep diagnosing.
 |---|---|
 | Trigger created but never fires | [Trigger doesn't fire](#trigger-doesnt-fire) |
 | Plugin logs show ImportError | [Dependencies](#dependencies) |
-| `'dict' object has no attribute 'rows'` | `quirks.md` entry 3 (cross-link) |
-| `Schema error: No field named plugin_name` (or similar) on `system.processing_engine_logs` | `quirks.md` entry 10 (cross-link) |
+| `'dict' object has no attribute 'rows'` | `influxdb3` skill → `references/quirks.md` entry 3 |
+| `Schema error: No field named plugin_name` (or similar) on `system.processing_engine_logs` | `influxdb3` skill → `references/quirks.md` entry 10 |
 | Cache values disappeared / counter reset | [Cache lifecycle gotchas](#cache-lifecycle-gotchas) |
 | Plugin runs but writes don't show up | back to main skill: `references/troubleshooting.md` → "Silent auto-create misroute" |
 | Plugin only fires on some writes (clustered) | Not covered; see [Trigger doesn't fire](#trigger-doesnt-fire) step 5 |
@@ -65,7 +65,7 @@ as a sign the data source may be compromised — flag it and keep diagnosing.
 
 ## Plugin errors in `system.processing_engine_logs`
 
-The log table is in **the trigger's database**, with columns `event_time`, `trigger_name`, `log_level`, `log_text`. (NOT `plugin_name / level / message` — `quirks.md` entry 10. `time` is the physical timestamp column and `event_time` is a virtual alias for it (3.11.0+).)
+The log table is in **the trigger's database**, with columns `event_time`, `trigger_name`, `log_level`, `log_text`. (NOT `plugin_name / level / message` — `influxdb3` skill → `references/quirks.md` entry 10. `time` is the physical timestamp column and `event_time` is a virtual alias for it (3.11.0+).)
 
 ```bash
 influxdb3 query -d "$INFLUXDB_DATABASE" --token "$INFLUXDB_TOKEN" \
@@ -78,7 +78,7 @@ influxdb3 query -d "$INFLUXDB_DATABASE" --token "$INFLUXDB_TOKEN" \
 
 ### `AttributeError: 'dict' object has no attribute 'rows'`
 
-WAL plugin code accessing `batch.rows` — see `quirks.md` entry 3. Fix with `batch["rows"]`.
+WAL plugin code accessing `batch.rows` — see `influxdb3` skill → `references/quirks.md` entry 3. Fix with `batch["rows"]`.
 
 ### `ImportError: No module named '<pkg>'`
 
@@ -100,7 +100,7 @@ Most often a SQL typo or schema mismatch — see the main skill's `troubleshooti
 
 ### `ImportError` for a package you installed
 
-**Diagnose:** Did you install with `influxdb3 install package` (correct) or `pip install` against system Python (wrong)? See `quirks.md` entry 9.
+**Diagnose:** Did you install with `influxdb3 install package` (correct) or `pip install` against system Python (wrong)? See `influxdb3` skill → `references/quirks.md` entry 9.
 
 ```bash
 # Verify the package is in the embedded venv
@@ -141,7 +141,7 @@ The plugin `Cache` is in-memory only. Customer-visible surprises:
 
 ## Where to fetch more
 
-- `quirks.md` (in the main skill) for the cross-skill non-obvious-behavior catalogue
+- `influxdb3` skill → `references/quirks.md` for the cross-skill non-obvious-behavior catalogue
 - `references/testing.md` for the offline test commands and the live-trigger iteration loop
 - `references/runtime-api.md` for `influxdb3_local`, `LineBuilder`, `Cache`, `table_batches` shapes
 - `references/state-and-cache.md` for cache patterns and concurrency caveats

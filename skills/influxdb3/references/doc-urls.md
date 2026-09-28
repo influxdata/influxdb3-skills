@@ -13,6 +13,16 @@ When the skill content does not cover a developer's question — or when the ans
 | Cloud Serverless | https://docs.influxdata.com/influxdb3/cloud-serverless/ | Cloud-Serverless–specific endpoints, auth, write path quirks |
 | Cloud Dedicated | https://docs.influxdata.com/influxdb3/cloud-dedicated/ | Dedicated cluster setup, custom hosts |
 
+## Topics this skill defers
+
+Use these URLs in the deferral replies that SKILL.md §9 describes. Link the page for the developer's product: replace `core` with `enterprise` for InfluxDB 3 Enterprise.
+
+| Topic | URL |
+|---|---|
+| Migration from v1 or v2 | https://docs.influxdata.com/influxdb3/core/get-started/migrate-from-influxdb-v1-v2/ |
+| Performance tuning | https://docs.influxdata.com/influxdb3/core/admin/performance-tuning/ |
+| Air-gapped plugin setup | https://docs.influxdata.com/influxdb3/core/plugins/ → "Disable package installation for secure environments" |
+
 ## Spec-level references
 
 | Topic | URL | When to fetch |

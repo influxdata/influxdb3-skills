@@ -58,6 +58,11 @@ The package must already be installed in the plugin venv before the trigger fire
 
 ## Air-gapped / locked-down environments
 
+This skill doesn't cover full air-gapped setup: offline mirrors, custom plugin repos, or offline `pip` installs.
+Say so first, and link https://docs.influxdata.com/influxdb3/core/plugins/ → "Disable package installation for secure environments" (use `enterprise` in the path for InfluxDB 3 Enterprise).
+Then give only the flag table below and the pre-install rule.
+Don't write virtual-environment, wheelhouse, or offline `pip` steps.
+
 The flag that blocks runtime package installation depends on the server version.
 Check that the user's binary accepts the flag (`influxdb3 serve --help` lists it) before you generate a start command.
 
@@ -86,7 +91,7 @@ When package installation is blocked:
 - The Processing Engine still runs triggers normally.
 - New `influxdb3 install package` calls and the HTTP install endpoint are rejected.
 
-**Pre-install everything you need before you block installation.** This pattern is for compliance environments that prohibit runtime package installation. Full air-gapped configuration (offline mirrors, custom plugin repos, and so on) is out of scope; see the docs.
+**Pre-install everything you need before you block installation.** This pattern is for compliance environments that prohibit runtime package installation.
 
 ## Where to fetch more
 

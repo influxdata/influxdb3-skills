@@ -55,6 +55,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   `clients/http.md` showed a positional array, which returns 400.
 - Enterprise user authentication and RBAC are a preview (3.10+), off by default.
   `flavors.md` described RBAC as first-class.
+- The operator token can't be deleted, only regenerated.
+  `tokens.md` told the agent to revoke it after bootstrap.
+- SKILL.md §4 lists three rules that hold even when the developer asks otherwise:
+  don't hard-code a token; don't write a `.env` that `.gitignore` doesn't cover;
+  and don't replace an unreachable instance with fake data.
+  The description now names unreachable-instance requests so the skill loads for them.
+- Deferred topics (air-gapped setup, performance tuning, and migration, including rewriting v1 or v2 client code) lead with the deferral and a docs URL.
+  `doc-urls.md` adds a "Topics this skill defers" table.
+  The plugins skill's air-gapped guidance no longer walks through offline installs.
+- InfluxDB 3 doesn't run Flux, so the skill doesn't write Flux, even as a comparison.
+- SKILL.md §5 says to use second precision unless a series gets more than one point per second.
+  `writing.md` no longer says coarser precision makes queries faster.
+- The plugins skill notes the `time` column in `system.processing_engine_logs` (3.11.0+).
+  Its `quirks.md` links point at the `influxdb3` skill, where the file lives.
+- Examples run on the current client minors: influxdb3-python 0.21, JavaScript 2.4, Go 2.17, Java 1.11, and C# 1.10 (live-verified on Core and Enterprise 3.11.5).
+  The Go README adds `go mod tidy`, and the Java docs add the Arrow Flight JVM options, including `--sun-misc-unsafe-memory-access=allow` on JDK 27.
 
 ### Changed
 - Both skills drop verification history (build dates, "verified against" notes, and "per source" notes) and skill-version roadmap references (`v0.x`).

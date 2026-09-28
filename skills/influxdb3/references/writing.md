@@ -106,7 +106,7 @@ Tags are always strings; mixing types into a tag silently coerces to string.
 ## Backfilling vs. live writes
 
 - **Live writes:** omit the timestamp; the server stamps "now". Cheaper.
-- **Backfills:** always include explicit timestamps. Use second precision (`?precision=second`) by default unless you genuinely need sub-second resolution — it makes line protocol smaller and queries faster.
+- **Backfills:** always include explicit timestamps. Use second precision (`?precision=second`) by default unless you genuinely need sub-second resolution — it makes line protocol smaller. Storage precision is the same either way.
 
 ## When to use raw HTTP vs the client
 

@@ -105,6 +105,7 @@ Columns:
 | Column | Type | Purpose |
 |---|---|---|
 | `event_time` | timestamp | When the log line was emitted. |
+| `time` | timestamp | Physical timestamp column (3.11.0+). `event_time` is an alias for it and works on every version. |
 | `trigger_name` | string | Name of the trigger that produced the log. |
 | `log_level` | string | `INFO` / `WARN` / `ERROR` (uppercase). |
 | `log_text` | string | The space-joined args passed to `info`/`warn`/`error`. The runtime also emits framing lines like `starting execution of wal plugin.` and `finished execution in N ms`. |
