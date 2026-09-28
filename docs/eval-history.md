@@ -48,4 +48,6 @@ The runnable examples ran separately against a live InfluxDB 3.11.5 Core instanc
 - `plugins-adversarial-path-traversal`: 3/3.
   The run-2 prompt used `--upload`, which legitimately uploads a local file from anywhere, so correct answers failed.
   The prompt now asks about a server-side path outside `--plugin-dir` without `--upload`.
-- The other 12 run-2 failures weren't rerun.
+- `connect-enterprise`: the SKILL.md §2 change stopped the checklist from holding back code. Haiku judge 2/3, Sonnet judge 0/3; most answers imply rather than state that Core and Enterprise share the client and endpoints.
+- `admin-db-crud`: answers follow the new `databases.md` walkthrough and write with an app token. Haiku judge 0/3, Sonnet judge 1/3. The answers appear to meet every criterion; the judge may read `export INFLUXDB_ADMIN_TOKEN="<your-admin-token>"` as an inlined token. The harness doesn't record judge rationale.
+- The other 10 run-2 failures weren't rerun.

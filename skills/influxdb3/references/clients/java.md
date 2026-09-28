@@ -28,6 +28,9 @@ With `mvn exec:java`, the code runs in Maven's JVM, so pass the options in `MAVE
 
 ## Construct the client
 
+The client, its API, and the `/api/v3` endpoints are the same for InfluxDB 3 Core and InfluxDB 3 Enterprise.
+Only the token differs: Enterprise can use a scoped resource token, and Core uses a named admin token.
+
 ```java
 import com.influxdb.v3.client.InfluxDBClient;
 import io.github.cdimascio.dotenv.Dotenv;

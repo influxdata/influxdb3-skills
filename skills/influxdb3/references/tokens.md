@@ -99,7 +99,7 @@ SELECT * FROM system.tokens;
 ### Delete a token
 
 ```bash
-influxdb3 delete token --token-name <name> --token "$INFLUXDB_TOKEN"
+influxdb3 delete token --token-name <name> -y --token "$INFLUXDB_TOKEN"
 ```
 
 > The flag is `--token-name` (not positional, no `--force`). Don't confuse with `--token`, which is the admin token used to authenticate the request.

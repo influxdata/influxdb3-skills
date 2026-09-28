@@ -84,11 +84,13 @@ For InfluxDB Clustered, route to its install docs.
 
 ## 2. Setup checklist
 
-> **Confirm these prerequisites before you write application code.**
+> **Cover these prerequisites whenever you write application code.**
 > With the default config, InfluxDB 3 silently auto-creates a database on the first successful write.
 > So code that skips this check can appear to work while it sends data to a misspelled database, or fails authorization on the wrong host.
 
-Before you generate application code, walk the developer through each item and confirm it's true:
+Give the checklist as setup steps in the same reply as the code.
+Don't hold the code back to ask questions: read settings from the env vars below, use placeholders, and ask only for values you can't default.
+The generated code checks at startup that the database exists, and stops with a clear error if it doesn't.
 
 - [ ] **The server is reachable.** `curl -H "Authorization: Bearer <token>" <host>/ping` returns 200 with an `x-influxdb-build` header. `/ping` is auth-gated (3.10+). An unauthenticated 401 still confirms that the server is up.
 - [ ] **An admin token exists.** For Core and Enterprise, it's the operator token printed at first start, or one created with `influxdb3 create token --admin`. For other products, follow that product's token docs.
@@ -98,7 +100,7 @@ Before you generate application code, walk the developer through each item and c
 - [ ] **`.env.example` is committed, and `.env` isn't.**
 - [ ] **Env vars are set:** `INFLUXDB_HOST`, `INFLUXDB_TOKEN`, `INFLUXDB_DATABASE`, and `INFLUXDB_ORG` only for InfluxDB Cloud Serverless writes.
 
-"I just started Core" (or Enterprise) means none of these items are guaranteed yet. Walk through them before you write code.
+"I just started Core" (or Enterprise) means none of these items are guaranteed yet. Include them as setup steps.
 
 **Don't skip the database check, even when the developer asks for "just the script."**
 A write to a misnamed database, such as `senor_data` instead of `sensor_data`, reports success and creates a new, wrong database.
@@ -221,6 +223,7 @@ Example reply:
 
 | Goal | Read |
 |---|---|
+| Create a database, write to it, and drop it, with the right token for each step | `references/databases.md` → "Create, write, and drop: which token does what" |
 | Create, list, delete, or update databases with the CLI | `references/databases.md` → CLI section |
 | Automate from a script (any of the six client paths) | `references/admin-http-api.md` and `examples/admin-<lang>/` |
 | Recover from misspelled, auto-created database | `references/databases.md` → "Recovering from the silent auto-create footgun" |

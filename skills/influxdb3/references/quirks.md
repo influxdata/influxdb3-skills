@@ -102,7 +102,7 @@ for row in system_tokens_rows:
 
 **Why:** Unlike `delete database` (positional `<NAME>`), `delete token` requires the `--token-name <NAME>` flag. The signature differs because there's also a `--token <admin-token>` flag for authentication; positional would be ambiguous.
 
-**What to do:** Use `influxdb3 delete token --token-name <name> --token "$INFLUXDB_TOKEN"`. No `--force` here either.
+**What to do:** Use `influxdb3 delete token --token-name <name> -y --token "$INFLUXDB_TOKEN"`. Like `delete database`, it prompts for confirmation, and a script without a TTY fails with `Cannot proceed without confirmation` unless you pass `-y`/`--yes` (observed on 3.11.5). No `--force` here either.
 
 ---
 

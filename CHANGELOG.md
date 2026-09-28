@@ -53,6 +53,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `influxdb3 delete database` prompts for confirmation (3.10+).
   Scripts pass `-y`/`--yes`.
   There's still no `--force`.
+- `influxdb3 delete token` also prompts for confirmation (observed on 3.11.5), so the token examples pass `-y`.
+- SKILL.md §2 gives the setup checklist alongside the code instead of holding the code back to ask questions.
+  `databases.md` adds a create, write, and drop walkthrough that writes with an app token, not the admin token (live-verified on Core and Enterprise 3.11.5).
+  `clients/java.md` says Core and Enterprise use the same client and endpoints.
 - `/ping` is auth-gated (3.10+).
   Health-check snippets send a token.
   An unauthenticated 401 still means the server is up.

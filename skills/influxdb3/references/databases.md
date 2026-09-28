@@ -10,6 +10,35 @@ Provisioning and managing InfluxDB 3 databases via CLI and HTTP API. For applica
 
 A database goes through: **create → use → (optionally) update retention → delete**. Names follow the same conventions as measurement names: snake_case, no SQL reserved words, no spaces.
 
+### Create, write, and drop: which token does what
+
+Use two env vars so the admin token never reaches the write path: `INFLUXDB_ADMIN_TOKEN` for lifecycle operations and `INFLUXDB_TOKEN` for the application's writes.
+
+```bash
+# 1. Create the database (admin token)
+influxdb3 create database sensor_data --token "$INFLUXDB_ADMIN_TOKEN"
+
+# 2. Create the app token (admin token). The response shows the token string once;
+#    store it as INFLUXDB_TOKEN in your secret manager or .env.
+#    Enterprise or InfluxDB 3 Cloud: a resource token scoped to this database
+influxdb3 create token --permission "db:sensor_data:write" --name sensor-writer \
+  --format json --token "$INFLUXDB_ADMIN_TOKEN"
+#    Core (admin tokens only): a named admin token just for this app
+influxdb3 create token --admin --name sensor-writer \
+  --format json --token "$INFLUXDB_ADMIN_TOKEN"
+
+# 3. Write a point (app token)
+curl -sS -X POST "$INFLUXDB_HOST/api/v3/write_lp?db=sensor_data&precision=second" \
+  -H "Authorization: Bearer $INFLUXDB_TOKEN" \
+  --data-binary "readings,sensor=s1 temp=21.5 $(date +%s)"
+
+# 4. Drop the database and the app token (admin token)
+influxdb3 delete database sensor_data -y --token "$INFLUXDB_ADMIN_TOKEN"
+influxdb3 delete token --token-name sensor-writer -y --token "$INFLUXDB_ADMIN_TOKEN"
+```
+
+The CLI connects to `http://127.0.0.1:8181` unless you pass `--host` or set `INFLUXDB3_HOST_URL`.
+
 ## CLI
 
 ### Create
