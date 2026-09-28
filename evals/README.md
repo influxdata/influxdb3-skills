@@ -79,6 +79,19 @@ node evals/gate.mjs --claude <claude-plugin-eval.json> --codex evals/results/cod
 
 The release-gate workflow runs both agents and the live examples (`evals/run-examples.sh`); see `docs/decisions/0002-evals-release-gate.md`. Run the unit tests with `node --test evals/gate.test.mjs`.
 
+## Change-control policy
+
+Treat a one-run result as a diagnostic signal, not proof of an eval or skill defect.
+Keep the prompt, criteria, answer model, and judge model fixed while you measure reliability.
+
+1. Run a changed or failing case three times before changing the skill or its criteria.
+2. Change a criterion only when it tests an unsupported or incorrect product behavior.
+3. Change the skill only when at least two runs expose the same gap in supported guidance.
+4. Record remaining misses as model reliability results. Don't expand the skill to address a single answer variation.
+
+To compare answer models, keep the rubric and judge model fixed.
+Audit disagreements with another judge or a human before changing a release decision.
+
 ## Recording results
 
 Per-run results go in `evals/results/`. The folder is gitignored, but a release-bar summary is committed under `docs/eval-history.md` (see `docs/publishing.md`).

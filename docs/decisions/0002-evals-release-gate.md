@@ -43,6 +43,16 @@ The existing `validate.yml` checks (skill spec, versions, and links) still run o
 The report goes to the job summary.
 Result files are uploaded as artifacts.
 
+### Interpreting failures
+
+A one-run result is a diagnostic signal, not proof of an eval or skill defect.
+Before changing a skill or its criteria, run the case three times with the same prompt, criteria, answer model, and judge model.
+Change a criterion only when it tests an unsupported or incorrect product behavior.
+Change the skill only when at least two runs expose the same gap in supported guidance.
+Treat any remaining misses as model reliability results.
+When comparing answer models, keep the rubric and judge model fixed.
+Audit judge disagreements with another judge or a human before changing a release decision.
+
 ### Secrets
 `ANTHROPIC_API_KEY` and `OPENAI_API_KEY` live in a `release-evals` environment that requires reviewer approval.
 The workflow uses `pull_request`, not `pull_request_target`, so fork pull requests never receive them.
