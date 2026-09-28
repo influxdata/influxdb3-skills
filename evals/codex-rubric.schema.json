@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "pass": { "type": "boolean" },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "minimum": 1 },
+          "pass": { "type": "boolean" },
+          "evidence": { "type": "string" }
+        },
+        "required": ["id", "pass", "evidence"],
+        "additionalProperties": false
+      }
+    },
+    "summary": { "type": "string" }
+  },
+  "required": ["pass", "checks", "summary"],
+  "additionalProperties": false
+}

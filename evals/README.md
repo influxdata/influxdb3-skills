@@ -3,7 +3,7 @@
 Two layers:
 
 1. **Manual smoke tests** — `smoke-prompts.md`, run by hand against a live InfluxDB 3 instance.
-2. **Formal eval suite** — `prompts.jsonl`, run with `claude plugin eval`.
+2. **Formal eval suite** — `prompts.jsonl`, run with either Claude Code or Codex.
 
 ## Pre-reqs
 
@@ -29,7 +29,30 @@ less evals/smoke-prompts.md
 
 ## Formal eval suite
 
-`prompts.jsonl` is the harness-neutral source. Build the cases, then run them:
+`prompts.jsonl` is the harness-neutral source. Use the runner for the agent you
+want to evaluate.
+
+### Codex
+
+The Codex runner answers each prompt using the checked-out skill source in a
+read-only Codex session, captures the JSONL trace, and grades every criterion
+with a second Codex session constrained to a JSON schema. It writes all traces,
+answers, and results to the gitignored `evals/results/` directory.
+
+```sh
+# One affected case (recommended while iterating)
+node evals/run-codex-evals.mjs --case admin-db-crud --runs 1
+
+# Entire suite, three samples per case
+node evals/run-codex-evals.mjs --runs 3
+```
+
+Codex must already be authenticated (`codex login status`). The runner uses the
+default configured model; pass `--model <model>` to override it.
+
+### Claude Code
+
+Build Claude's cases, then run them:
 
 ```sh
 node evals/build-claude-cases.mjs
