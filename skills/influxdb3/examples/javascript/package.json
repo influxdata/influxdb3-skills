@@ -7,7 +7,7 @@
     "schema": "node schema-example.js"
   },
   "dependencies": {
-    "@influxdata/influxdb3-client": "^2.2.0",
+    "@influxdata/influxdb3-client": "^2.4.0",
     "dotenv": "^16.4.0"
   }
 }

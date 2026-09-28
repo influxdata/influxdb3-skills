@@ -2,7 +2,7 @@
 
 A catalogue of behaviors that aren't in the official docs but customers will hit. Each entry: **What you'll see → Why it's that way → What to do.** Entries are bounded — only quirks that are (a) verified against a real release, (b) genuinely non-obvious, (c) likely to be hit in a customer's first month.
 
-> Verified against InfluxDB 3 Enterprise 3.8.4 on 2026-05-08. Cloud-flavor quirks may differ — see flavor-specific notes per entry.
+> Quirks can differ on InfluxDB 3 Cloud, InfluxDB Cloud Serverless, InfluxDB Cloud Dedicated, and InfluxDB Clustered — see flavor-specific notes per entry.
 
 ---
 
@@ -76,26 +76,23 @@ for row in system_tokens_rows:
 
 ---
 
-## 6. Resource-token endpoint differs Core vs Enterprise
+## 6. Resource-token creation fails on Core
 
-**What you'll see:** A `POST /api/v3/configure/token` succeeds on Core but returns 404 on Enterprise (or vice versa).
+**What you'll see:** On Core, a resource-token create request returns 404, or `influxdb3 create token --permission` is rejected.
 
-**Why:**
-- **Core** uses `POST /api/v3/configure/token` for resource tokens.
-- **Enterprise** uses `POST /api/v3/enterprise/configure/token` for resource tokens (different path).
-- Admin token creation, delete-token, and database CRUD endpoints are identical on both.
+**Why:** Core has admin tokens only. See `references/tokens.md` → "InfluxDB 3 Core: admin tokens only."
 
-**What to do:** Detect the flavor (`references/flavor-detection.md`) before generating admin code. Examples in `examples/admin-*` target Enterprise; the README in each example notes the one-line swap for Core.
+**What to do:** Detect the flavor (`references/flavor-detection.md`) before generating admin code. The `examples/admin-*` scripts require Enterprise or InfluxDB 3 Cloud.
 
 ---
 
-## 7. `delete database` has no `--force` flag
+## 7. `delete database` uses `-y`/`--yes` to skip the prompt — there is no `--force`
 
-**What you'll see:** Generated CLI code with `influxdb3 delete database <name> --force` errors with `error: unexpected argument '--force' found`.
+**What you'll see:** Two related surprises. (a) `influxdb3 delete database <name> --force` errors with `error: unexpected argument '--force' found` — that flag doesn't exist. (b) In a script / non-interactive shell (no TTY), a bare `influxdb3 delete database <name>` prints `Are you sure you want to delete "<name>"?` and then fails with `Delete command failed: Cannot proceed without confirmation` (exit 1).
 
-**Why:** Deletion is non-interactive by default — there is no confirmation prompt, so no need for `--force`. (Other commands like `delete trigger` DO have `--force`; this is asymmetric.)
+**Why:** The CLI prompts for confirmation (3.10+); the flag to skip it is `-y`/`--yes`, not `--force`. The HTTP API `DELETE /api/v3/configure/database?db=<name>` has **no** prompt and is unaffected.
 
-**What to do:** Drop the `--force`. Use `--hard-delete <when>` (`never` / `now` / `default` / `<timestamp>`) or `--data-only` for advanced cases. Pattern documented in `references/databases.md`.
+**What to do:** For scripting/automation, pass `-y` (or `--yes`): `influxdb3 delete database <name> -y --token "$INFLUXDB_TOKEN"`. Combine with `--hard-delete <when>` (`never` / `now` / `default` / `<timestamp>`) or `--data-only` for advanced cases. Pattern documented in `references/databases.md`. Or call the HTTP API, which never prompts.
 
 ---
 
@@ -105,7 +102,7 @@ for row in system_tokens_rows:
 
 **Why:** Unlike `delete database` (positional `<NAME>`), `delete token` requires the `--token-name <NAME>` flag. The signature differs because there's also a `--token <admin-token>` flag for authentication; positional would be ambiguous.
 
-**What to do:** Use `influxdb3 delete token --token-name <name> --token "$INFLUXDB_TOKEN"`. No `--force` here either.
+**What to do:** Use `influxdb3 delete token --token-name <name> -y --token "$INFLUXDB_TOKEN"`. Like `delete database`, it prompts for confirmation, and a script without a TTY fails with `Cannot proceed without confirmation` unless you pass `-y`/`--yes` (observed on 3.11.5). No `--force` here either.
 
 ---
 
@@ -123,9 +120,12 @@ for row in system_tokens_rows:
 
 **What you'll see:** A query `SELECT time, plugin_name, level, message FROM system.processing_engine_logs` returns `Schema error: No field named plugin_name`.
 
-**Why:** The actual columns are `event_time` (timestamp), `trigger_name` (string), `log_level` (`INFO` / `WARN` / `ERROR` uppercase), `log_text` (string). The `time / plugin_name / level / message` names came from older docs that drifted.
+**Why:** The columns are `event_time` (timestamp), `trigger_name` (string), `log_level` (`INFO` / `WARN` / `ERROR` uppercase), and `log_text` (string).
+`plugin_name`, `level`, and `message` aren't columns.
+The physical timestamp column is named `time`, and `event_time` is a virtual alias for it (3.11.0+).
+`event_time` works on every version, so the examples use it.
 
-**What to do:** Use the verified column names. Reference: `skills/influxdb3-plugins/references/testing.md` → "Reading plugin logs".
+**What to do:** Use `event_time`, `trigger_name`, `log_level`, and `log_text`. Reference: `skills/influxdb3-plugins/references/testing.md` → "Reading plugin logs".
 
 ```sql
 SELECT event_time, log_level, log_text FROM system.processing_engine_logs
@@ -135,13 +135,19 @@ ORDER BY event_time DESC LIMIT 50;
 
 ---
 
-## 11. 400 from a write rejects the **whole batch**, not just the bad line
+## 11. A 400 from `/api/v3/write_lp` can still write most of the batch
 
-**What you'll see:** A batch of 1,000 line-protocol points returns `400 Bad Request` because line #347 has a parse error. The other 999 valid lines were NOT written.
+**What you'll see:** A batch of 1,000 line-protocol points returns `400 Bad Request` because line #347 has a parse error.
 
-**Why:** v3's write endpoint validates the whole payload before committing any of it. One malformed line aborts the entire request.
+**Why:** `/api/v3/write_lp` defaults to `accept_partial=true`.
+InfluxDB writes the 999 valid lines and rejects line #347.
+The response `data` array lists each rejected line.
+With `accept_partial=false`, one invalid line rejects the whole batch.
 
-**What to do:** Either pre-validate line protocol client-side, or implement split-and-retry on 400 to find the bad row. The error response usually names the offending line. Documented in `references/writing.md` → "Error handling".
+**What to do:** Don't resend the whole batch after a partial write, because that duplicates the lines already stored.
+Fix and resend only the lines listed in `data`.
+The `/api/v2/write` and `/write` compatibility endpoints behave differently: on 3.11.5, one invalid line rejects the whole batch.
+Documented in `references/writing.md` → "Error handling".
 
 ---
 

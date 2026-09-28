@@ -1,11 +1,11 @@
 # Diagnostic toolkit
 
-`diagnose.py` runs a one-page health check on your InfluxDB 3 instance. Useful when something feels off and you want a sanity check before pasting an error into Claude.
+`diagnose.py` runs a one-page health check on your InfluxDB 3 instance. Useful when something feels off and you want a sanity check before you paste an error into your agent.
 
 ## What it does
 
 1. `HEAD /ping` — expecting 404 (a known quirk; only GET works on `/ping`). Verifies network reachability.
-2. `GET /ping` — expecting 200. Reports flavor (Core/Enterprise/Cloud) and version.
+2. `GET /ping` — expecting 200. Reports flavor (Core, Enterprise, or another InfluxDB 3 product) and version.
 3. List databases visible to the token. Reports count + first 5 names.
 4. (Admin-scope only) Create a throwaway `diagnose_<ts>` database, write a smoke point, query it back, delete the database. Confirms the write subsystem and full round-trip work.
 

@@ -3,8 +3,8 @@
 // Exercises the full token + database lifecycle (10 steps).
 // Cleanup uses defer'd best-effort revocations so partial failures don't orphan.
 //
-// Targets Enterprise (uses /api/v3/enterprise/configure/token). For Core,
-// change the resource-token create endpoint to /api/v3/configure/token.
+// Requires InfluxDB 3 Enterprise or InfluxDB 3 Cloud: step 3 creates a resource
+// token, and Core has none (references/tokens.md).
 package main
 
 import (
@@ -139,8 +139,12 @@ func (c *adminClient) deleteToken(name string) error {
 	return nil
 }
 
-func (c *adminClient) querySQL(db, q string) ([]map[string]any, error) {
-	r, err := c.req("POST", "/api/v3/query_sql", map[string]string{"db": db, "q": q})
+func (c *adminClient) querySQL(db, q string, params map[string]any) ([]map[string]any, error) {
+	body := map[string]any{"db": db, "q": q}
+	if params != nil {
+		body["params"] = params // bind values as $name — never string-concatenate into q
+	}
+	r, err := c.req("POST", "/api/v3/query_sql", body)
 	if err != nil {
 		return nil, err
 	}
@@ -238,7 +242,7 @@ func main() {
 	}
 
 	fmt.Printf("==> step 5: list tokens via SQL, find %s\n", tokenA)
-	rows, err := c.querySQL("_internal", fmt.Sprintf("SELECT name FROM system.tokens WHERE name = '%s'", tokenA))
+	rows, err := c.querySQL("_internal", "SELECT name FROM system.tokens WHERE name = $name", map[string]any{"name": tokenA})
 	must("list tokens:", err)
 	matches := 0
 	for _, r := range rows {
@@ -281,7 +285,7 @@ func main() {
 			dbOrph = append(dbOrph, d)
 		}
 	}
-	rowsEnd, _ := c.querySQL("_internal", "SELECT name FROM system.tokens WHERE name LIKE 'admin_test_go_%'")
+	rowsEnd, _ := c.querySQL("_internal", "SELECT name FROM system.tokens WHERE name LIKE 'admin_test_go_%'", nil)
 	var tokOrph []string
 	for _, r := range rowsEnd {
 		if name, _ := r["name"].(string); strings.HasPrefix(name, "admin_test_go_") {

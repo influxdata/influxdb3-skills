@@ -1,6 +1,8 @@
 # Raw HTTP / curl
 
 For any language without a first-class client, or when a developer explicitly wants to skip the client library, use the v3 HTTP API directly.
+The `/api/v3` endpoints exist only on InfluxDB 3 Core, InfluxDB 3 Enterprise, and InfluxDB 3 Cloud.
+For InfluxDB Cloud Serverless and InfluxDB Cloud Dedicated, see `references/flavors.md`.
 
 ## Endpoints
 
@@ -8,7 +10,6 @@ For any language without a first-class client, or when a developer explicitly wa
 |---|---|---|---|
 | Health probe / flavor detection | `GET` | `/ping` | See `references/flavor-detection.md` |
 | Write line protocol | `POST` | `/api/v3/write_lp?db=$INFLUXDB_DATABASE` | Body is line protocol; one line per point |
-| Write line protocol (Cloud Serverless) | `POST` | `/api/v2/write?org=$INFLUXDB_ORG&bucket=$INFLUXDB_DATABASE` | v2-compat write path |
 | Query (SQL) | `POST` | `/api/v3/query_sql` | JSON body: `{"db": "...", "q": "..."}` |
 | Query (InfluxQL) | `POST` | `/api/v3/query_influxql` | Same shape; legacy compat only |
 
@@ -53,14 +54,16 @@ Expected: JSON array of rows.
 
 The v3 SQL query endpoint accepts an optional `params` object — use it. Never string-concatenate user input into the `q` field.
 
+`params` is a **named object** (`{"name": value}`) referenced in the SQL as `$name`. It is **not** positional — a `$1` placeholder with an array (`"params": ["server01"]`) is rejected with HTTP 400 `invalid type: sequence, expected a map`.
+
 ```bash
 curl -sS -X POST "$INFLUXDB_HOST/api/v3/query_sql" \
   -H "Authorization: Bearer $INFLUXDB_TOKEN" \
   -H "Content-Type: application/json" \
   -d "{
     \"db\": \"$INFLUXDB_DATABASE\",
-    \"q\": \"SELECT * FROM sensor WHERE host = \$1 LIMIT 10\",
-    \"params\": [\"server01\"]
+    \"q\": \"SELECT * FROM sensor WHERE host = \$host LIMIT 10\",
+    \"params\": {\"host\": \"server01\"}
   }"
 ```
 

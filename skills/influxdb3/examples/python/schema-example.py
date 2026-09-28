@@ -2,8 +2,8 @@
 
 Demonstrates a sensible measurement design:
   measurement: sensor
-  tags:        host (low-cardinality), region (low-cardinality)
-  fields:      temperature, humidity, gpu_id (high-cardinality identity)
+  tags:        host, region
+  fields:      temperature, humidity
   timestamp:   per-write
 
 Then runs a representative aggregation query.
@@ -32,14 +32,12 @@ def main() -> None:
         ts = now - (60 - minute) * 60
         for region in ("us-west", "us-east"):
             for host_idx in range(3):
-                # gpu_id is HIGH cardinality (unique per host) → field, not tag.
                 points.append(
                     Point("sensor")
                     .tag("host", f"server{host_idx:02d}")
                     .tag("region", region)
                     .field("temperature", 70.0 + (minute % 5))
                     .field("humidity", 40.0 + (host_idx % 3))
-                    .field("gpu_id", f"gpu-{region}-{host_idx}-{minute}")
                     .time(ts, write_precision="s")
                 )
     print(f"==> Writing {len(points)} points")

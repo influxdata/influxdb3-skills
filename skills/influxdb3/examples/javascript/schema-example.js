@@ -13,14 +13,12 @@ for (let minute = 0; minute < 60; minute++) {
   const ts = new Date(now - (60 - minute) * 60_000);
   for (const region of ['us-west', 'us-east']) {
     for (let hostIdx = 0; hostIdx < 3; hostIdx++) {
-      // gpu_id is HIGH cardinality (unique per host-minute) → field, not tag.
       points.push(
         Point.measurement('sensor')
           .setTag('host', `server${String(hostIdx).padStart(2, '0')}`)
           .setTag('region', region)
           .setFloatField('temperature', 70 + (minute % 5))
           .setFloatField('humidity', 40 + (hostIdx % 3))
-          .setStringField('gpu_id', `gpu-${region}-${hostIdx}-${minute}`)
           .setTimestamp(ts)
       );
     }

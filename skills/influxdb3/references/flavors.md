@@ -1,6 +1,8 @@
 # InfluxDB 3 Flavors
 
-InfluxDB 3 ships in four flavors. Most code is portable across flavors when host and token are env-driven; this reference exists for the cases where they actually differ.
+This table compares InfluxDB 3 Core, InfluxDB 3 Enterprise, InfluxDB Cloud Serverless, and InfluxDB Cloud Dedicated. For InfluxDB 3 Cloud and InfluxDB Clustered, check their docs. Only InfluxDB 3 Core, InfluxDB 3 Enterprise, and InfluxDB 3 Cloud have `/api/v3` endpoints.
+InfluxDB Cloud Serverless and InfluxDB Cloud Dedicated have none.
+Most code is portable across flavors when host and token are env-driven; this reference exists for the cases where they actually differ.
 
 ## Comparison table
 
@@ -8,28 +10,29 @@ InfluxDB 3 ships in four flavors. Most code is portable across flavors when host
 |---|---|---|---|---|
 | **Default port** | `8181` | `8181` (per node) | 443 (TLS) | 443 (TLS) |
 | **Host pattern** | configurable, often `localhost:8181` | configurable cluster | `https://<region>-<id>.cloud2.influxdata.com` | customer-specific hostname |
-| **Token type** | database / admin token | database / admin token (with RBAC) | management + database tokens | management + database tokens |
-| **Write endpoint** | `POST /api/v3/write_lp` | `POST /api/v3/write_lp` | `POST /api/v2/write` (back-compat) | `POST /api/v3/write_lp` |
-| **Query (SQL)** | `POST /api/v3/query_sql` | `POST /api/v3/query_sql` | `POST /api/v3/query_sql` | `POST /api/v3/query_sql` |
-| **Query (InfluxQL)** | `POST /api/v3/query_influxql` | `POST /api/v3/query_influxql` | `POST /api/v3/query_influxql` | `POST /api/v3/query_influxql` |
+| **Token type** | admin tokens only | admin + resource (database, system) tokens | management + database tokens | management + database tokens |
+| **Write endpoint** | `POST /api/v3/write_lp` | `POST /api/v3/write_lp` | `POST /api/v2/write` (or v1 `/write`) | `POST /api/v2/write` (or v1 `/write`) |
+| **Query** | `/api/v3/query_sql`, `/api/v3/query_influxql`, or Flight | Same as Core | Flight (SQL or InfluxQL), or v1 `/query` (InfluxQL) | Same as Cloud Serverless |
 | **Multi-database** | yes | yes | yes (per bucket) | yes |
 | **Database creation** | HTTP API or CLI | HTTP API or CLI | UI / API (cloud-managed) | UI / API (cloud-managed) |
-| **Database creation API** | `POST /api/v3/configure/database` (HTTP) or `influxdb3 create database` (CLI) | Same as Core | Cloud console / management API | Cloud console / management API |
-| **Token creation API** | `POST /api/v3/configure/token` (HTTP) or `influxdb3 create token` (CLI) | Same as Core | Cloud console / management API | Cloud console / management API |
+| **Database creation API** | `POST /api/v3/configure/database` (HTTP) or `influxdb3 create database` (CLI) | Same as Core | Product UI or management API | Product UI or management API |
+| **Token creation API** | Admin only: `POST /api/v3/configure/token/named_admin` (HTTP) or `influxdb3 create token --admin` (CLI) | Admin: same as Core. Resource: `POST /api/v3/enterprise/configure/token` or `influxdb3 create token --permission` | Product UI or management API | Product UI or management API |
 
 ## Notable per-flavor gotchas
 
 ### Core
-Single-node, open source. No RBAC. Tokens are scoped per database. Default object-store is local disk; `--object-store=memory` is fine for testing only.
+Single-node, open source. Admin tokens only: no resource tokens and no RBAC (`references/tokens.md` → "InfluxDB 3 Core: admin tokens only"). `--object-store` is required with no default (3.2.1+); `--object-store=memory` is fine for testing only.
 
 ### Enterprise
-Multi-node cluster. RBAC and replication are first-class. Same v3 HTTP API as Core; the differences are operational (cluster, observability) rather than client-facing.
+Multi-node cluster with replication. Adds resource tokens with per-database and system permissions. User authentication and RBAC are a preview (3.10.0+), off by default. Otherwise the same v3 HTTP API as Core; the other differences are operational (cluster, observability) rather than client-facing.
 
 ### Cloud Serverless
-The write path is the v2-compatible `/api/v2/write` endpoint for back-compat with v2 tooling, but **queries are v3 SQL** via `/api/v3/query_sql`. Generated code that targets Cloud Serverless should use the v2 write path; the v3 SQL query path is unchanged.
+No `/api/v3` endpoints. Write through `/api/v2/write`.
+Query through Flight with the InfluxDB 3 client libraries, or with InfluxQL over the v1 `/query` endpoint.
 
 ### Cloud Dedicated
-Same v3 API surface as Core/Enterprise, but the host is customer-specific and tokens are managed via the Cloud Dedicated console. Auth is otherwise identical.
+Same write and query paths as Cloud Serverless.
+The host is customer-specific, and tokens are managed in the Cloud Dedicated console.
 
 ## When to ask the developer
 

@@ -1,6 +1,6 @@
-# Testing claude-influxdb3 (reviewer guide)
+# Testing influxdb3-skills (reviewer guide)
 
-Welcome. You're reviewing one quadrant of the `claude-influxdb3` Claude Code plugin before we open it more broadly. This page covers the shared setup; your area-specific instructions live in `evals/reviewer-briefings/`.
+Welcome. You're reviewing one quadrant of the `influxdb3-skills` plugin before we open it more broadly. This page covers the shared setup; your area-specific instructions live in `evals/reviewer-briefings/`.
 
 ## What you're reviewing
 
@@ -24,14 +24,14 @@ Reviewer assignments are filled in once we pick the team.
 You'll need a local clone so you can read source files, examine commit history, and open PRs for any fixes you propose. Clone first:
 
 ```bash
-git clone https://github.com/influxdata/claude-skill-for-influxdb3.git ~/Projects/claude-influxdb3
+git clone https://github.com/influxdata/influxdb3_skills.git ~/Projects/influxdb3-skills
 ```
 
 Then in Claude Code, register the local clone as a marketplace and install the plugin:
 
 ```
-/plugin marketplace add ~/Projects/claude-influxdb3
-/plugin install claude-influxdb3@influxdata
+/plugin marketplace add ~/Projects/influxdb3-skills
+/plugin install influxdb3-skills@influxdata-influxdb3
 ```
 
 Verify:
@@ -40,16 +40,11 @@ Verify:
 /plugin
 ```
 
-You should see `claude-influxdb3` listed as installed and enabled. If it doesn't show up immediately, run `/reload-plugins`. (If you previously installed from the published marketplace, run `/plugin uninstall claude-influxdb3@influxdata` and `/plugin marketplace remove influxdata` first — the marketplace name `influxdata` would otherwise collide. The README "Develop locally" section covers this in more detail.)
+You should see `influxdb3-skills` listed as installed and enabled. If it doesn't show up immediately, run `/reload-plugins`. (If you previously installed from the published marketplace, run `/plugin uninstall influxdb3-skills@influxdata-influxdb3` and `/plugin marketplace remove influxdata-influxdb3` first, because the marketplace names would collide. If you installed a version before 0.7.0, remove `claude-influxdb3@influxdata` and the `influxdata` marketplace instead. The README "Develop locally" section covers this in more detail.)
 
 The `git clone` above uses your GitHub credentials directly, so if you can clone the internal repo you're already authenticated for the marketplace step too.
 
-After editing files in your local clone, refresh:
-
-```
-/plugin marketplace update influxdata
-/plugin update claude-influxdb3@influxdata
-```
+After you edit files in your local clone, start a new session to load the changes.
 
 ### 2. Get an InfluxDB 3 instance running
 
@@ -96,7 +91,7 @@ For this MVP review pass, we're focusing on **Core and Enterprise self-hosted**.
 ### 3. Set environment variables
 
 ```bash
-cat > ~/Projects/claude-influxdb3/.env <<EOF
+cat > ~/Projects/influxdb3-skills/.env <<EOF
 INFLUXDB_HOST=http://localhost:8181
 INFLUXDB_TOKEN=<your-operator-token>
 INFLUXDB_DATABASE=claude_skill_test

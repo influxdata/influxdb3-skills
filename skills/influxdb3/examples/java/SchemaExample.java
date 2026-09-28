@@ -23,14 +23,11 @@ public class SchemaExample {
                 Instant ts = now.minus(60L - minute, ChronoUnit.MINUTES);
                 for (String region : new String[] {"us-west", "us-east"}) {
                     for (int hostIdx = 0; hostIdx < 3; hostIdx++) {
-                        // gpu_id is HIGH cardinality → field, not tag.
                         points.add(Point.measurement("sensor")
                             .setTag("host", String.format("server%02d", hostIdx))
                             .setTag("region", region)
                             .setFloatField("temperature", 70.0 + (minute % 5))
                             .setFloatField("humidity", 40.0 + (hostIdx % 3))
-                            .setStringField("gpu_id",
-                                String.format("gpu-%s-%d-%d", region, hostIdx, minute))
                             .setTimestamp(ts));
                     }
                 }

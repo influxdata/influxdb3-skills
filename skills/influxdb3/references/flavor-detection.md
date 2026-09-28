@@ -201,19 +201,10 @@ def detect_flavor(host: str, token: str) -> str | None:
         except requests.exceptions.RequestException:
             pass  # probe failed; fall through
 
-    # Step 4: Cloud Serverless — try listing databases via Serverless endpoint
-    serverless_url = f"{host}/api/v3/databases"
-    try:
-        r3 = requests.get(
-            serverless_url, headers=headers_with_token, timeout=10
-        )
-        if r3.status_code == 200:
-            return "InfluxDB 3 Cloud Serverless"
-        if r3.status_code in (401, 403):
-            # Token is wrong for Serverless; cannot distinguish further
-            return None
-    except requests.exceptions.RequestException:
-        pass  # not Serverless; fall through
+    # Step 4: Cloud Serverless — host pattern. Cloud Serverless has no
+    # /api/v3 endpoints, so these snippets check the documented host instead.
+    if "cloud2.influxdata.com" in host:
+        return "InfluxDB 3 Cloud Serverless"
 
     # Step 5: Cloud Dedicated — URL pattern
     if "influxdb.io" in host:
@@ -305,21 +296,10 @@ async function detectFlavor(host, token) {
     }
   }
 
-  // Step 4: Cloud Serverless — try listing databases via Serverless endpoint
-  const serverlessUrl = `${baseHost}/api/v3/databases`;
-  try {
-    const r3 = await fetch(serverlessUrl, {
-      headers: authHeaders,
-      signal: AbortSignal.timeout(10000),
-    });
-    if (r3.status === 200) {
-      return "InfluxDB 3 Cloud Serverless";
-    }
-    if (r3.status === 401 || r3.status === 403) {
-      return null;
-    }
-  } catch {
-    // not Serverless; fall through
+  // Step 4: Cloud Serverless — host pattern. Cloud Serverless has no
+  // /api/v3 endpoints, so these snippets check the documented host instead.
+  if (baseHost.includes("cloud2.influxdata.com")) {
+    return "InfluxDB 3 Cloud Serverless";
   }
 
   // Step 5: Cloud Dedicated — URL pattern
@@ -344,9 +324,7 @@ Record the answer in context and continue. For Cloud Dedicated and Clustered you
 
 ---
 
-## Notes on the Live Enterprise 3.8.4 Sample
-
-The confirmed response from a real Enterprise 3.8.4 instance:
+## Sample `/ping` response
 
 ```
 GET /ping  →  200 OK
@@ -355,24 +333,3 @@ HEAD /ping →  404  (HEAD is not implemented — use GET only)
 ```
 
 The presence of a JSON body with `version` is consistent with Explorer's extraction of `x-influxdb-version` from the response headers. If the authenticated `/ping` in step 2 returns the `x-influxdb-build: Enterprise` header, detection ends immediately with `"InfluxDB 3 Enterprise"` — matching this sample.
-
----
-
-## Provenance
-
-This detection logic is ported from the InfluxData Explorer (`influxdb3_ui`) source as of 2026-04-29.
-
-Primary source files read:
-
-- `apps/backend/src/modules/influx-product/influx-product.service.ts` — main orchestration
-- `apps/backend/src/modules/influx-product/helpers/constants.ts` — `InfluxDBBuildType`, `InfluxDBUrlPattern`
-- `apps/backend/src/modules/influx-product/helpers/types.ts` — `ProductDetectionRequest/Result`
-- `apps/backend/src/modules/influx-api/strategies/base-influx.strategy.ts` — `ping()` implementation
-- `apps/wasm_backend/src/influx/detect.rs` — Rust/WASM parallel implementation (confirms same patterns)
-- `apps/wasm_backend/src/influx/product/mod.rs` — canonical product string names
-- `libs/types/src/product-type.ts` — `ProductType` enum
-- `libs/types/src/server-config/common.ts` — `InfluxDBProduct` enum with display names
-- `libs/types/src/errors/product-detection.errors.ts` — error codes
-- `docs/detect-product.md` — Explorer's own internal documentation of the flow
-
-If Explorer's logic changes (new product types, modified patterns), update this file accordingly.

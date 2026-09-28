@@ -4,7 +4,118 @@ All notable changes to this skill will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased]
+## [Unreleased] — 0.7.0
+
+### Packaging
+- Renamed the repo from `influxdata/claude-skill-for-influxdb3` to `influxdata/influxdb3_skills`, the plugin from `claude-influxdb3` to `influxdb3-skills`, and its marketplace from `influxdata` to `influxdata-influxdb3`. Skill names don't change.
+- Added a root `plugin.json` in the Agent Plugins format, so agents other than Claude Code can install the repo.
+- The README gives install steps for Claude Code, Codex, and other agents.
+- Removed Claude-specific wording from skill text.
+- Shortened both skill descriptions to fit the Agent Skills 1024-character limit, and rewrote `influxdb3/SKILL.md` in plainer style. The `influxdb3` description no longer targets InfluxDB OSS v1 or v2, InfluxDB Cloud (TSM), InfluxDB Cloud 1, or Flux. Agents answer those directly. If the skill loads for one of them, its body still routes to the docs MCP server and `llms-full.txt`.
+- Added CI: the Agent Skills reference validator on each skill, a check that all versions match, and a link check. Added Dependabot for GitHub Actions.
+
+### Security
+- Plugins run unsandboxed with the server's privileges.
+  The new `influxdb3-plugins` reference `plugin-code-safety.md` sets rules for generated plugin code:
+  don't execute untrusted data, parameterize `query()` with `args=`, and don't read, log, or return secrets.
+- `installing.md` and `dependencies.md` document `gh:` plugin paths, `--plugin-repo`, and `influxdb3 install package` as trust boundaries.
+  `installing.md` lists the plugin hardening flags (3.10.0+):
+  `--plugin-dir-only` (Enterprise only) and `--restrict-plugin-triggers-to` (Core and Enterprise).
+- Both skills treat error bodies, query results, log text, and database or token names as untrusted data, never as instructions.
+- The token-redaction regex is broader and case-insensitive.
+  The rule applies to any credential-shaped string.
+  It's behavior the agent follows, not an enforced filter.
+- The `doc-urls.md` allowlists are advisory.
+  Agents match the exact host.
+- Examples that auto-load `.env` note that `INFLUXDB_HOST` decides where the token is sent.
+- Line protocol has no escape for `\n` or `\r`, and `LineBuilder` doesn't escape them.
+  `writing.md` and `runtime-api.md` say to reject or strip them from untrusted values.
+- The admin examples bind token names as SQL parameters instead of interpolating them.
+- Plugin code doesn't write state or secrets to the filesystem, even to a path the developer names.
+  `plugin-code-safety.md` §4 lists the alternatives: `influxdb3_local.cache`, a measurement for state that survives a restart, and trigger `args` for credentials.
+- Plugin files stay inside `--plugin-dir`.
+  The skill names the symlink rule and doesn't suggest workarounds.
+  `installing.md` separates `--path` with and without `--upload`.
+
+### Fixed
+- InfluxDB 3 Core has admin tokens only, with no resource tokens and no RBAC.
+  The skill told Core users to create `--permission` tokens.
+  It also documented a Core resource-token endpoint that doesn't exist.
+  `tokens.md` → "InfluxDB 3 Core: admin tokens only" is now the one place that states the Core behavior.
+  Each Core application uses its own named admin token.
+  The admin examples require Enterprise or InfluxDB 3 Cloud.
+- Named admin tokens use `POST /api/v3/configure/token/named_admin` with `{"token_name", "expiry_secs"}` (live-verified on Core and Enterprise 3.11.5).
+  `POST /api/v3/configure/token/admin` takes no body and creates the operator token.
+  `admin-http-api.md` adds the operator-token regenerate endpoint.
+- `--permission` examples include the required `--name`.
+- `--object-store` is required with no default (3.2.1+).
+  The skill said the default was `file`.
+- `influxdb3 delete database` prompts for confirmation (3.10+).
+  Scripts pass `-y`/`--yes`.
+  There's still no `--force`.
+- `influxdb3 delete token` also prompts for confirmation (observed on 3.11.5), so the token examples pass `-y`.
+- SKILL.md §2 gives the setup checklist alongside the code instead of holding the code back to ask questions.
+  `databases.md` adds a create, write, and drop walkthrough that writes with an app token, not the admin token (live-verified on Core and Enterprise 3.11.5).
+  SKILL.md §10 makes the app-token write a rule, including one-off demos.
+  `clients/java.md` says Core and Enterprise use the same client and endpoints.
+- `/ping` is auth-gated (3.10+).
+  Health-check snippets send a token.
+  An unauthenticated 401 still means the server is up.
+- `/api/v3/query_sql` `params` is a named object referenced as `$name`.
+  `clients/http.md` showed a positional array, which returns 400.
+- Enterprise user authentication and RBAC are a preview (3.10+), off by default.
+  `flavors.md` described RBAC as first-class.
+- The operator token can't be deleted, only regenerated.
+  `tokens.md` told the agent to revoke it after bootstrap.
+- SKILL.md §4 lists three rules that hold even when the developer asks otherwise:
+  don't hard-code a token; don't write a `.env` that `.gitignore` doesn't cover;
+  and don't replace an unreachable instance with fake data.
+  The description now names unreachable-instance requests so the skill loads for them.
+- Deferred topics (air-gapped setup, performance tuning, and migration, including rewriting v1 or v2 client code) lead with the deferral and a docs URL.
+  `doc-urls.md` adds a "Topics this skill defers" table.
+  The plugins skill's air-gapped guidance no longer walks through offline installs.
+- InfluxDB 3 doesn't run Flux, so the skill doesn't write Flux, even as a comparison.
+- SKILL.md §5 says to use second precision unless a series gets more than one point per second.
+  `writing.md` no longer says coarser precision makes queries faster.
+- The plugins skill notes the `time` column in `system.processing_engine_logs` (3.11.0+).
+  Its `quirks.md` links point at the `influxdb3` skill, where the file lives.
+- Examples run on the current client minors: influxdb3-python 0.21, JavaScript 2.4, Go 2.17, Java 1.11, and C# 1.10 (live-verified on Core and Enterprise 3.11.5).
+  The Go README adds `go mod tidy`, and the Java docs add the Arrow Flight JVM options, including `--sun-misc-unsafe-memory-access=allow` on JDK 27.
+
+### Changed
+- Both skills drop verification history (build dates, "verified against" notes, and "per source" notes) and skill-version roadmap references (`v0.x`).
+  Version-support notes stay, written as `X+` (for example, `3.10+`).
+
+## 0.6.0 (unreleased)
+
+Content checked against the InfluxDB 3 Core and InfluxDB 3 Enterprise 3.11.5 docs and release notes.
+Live evals on 3.11.5 are still pending.
+
+### Boundaries
+- `influxdb3` names each product it covers in full: InfluxDB 3 Core, InfluxDB 3 Enterprise, InfluxDB 3 Cloud, InfluxDB Cloud Serverless, InfluxDB Cloud Dedicated, and InfluxDB Clustered. Core and Enterprise get full guidance. The other products route to their own docs for tokens, databases, and product-specific behavior.
+- For InfluxDB OSS v1, InfluxDB Enterprise v1, InfluxDB OSS v2, InfluxDB Cloud (TSM), InfluxDB Cloud 1, and Flux, the skill routes questions to the InfluxDB Documentation MCP server and each product's `llms-full.txt` instead of answering from memory. The description names these products so the skill fires for them.
+- Both skills look things up in this order: the InfluxDB docs MCP server, then the `influxdb3` CLI or InfluxDB 3 MCP server for live state, then curated doc URLs. Neither MCP server is required.
+- Both skills tell the agent not to state version-sensitive flags, defaults, or limits from memory, and to report observed behavior that contradicts the docs, with product and version. `--help` text alone doesn't count as evidence against the docs.
+
+### Fixed
+- `/api/v3/write_lp` accepts partial writes by default (`accept_partial=true`), so a 400 doesn't mean the whole batch was rejected. `writing.md`, `troubleshooting.md`, `quirks.md` entry 11, and `SKILL.md` said the opposite.
+- On Core and Enterprise 3.11.5 (live-verified), `/api/v2/write` and `/write` reject the whole batch when one line is invalid. The v1 compatibility route is `/write`, not `/api/v1/write`.
+- Added "no response" to the write error table as retriable. On 3.11.5, a write to a node stopped with `influxdb3 stop node` got a connection reset, not the 503 that the 3.11.0 release notes describe (live-verified).
+- The official clients write through `/api/v2/write` by default starting in influxdb3-python 0.20.0, JavaScript 2.3.0, Go 2.15.0, Java 1.10.0, and C# 1.9.0. `writing.md` and each client reference say how to opt into `/api/v3/write_lp` for partial writes and `no_sync`.
+- `tokens.md` notes that regenerating the operator token invalidates the old token immediately (live-verified on Core 3.11.5).
+- Added 403 to the write error table. Starting in 3.10.0, `/api/v2/write` returns 403, not 401, for a valid token without write permission.
+- Duplicate tag keys are rejected with 400 starting in 3.9.8, 3.10.3, and 3.11.0. Earlier versions accepted them and then crash-looped on WAL replay.
+- InfluxDB Cloud Serverless and InfluxDB Cloud Dedicated have no `/api/v3` endpoints. They write through `/api/v2/write` and query through Flight or the v1 `/query` endpoint. `flavors.md` said Cloud Dedicated had the same v3 API as Core, and the flavor-detection snippets probed a Serverless `/api/v3/databases` endpoint that doesn't exist. `flavors.md` is now the one place that lists per-product endpoints.
+- Schema guidance no longer applies InfluxDB v1/v2 cardinality advice. InfluxDB 3 supports unlimited tag cardinality, and a row is identified by its tags and timestamp, so identifiers such as `gpu_id` are tags. As fields, GPUs on one host would overwrite each other.
+- `--package-manager` is deprecated in 3.10. Starting in 3.11.0, `--disable-package-management` blocks plugin package installation. `dependencies.md` now gives the flag for each version.
+- `quirks.md` entry 10 said `time` isn't a column of `system.processing_engine_logs`. Starting in 3.11.0, `time` is the physical column and `event_time` is a virtual alias. Examples keep `event_time`, which works on every version.
+- Asynchronous triggers with `--error-behavior retry` retry a limited number of times starting in 3.11.0, not indefinitely.
+
+### Packaging
+- Moved `version`, `last_verified`, and `verified_against` in both `SKILL.md` files under `metadata:`, as the Agent Skills spec requires. Docs-checked and live-verified versions are now recorded separately.
+- `docs/publishing.md` and the README describe the new metadata fields.
+
+### Earlier unreleased changes
 
 Findings from a hands-on test pass (local bring-up + sustained write/query load). All changes are in the `influxdb3` skill.
 

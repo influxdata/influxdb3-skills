@@ -5,6 +5,11 @@ set -euo pipefail
 # Connects, writes 10 points, queries them back.
 
 # Load .env from the script's directory if present.
+# Trust boundary: INFLUXDB_HOST and this auto-sourced .env decide where the
+# bearer token below is sent. A poisoned env var or a hostile .env dropped in
+# this directory would ship the token to an attacker's host — the requests
+# carry `Authorization: Bearer $INFLUXDB_TOKEN` with no host validation. Only
+# run this against a host you control, and don't source a .env you didn't write.
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 if [[ -f "$script_dir/.env" ]]; then
   set -a

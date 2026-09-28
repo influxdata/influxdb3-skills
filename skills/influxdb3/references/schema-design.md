@@ -2,41 +2,27 @@
 
 ## The tag-vs-field decision
 
-For each value you're considering writing:
+InfluxDB 3 identifies a row by its table, its tag set, and its timestamp.
+Fields aren't part of that identity.
 
-| Question | If yes → | If no → |
-|---|---|---|
-| Will I `GROUP BY` or filter on this? | candidate for tag | field |
-| Does it have a small, bounded set of distinct values (typically ≤ a few thousand)? | tag | field |
-| Is it a measured quantity that varies over time? | field | tag |
-| Is it a unique identifier (UUID, request ID, user ID)? | **field**, not tag | — |
+- **Tags** hold metadata that identifies the data's source or context: `host`, `region`, `sensor_id`, `gpu_id`.
+- **Fields** hold measured values: temperature, utilization, latency.
+- Tag values are always strings. Field values can be integers, unsigned integers, floats, strings, or booleans.
 
-Default: **when in doubt, make it a field.** It's cheaper to add a tag later than to recover from a high-cardinality blowup.
+Two points with the same table, tag set, and timestamp are the same row, and the later write overwrites the earlier one.
+So a value that tells two data sources apart must be a tag, even when it's unique per device.
 
-## Cardinality — the most common mistake
+## Cardinality
 
-Tags create indexed series. The total number of unique tag-value combinations is your **series cardinality**. High cardinality blows up storage and slows queries.
-
-Common offenders that should be **fields, not tags**:
-
-- User IDs, customer IDs, account IDs
-- Request IDs, trace IDs, transaction IDs
-- UUIDs of any kind
-- IP addresses (in most apps)
-- GPU IDs, device IDs (in fleet-scale telemetry)
-
-Common values that **should** be tags:
-
-- `region` (small set: us-east, us-west, …)
-- `host` (bounded by your fleet size, typically OK; once you exceed ~100k unique hosts in a single series, reconsider)
-- `service`, `env`, `tier`
-- `status` (typically a small enum)
+The InfluxDB 3 storage engine supports unlimited tag value and series cardinality.
+Unlike InfluxDB v1 and v2, a tag with many distinct values, such as a device ID, doesn't slow the database down.
+Don't move identifiers into fields to reduce cardinality. That advice applies to InfluxDB v1 and v2, not InfluxDB 3.
 
 ### The 50,000-GPU example
 
-If a developer asks "how do I track GPU utilization across 50,000 GPUs?", and they propose `gpu_id` as a tag, push back:
-
-> "50,000 unique tag values per measurement is a high cardinality. If you also tag by region (4) and host (10,000), your series count multiplies. Make `gpu_id` a **field** instead, and tag only by low-cardinality dimensions like `region` or `gpu_model`."
+For "how do I track GPU utilization across 50,000 GPUs?", make `gpu_id` a tag, along with `host` and `region`.
+Several GPUs on one host report at the same timestamp.
+If `gpu_id` were a field, their points would share a tag set and timestamp, and each write would overwrite the last.
 
 ## Naming conventions
 

@@ -2,7 +2,7 @@
 
 `admin_lifecycle.py` exercises the full token + database lifecycle for InfluxDB 3 **Enterprise**, using `requests` to hit the management HTTP API directly. The official `influxdb3-python` client is data-plane only — it doesn't expose admin operations.
 
-> **Targets Enterprise.** `_create_scoped_token` calls `/api/v3/enterprise/configure/token`. For Core, change that path to `/api/v3/configure/token`.
+> **Requires InfluxDB 3 Enterprise or InfluxDB 3 Cloud.** `_create_scoped_token` creates a scoped resource token via `/api/v3/enterprise/configure/token`. Core has no resource tokens, so it doesn't run on Core (`references/tokens.md`).
 
 ## What it does
 
@@ -24,7 +24,6 @@ python admin_lifecycle.py
 
 - Don't copy this script into production CI without changing the test-DB name pattern (`admin_test_python_<ts>`).
 - Generalize the `try/finally` cleanup pattern into your real provisioning code.
-- For Core, change `_create_scoped_token`'s endpoint to `/api/v3/configure/token`.
 
 ## Where to fetch more
 

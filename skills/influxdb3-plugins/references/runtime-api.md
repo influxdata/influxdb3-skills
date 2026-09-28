@@ -52,7 +52,9 @@ influxdb3_local.write_sync(line, no_sync=True)
 
 ## `LineBuilder`
 
-Helper for constructing InfluxDB line protocol with proper escaping and type strictness. Constructor: `LineBuilder(measurement: str)` — measurement name cannot contain spaces (raises `InvalidMeasurementError`).
+Helper for constructing InfluxDB line protocol with type strictness and escaping of the common structural characters (commas, `=`, spaces, and quotes/backslashes in string fields). Constructor: `LineBuilder(measurement: str)` — measurement name cannot contain spaces (raises `InvalidMeasurementError`).
+
+> **`LineBuilder` does not escape newlines (`\n`) or carriage returns (`\r`).** Line protocol treats a newline as a record separator and has no escape for it, so a tag/field value containing `\n`/`\r` will forge an extra point. When a value may contain them (e.g. anything derived from `process_request` input or upstream data), **reject or strip `\n`/`\r` before building the line** — don't rely on `LineBuilder` to neutralize it.
 
 | Method | Purpose |
 |---|---|

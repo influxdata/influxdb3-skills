@@ -12,11 +12,11 @@ Run each prompt in a **fresh** Claude Code session (so the skill is loaded clean
 | 2 | "Add to that script — query the last 10 minutes of data and print the rows." | Query, Python, SQL primary | Uses SQL `SELECT ... WHERE time >= now() - INTERVAL '10 minutes'` (or equivalent), parameterized if user input is involved. |
 | 3 | "Now do the same thing in Go." | Cross-language portability | Uses official `influxdb3-go` client, same env vars, no hard-coded host. |
 | 4 | "I'm targeting Cloud Serverless. Set up the connection in JavaScript." | Flavor switch, JS/TS | Uses `@influxdata/influxdb3-client`, points at the Cloud Serverless host pattern, notes the v2 write path for Serverless if relevant. |
-| 5 | "Help me design a schema for tracking GPU utilization across a fleet of 50,000 GPUs." | Schema design, cardinality | Calls out that GPU ID should be a **field** (not a tag) due to cardinality; tags reserved for low-cardinality grouping like `region` or `gpu_model`. |
+| 5 | "Help me design a schema for tracking GPU utilization across a fleet of 50,000 GPUs." | Schema design | Makes `gpu_id` a **tag**: a row is identified by its tags and timestamp, so GPUs on one host would overwrite each other if `gpu_id` were a field. Doesn't apply InfluxDB v1/v2 cardinality advice. |
 | 6 | "Show me how to batch-write 1 million points efficiently in C#." | Write path, batching | Batches ≥ 1,000 points per flush, handles retriable vs non-retriable errors, uses `InfluxDB3.Client`. |
 | 7 | "Write a SQL query that gives me the average temperature per region per hour for the last day." | Query, SQL idioms | Correct `DATE_BIN` or `time_bucket` usage for v3 SQL, `GROUP BY` on tags, sensible time filter. |
 | 8 | "I have user input coming into a query — how do I parameterize it safely in Java?" | Query, security | Uses parameterized query API of `influxdb3-java`, never string-concatenates user input. |
-| 9 | "I don't want to use the official client. Just give me curl examples for write and query against Cloud Dedicated." | HTTP fallback, Cloud Dedicated | Uses raw `/api/v3/write_lp` (or correct flavor endpoint) and `/api/v3/query_sql`, env vars for host and token. |
+| 9 | "I don't want to use the official client. Just give me curl examples for write and query against Cloud Dedicated." | HTTP fallback, Cloud Dedicated | Writes with `/api/v2/write`; queries with InfluxQL over v1 `/query` or says SQL needs Flight. Uses no `/api/v3` endpoint. Env vars for host and token. |
 | 10 | "I think I'm hitting a 401 — help me check my auth setup." | Auth-failure diagnostic (in-scope since v0.4.0) | Routes to `troubleshooting.md` → "Auth failures" → "HTTP 401"; walks env-var check (`INFLUXDB_TOKEN` set, right name per quirks.md entry 5), host correctness (`/ping`), recent rotation, token validity. Never inlines a token in suggested code. |
 | 11 | "Migrate this v2 Python code to v3." | Out-of-scope migration | Defers politely; does not pretend to be a migration helper. |
 | 12 | "How do I tell which flavor I'm connected to from my code?" | Flavor detection | Produces a `/ping`-based snippet matching the logic from `references/flavor-detection.md`. |
@@ -121,7 +121,7 @@ These prompts must NEVER produce the wrong output. If they do, **block the v0.4.
 
 ### v0.4.0 deferred cases (must defer politely)
 
-- "My query takes 30 seconds — how do I make it faster?" → defer to v0.5.0 (one-line "common cause is high cardinality or unbounded SELECT *" hint allowed).
+- "My query takes 30 seconds — how do I make it faster?" → defer to v0.5.0 (one-line "common cause is a missing time filter or unbounded SELECT *" hint allowed).
 - "My plugin in a 5-node cluster only runs on some writes" → defer to v0.2.1 (cluster placement).
 
 ---
@@ -132,7 +132,7 @@ Run each prompt in a **fresh** Claude Code session inside a throwaway directory.
 
 | # | Prompt | Verifies | Pass criteria |
 |---|---|---|---|
-| 28 | "I just installed the claude-influxdb3 plugin. I don't have InfluxDB 3 running yet — help me get a Core instance up." | Install path: Core | Routes to `references/installing.md`. Walks through install script OR Docker (presents both); covers `serve` invocation with `--node-id`, `--object-store`, `--data-dir`, `--plugin-dir`; covers `create token --admin` for bootstrap; verifies with `GET /ping`. Never inlines a token. |
+| 28 | "I just installed the influxdb3-skills plugin. I don't have InfluxDB 3 running yet — help me get a Core instance up." | Install path: Core | Routes to `references/installing.md`. Walks through install script OR Docker (presents both); covers `serve` invocation with `--node-id`, `--object-store`, `--data-dir`, `--plugin-dir`; covers `create token --admin` for bootstrap; verifies with `GET /ping`. Never inlines a token. |
 | 29 | "How do I install InfluxDB 3 Enterprise on my Mac for development?" | Install path: Enterprise | Same flow as #28 but Enterprise. Mentions license activation step on first boot. Does NOT walk through systemd / production hardening (out of scope). |
 
 ---

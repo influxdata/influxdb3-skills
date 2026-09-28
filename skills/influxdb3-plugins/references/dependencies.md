@@ -38,6 +38,8 @@ curl -X POST "$INFLUXDB_HOST/api/v3/configure/plugin_environment/install_package
 
 The HTTP variant requires an admin token.
 
+> **`install package` is a supply-chain trust boundary.** Package names go to `pip` against public PyPI with **no typosquat protection** — a misspelled or look-alike name (`reqeusts`, `panndas`) installs and then becomes importable by unsandboxed plugin code (`references/plugin-code-safety.md`). Extra arguments are passed to `pip` verbatim, so a stray `--index-url http://attacker/…` or `--extra-index-url` redirects where packages come from. Install only names you've verified, pin versions (`pandas==2.2.2`), and prefer a vetted internal index; in locked-down deployments use `--package-manager disabled` (below) to turn this surface off entirely.
+
 ## When the plugin imports a package
 
 In plugin code, `import` works just like in any Python script:
@@ -56,7 +58,22 @@ The package must already be installed in the plugin venv before the trigger fire
 
 ## Air-gapped / locked-down environments
 
-Start the server with `--package-manager disabled` to block runtime package installation:
+This skill doesn't cover full air-gapped setup: offline mirrors, custom plugin repos, or offline `pip` installs.
+Say so first, and link https://docs.influxdata.com/influxdb3/core/plugins/ → "Disable package installation for secure environments" (use `enterprise` in the path for InfluxDB 3 Enterprise).
+Then give only the flag table below and the pre-install rule.
+Don't write virtual-environment, wheelhouse, or offline `pip` steps.
+
+The flag that blocks runtime package installation depends on the server version.
+Check that the user's binary accepts the flag (`influxdb3 serve --help` lists it) before you generate a start command.
+
+| Server version | Flag | Behavior |
+|---|---|---|
+| 3.11.0+ | `--disable-package-management` (env `INFLUXDB3_DISABLE_PACKAGE_MANAGEMENT`) | The server never creates or changes a virtual environment and never runs `pip`. Package-install API calls are rejected. You manage the virtual environment yourself and point the server at it with `VIRTUAL_ENV`. Takes precedence over `--package-manager`. |
+| 3.10.x | `--package-manager disabled` | `--package-manager` is deprecated (3.10+), and the server prints a deprecation warning. `disabled` still blocks package-install API calls. |
+| Earlier than 3.10 | `--package-manager disabled` | Blocks package-install API calls. |
+
+The 3.11.0 release notes add `--disable-package-management`, but the reference docs don't describe it yet.
+The behavior in the first row comes from the 3.11.5 `--help` text and hasn't been behavior-tested.
 
 ```bash
 influxdb3 serve \
@@ -64,15 +81,17 @@ influxdb3 serve \
   --object-store file \
   --data-dir ~/.influxdb3 \
   --plugin-dir ~/.plugins \
-  --package-manager disabled
+  --disable-package-management
 ```
 
-When disabled:
+`pip` is always the package installer, and `uv` isn't used (3.10+).
+
+When package installation is blocked:
 - Existing pre-installed packages still work.
 - The Processing Engine still runs triggers normally.
-- New `influxdb3 install package` calls and the HTTP install endpoint are blocked.
+- New `influxdb3 install package` calls and the HTTP install endpoint are rejected.
 
-**Pre-install everything you need before disabling.** This pattern is for compliance environments that prohibit runtime package installation. Full air-gapped configuration (offline mirrors, custom plugin repos, etc.) is the v0.3.0 scope.
+**Pre-install everything you need before you block installation.** This pattern is for compliance environments that prohibit runtime package installation.
 
 ## Where to fetch more
 

@@ -13,8 +13,8 @@
 | Variable | Required | Notes |
 |---|---|---|
 | `INFLUXDB_HOST` | yes | Full URL including scheme and port; e.g., `http://localhost:8181` for Core or `https://us-east-1-1.cloud2.influxdata.com` for Cloud Serverless |
-| `INFLUXDB_TOKEN` | yes | Database-scoped or admin token; never inline |
-| `INFLUXDB_DATABASE` | yes | The database (Core/Enterprise) or bucket (Cloud) name |
+| `INFLUXDB_TOKEN` | yes | Database-scoped token, or a named admin token on Core; never inline |
+| `INFLUXDB_DATABASE` | yes | The database (Core/Enterprise) or bucket (InfluxDB Cloud Serverless) name |
 | `INFLUXDB_ORG` | no | Only needed for v2-style endpoints (Cloud Serverless write path); leave unset elsewhere |
 
 ## First-time setup checklist
@@ -25,7 +25,7 @@ When the developer is starting fresh in a project (no `.env`, no client imports)
 
 These steps happen ONCE, on the server side, before any application code:
 
-1. **Pick the flavor** — Core or Enterprise (self-hosted), or skip to "Cloud" below. See `references/flavors.md`.
+1. **Pick the flavor** — Core or Enterprise (self-hosted), or skip to InfluxDB Cloud Serverless / InfluxDB Cloud Dedicated below. For InfluxDB 3 Cloud and InfluxDB Clustered, follow their docs. See `references/flavors.md`.
 2. **Start the server** — `influxdb3 serve --object-store=...` (Core) or your cluster bootstrap (Enterprise).
 3. **Create the operator/admin token.** For a brand-new server, this is a bootstrap step that does NOT require an existing token:
    - CLI: `influxdb3 create token --admin --host http://localhost:8181`
@@ -34,8 +34,9 @@ These steps happen ONCE, on the server side, before any application code:
    - CLI: `influxdb3 create database <name> --token <admin-token> --host http://localhost:8181`
    - Or HTTP: `POST /api/v3/configure/database` with `Authorization: Bearer <admin-token>` and body `{"db":"<name>"}`.
    - Full reference and HTTP API equivalents: `references/databases.md`.
-5. **(Recommended)** Create a database-scoped token for the application instead of reusing the admin token:
-   - CLI: `influxdb3 create token --permission "db:<name>:read,write" --token <admin-token>`
+5. **(Recommended)** Create a token for the application instead of reusing the operator token:
+   - Enterprise: `influxdb3 create token --permission "db:<name>:read,write" --name <app> --token <admin-token>`
+   - Core has admin tokens only: `influxdb3 create token --admin --name <app> --token <admin-token>` (`references/tokens.md` → "InfluxDB 3 Core: admin tokens only")
    - This is the token the application reads from `INFLUXDB_TOKEN`.
    - Full reference, including the safe rotation pattern: `references/tokens.md`.
 
@@ -44,8 +45,8 @@ These steps happen ONCE, on the server side, before any application code:
 The server already exists and the bootstrap admin already happened on InfluxData's side:
 
 1. **Pick the flavor** and confirm the host pattern (`<region>-<id>.cloud2.influxdata.com` for Serverless; customer-specific hostname for Dedicated). See `references/flavors.md`.
-2. **Create the database/bucket** via the Cloud UI or the management API (instructions vary per flavor — see `references/doc-urls.md`).
-3. **Create a database-scoped token** via the Cloud UI or management API.
+2. **Create the database/bucket** in the product's UI or management API (instructions vary per flavor — see `references/doc-urls.md`).
+3. **Create a database-scoped token** in the product's UI or management API.
 
 ### Per-project setup (any flavor — happens in the developer's workspace)
 
@@ -72,7 +73,7 @@ That means they're at step 2 of bootstrapping, with nothing else done yet. Walk 
 
 ## The silent auto-create footgun
 
-> **Important:** InfluxDB 3 (Core, Enterprise, and Cloud, with default config) will **silently auto-create a database on first write**. A typo in `INFLUXDB_DATABASE` won't error — it'll create a brand-new, empty database with the misspelled name and write your data there. The original database keeps growing nothing; your dashboards and queries against the original name return zero rows.
+> **Important:** InfluxDB 3 Core and Enterprise (with default config) will **silently auto-create a database on first write**. For other products, check their docs. A typo in `INFLUXDB_DATABASE` won't error — it'll create a brand-new, empty database with the misspelled name and write your data there. The original database keeps growing nothing; your dashboards and queries against the original name return zero rows.
 
 This means: **a script can report `==> Done` while doing the wrong thing.** Always verify the database exists *before* writing.
 

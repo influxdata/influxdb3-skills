@@ -1,12 +1,12 @@
 {
-  "name": "claude-influxdb3",
-  "version": "0.5.2",
-  "description": "Teach Claude Code to write correct InfluxDB 3 code (connect, write, query, schema design), to develop, install, and test Processing Engine plugins, to provision and manage databases and auth tokens, AND to troubleshoot when something stops working — across Core, Enterprise, Cloud Serverless, and Cloud Dedicated, in Python, JavaScript, Go, Java, C#, and raw HTTP.",
+  "name": "influxdb3-skills",
+  "version": "0.7.0",
+  "description": "Agent skills for InfluxDB 3: write correct application code (connect, write, query, schema design), develop, install, and test Processing Engine plugins, manage databases and tokens, and troubleshoot InfluxDB 3 Core and InfluxDB 3 Enterprise, with routing to the docs for other InfluxDB products.",
   "author": {
     "name": "InfluxData",
     "email": "product@influxdata.com"
   },
-  "homepage": "https://github.com/influxdata/claude-skill-for-influxdb3",
-  "repository": "https://github.com/influxdata/claude-skill-for-influxdb3",
+  "homepage": "https://github.com/influxdata/influxdb3_skills",
+  "repository": "https://github.com/influxdata/influxdb3_skills",
   "license": "MIT"
 }
