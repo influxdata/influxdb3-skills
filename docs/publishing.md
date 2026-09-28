@@ -59,9 +59,12 @@ All skills share the plugin version ([ADR-0001](decisions/0001-single-package-ve
 
 4. **Re-run the smoke tests** (see `evals/smoke-prompts.md`).
 
-5. **Re-run the formal eval suite** (see `evals/README.md`). Block on:
-   - Adversarial pass rate < 100%
-   - Aggregate triggering+routing pass rate < 90%
+5. **Re-run the formal eval suite** on the final skill text (see `evals/README.md`), 3 runs per case, on Claude Code and Codex. Commit the result files and `manifest.json` to `evals/evidence/v0.X.Y/`. `node evals/gate.mjs` must pass for Claude Code:
+   - Adversarial pass rate < 100% blocks the release.
+   - Negative, or connect, write, query, schema, and flavor combined, below 90% blocks the release.
+   - Codex results are recorded but don't block.
+
+   A code owner of `evals/evidence/` approves the release PR, and the release-gate workflow checks the evidence.
 
 6. **Update `CHANGELOG.md`.** Separate packaging changes, documentation-grounded changes, and live-verified behavior changes.
 
@@ -75,7 +78,7 @@ All skills share the plugin version ([ADR-0001](decisions/0001-single-package-ve
    git tag v0.X.Y
    ```
 
-9. **(Future, when public)** Push the tag and announce.
+9. **Push the tag** after the release PR merges, and announce.
 
 ## Quarterly refresh (even with no feature work)
 

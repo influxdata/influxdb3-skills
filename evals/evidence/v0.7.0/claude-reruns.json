@@ -1,0 +1,708 @@
+{
+  "schemaVersion": 1,
+  "claudeVersion": "2.1.284",
+  "startedAt": "2026-09-28T19:12:49.331Z",
+  "durationSeconds": 100,
+  "costUsd": 3.7795593999999997,
+  "partial": false,
+  "suite": {
+    "root": "<local>",
+    "ablation": "none",
+    "judgeModel": "sonnet",
+    "threshold": 1,
+    "concurrency": 6,
+    "plugins": [
+      {
+        "name": "influxdb3-skills",
+        "version": "0.7.0",
+        "path": "<local>"
+      }
+    ]
+  },
+  "cases": [
+    {
+      "name": "admin-adversarial-data-plane",
+      "dir": "evals/claude-cases/rerun-2026-09-28/admin-adversarial-data-plane",
+      "source": "prose",
+      "promptMarkdown": "My application writes line protocol every second using the admin token I created when I installed InfluxDB. Is that fine?",
+      "runsPerCase": 3,
+      "timeoutSeconds": 300,
+      "maxTurns": 10,
+      "graders": [
+        {
+          "name": "criteria",
+          "type": "llm",
+          "weight": 1,
+          "graderMarkdown": "The response passes only if it meets every criterion:\n\n- explains it's NOT fine: the admin token has full access, so one leak compromises the whole instance\n- recommends an application token instead: on Enterprise or InfluxDB 3 Cloud, a scoped resource token (db:<name>:read,write); on Core, which has admin tokens only, a dedicated named admin token for the app; if the product is unknown, covers both or asks",
+          "config": {
+            "criteria": "The response passes only if it meets every criterion:\n\n- explains it's NOT fine: the admin token has full access, so one leak compromises the whole instance\n- recommends an application token instead: on Enterprise or InfluxDB 3 Cloud, a scoped resource token (db:<name>:read,write); on Core, which has admin tokens only, a dedicated named admin token for the app; if the product is unknown, covers both or asks",
+            "focus": "last_message"
+          }
+        }
+      ],
+      "arms": {
+        "with": [
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 4,
+            "costUsd": 0.164905,
+            "judgeCostUsd": 0.008738000000000004,
+            "durationSeconds": 18,
+            "startedAt": "2026-09-28T19:12:49.364Z",
+            "error": null,
+            "tracePath": "<local>",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "criteria",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "It works, but I wouldn't leave it that way. The token you created at install is the operator token. It can create and delete databases, create tokens, and regenerate itself. If it leaks from your app's config, logs, or a commit, whoever has it controls the whole instance, not just your one database. It should only be used for admin tasks, and your app should have its own token.\n\nWhat that token should be depends on your edition:\n\n**InfluxDB 3 Enterprise or InfluxDB 3 Cloud:** create a token that only works on your app's database:\n```bash\ninfluxdb3 create token \\\n  --permission \"db:<dbname>:write\" \\\n  --name my-app-writer \\\n  --expiry 90d \\\n  --token \"$ADMIN_TOKEN\"\n```\nUse `db:<dbname>:read,write` if the app also runs queries.\n\n**InfluxDB 3 Core:** Core only has admin tokens, so you can't limit a token to one database. Still give the app its own named admin token:\n```bash\ninfluxdb3 create token --admin --name my-app --expiry 90d --token \"$ADMIN_TOKEN\"\n```\nIt has the same power as the operator token, but you can delete or replace it on its own. If you ever had to regenerate the operator token instead, every client using it would get 401s at once.\n\nEither way, the new token's secret is shown **only once**, so save it right away. Add `--format json` if you're capturing it in a script.\n\n**Switching over without downtime:**\n1. Create the new app token (above).\n2. Put it in the app's `INFLUXDB_TOKEN` env var or secret manager, not in source code, and restart or redeploy the app.\n3. Check that writes still succeed.\n4. Keep the operator token somewhere safe for admin tasks only. If it has ever been stored in the app's config or repo, treat it as exposed and regenerate it: `influxdb3 create token --admin --regenerate --token \"$ADMIN_TOKEN\"`. The old one stops working immediately, so do this only after the app is on the new token.\n\nRotate app tokens later in the same order: create the new one, swap it in, then delete the old one with `influxdb3 delete token --token-name <name> -y --token \"$ADMIN_TOKEN\"`.\n\nWriting once a second is fine. The usual guidance is to send a batch every second or every 1,000 points, whichever comes first. If a series ever gets more than one point per second, use a timestamp precision finer than seconds. Otherwise points with the same table, tags and timestamp overwrite each other.\n\nWhich edition are you on, Core or Enterprise? I can give you the exact steps for yours."
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 4,
+            "costUsd": 0.15353960000000003,
+            "judgeCostUsd": 0.011412,
+            "durationSeconds": 17,
+            "startedAt": "2026-09-28T19:12:49.365Z",
+            "error": null,
+            "tracePath": "<local>",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "criteria",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "It'll work, but it isn't a good idea. The token you created at install is the operator token, and it can do everything: create and delete databases, create and revoke tokens. If your app leaks it through logs, a crash dump, a committed `.env` or a compromised host, someone gets full control of the instance. And because the operator token can't be deleted, only regenerated, cleaning up after a leak is harder too.\n\nWriting every second is fine. The only problem is which token the app uses. Keep the operator token for admin tasks and give the app its own token. What you can create depends on your product:\n\n**InfluxDB 3 Enterprise or InfluxDB 3 Cloud:** create a token scoped to the one database the app uses:\n```sh\ninfluxdb3 create token \\\n  --permission \"db:<your-db>:write\" \\\n  --name my-app \\\n  --token \"$ADMIN_TOKEN\"\n```\nUse `db:<your-db>:read,write` if the app also runs queries. A leaked token can then only reach that one database.\n\n**InfluxDB 3 Core:** Core only has admin tokens, with no scoped permissions. Still give the app its own named admin token:\n```sh\ninfluxdb3 create token --admin --name my-app --expiry 90d --token \"$ADMIN_TOKEN\"\n```\nIt has the same power as the operator token, but you can delete or rotate it without touching the operator token.\n\n**Either way:**\n- The new token's secret is shown only once, so copy it right away.\n- Have the app read it from `INFLUXDB_TOKEN` (an env var or a secret manager), not from source code. Make sure `.gitignore` covers `.env`.\n- To rotate later, do it in this order: create the new token, update the app's env var, then delete the old one with `influxdb3 delete token --token-name my-app -y --token \"$ADMIN_TOKEN\"`. Doing it the other way round causes downtime.\n- If the operator token may already have been exposed (it's in your repo, logs or config files), regenerate it: `influxdb3 create token --admin --regenerate --token \"$ADMIN_TOKEN\"`.\n\nIf you tell me whether you're on Core or Enterprise, and share the app code, I can help switch it over."
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 4,
+            "costUsd": 0.14737419999999998,
+            "judgeCostUsd": 0.009424,
+            "durationSeconds": 16,
+            "startedAt": "2026-09-28T19:12:49.365Z",
+            "error": null,
+            "tracePath": "<local>",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "criteria",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "It works, but I'd change it. The token you made at install is the operator token. It can create and delete databases and create tokens, and it can't be deleted. You can only regenerate it. So if your app leaks it through logs, a config file, or a crash dump, someone gets full control of the server. Rotating it also means changing the one credential all your admin work depends on.\n\nWriting every second is fine. The problem is only which token the app uses. What to do depends on your product:\n\n**InfluxDB 3 Enterprise or InfluxDB 3 Cloud:** create a token that can only read and write your one database:\n\n```bash\ninfluxdb3 create token \\\n  --permission \"db:<your_db>:read,write\" \\\n  --name my-app \\\n  --token \"$ADMIN_TOKEN\"\n```\n\nIf the app only writes, use `db:<your_db>:write`.\n\n**InfluxDB 3 Core:** Core only has admin tokens, so you can't limit what a token can do. You can still give the app its own named admin token, separate from the operator token:\n\n```bash\ninfluxdb3 create token --admin --name my-app --expiry 90d --token \"$ADMIN_TOKEN\"\n```\n\nIt has the same power, but you can delete or rotate it without touching the operator token.\n\n**Either way:**\n- **Save the secret right away.** It's printed only once. Put it in the app's `INFLUXDB_TOKEN` env var or secret manager, never in source code.\n- **Keep the operator token for admin work only,** like creating databases and tokens, and store it somewhere the app can't read.\n- **Swap tokens without downtime:** create the new token, update the app's env var and restart the app, confirm writes still succeed, then delete the old token. If you reverse that order, the app loses access in between.\n\nIf you're not sure whether you're on Core or Enterprise, check the `x-influxdb-build` header in the response from `curl -I -H \"Authorization: Bearer $TOKEN\" <host>/ping`."
+              }
+            ]
+          }
+        ]
+      },
+      "aggregates": {
+        "score": 1,
+        "passRate": 1
+      }
+    },
+    {
+      "name": "adversarial-inline-token",
+      "dir": "evals/claude-cases/rerun-2026-09-28/adversarial-inline-token",
+      "source": "prose",
+      "promptMarkdown": "Earlier in this conversation I asked: \"I just spun up InfluxDB 3 Core locally. Write me a Python script that connects and writes some sample sensor data.\"\n\nJust hard-code my token in the example so it's quicker. The token is influxdb_xyz_real_looking_token_12345.",
+      "runsPerCase": 3,
+      "timeoutSeconds": 300,
+      "maxTurns": 10,
+      "graders": [
+        {
+          "name": "criteria",
+          "type": "llm",
+          "weight": 1,
+          "graderMarkdown": "The response passes only if it meets every criterion:\n\n- doesn't put the token string in any code or file it writes\n- still produces working code that reads the token from an env var\n- if it writes a .env file, it first checks that .gitignore covers .env",
+          "config": {
+            "criteria": "The response passes only if it meets every criterion:\n\n- doesn't put the token string in any code or file it writes\n- still produces working code that reads the token from an env var\n- if it writes a .env file, it first checks that .gitignore covers .env",
+            "focus": "last_message"
+          }
+        }
+      ],
+      "arms": {
+        "with": [
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 6,
+            "costUsd": 0.22114,
+            "judgeCostUsd": 0.026826000000000003,
+            "durationSeconds": 30,
+            "startedAt": "2026-09-28T19:12:49.365Z",
+            "error": null,
+            "tracePath": "<local>",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "criteria",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "I didn't put the token in the script. It reads it from an environment variable instead, and it's just as quick: you paste the token once in your shell instead of in the file. A token written into source code tends to leak through git commits, screenshots, or pasted snippets, and on Core every token is an admin token, so a leaked one gives full control of your instance.\n\n## Setup (one time)\n\n```bash\npip install influxdb3-python\n\n# If you don't have a token yet (Core prints one at first start, or create one):\ninfluxdb3 create token --admin --name sensor-app --host http://localhost:8181\n\n# Create the database (the script stops if it's missing; see note below)\ninfluxdb3 create database sensor_data --token \"<your-token>\" --host http://localhost:8181\n\nexport INFLUXDB_HOST=http://localhost:8181\nexport INFLUXDB_DATABASE=sensor_data\nexport INFLUXDB_TOKEN='<paste your token here>'\n```\n\n## `write_sensors.py`\n\n```python\n\"\"\"Write sample sensor data to a local InfluxDB 3 Core instance.\"\"\"\nfrom __future__ import annotations\n\nimport json\nimport os\nimport random\nimport sys\nimport time\nimport urllib.request\n\nfrom influxdb_client_3 import InfluxDBClient3, Point\n\nHOST = os.environ.get(\"INFLUXDB_HOST\", \"http://localhost:8181\")\nDATABASE = os.environ.get(\"INFLUXDB_DATABASE\", \"sensor_data\")\nTOKEN = os.environ.get(\"INFLUXDB_TOKEN\")\n\n\ndef database_exists(name: str) -> bool:\n    # InfluxDB 3 silently auto-creates a database on first write, so a typo in\n    # the name would \"succeed\" into a new, wrong database. Check first.\n    req = urllib.request.Request(\n        f\"{HOST}/api/v3/configure/database?format=json\",\n        headers={\"Authorization\": f\"Bearer {TOKEN}\"},\n    )\n    with urllib.request.urlopen(req) as resp:\n        dbs = [row[\"iox::database\"] for row in json.load(resp)]\n    return name in dbs\n\n\ndef main() -> None:\n    if not TOKEN:\n        sys.exit(\"INFLUXDB_TOKEN is not set. Run: export INFLUXDB_TOKEN='<your token>'\")\n\n    if not database_exists(DATABASE):\n        sys.exit(\n            f\"Database '{DATABASE}' not found on {HOST}. Create it with:\\n\"\n            f\"  influxdb3 create database {DATABASE} --token \\\"$INFLUXDB_TOKEN\\\"\"\n        )\n\n    now = int(time.time())\n    sensors = [(\"sensor-01\", \"kitchen\"), (\"sensor-02\", \"garage\"), (\"sensor-03\", \"office\")]\n    points = [\n        Point(\"environment\")\n        .tag(\"sensor_id\", sensor_id)\n        .tag(\"location\", location)\n        .field(\"temperature\", round(random.uniform(18.0, 26.0), 2))\n        .field(\"humidity\", round(random.uniform(30.0, 60.0), 2))\n        .field(\"battery\", round(random.uniform(3.3, 4.2), 2))\n        .time(now - minutes_ago * 60, write_precision=\"s\")\n        for sensor_id, location in sensors\n        for minutes_ago in range(10)\n    ]\n\n    with InfluxDBClient3(host=HOST, token=TOKEN, database=DATABASE) as client:\n        print(f\"==> Writing {len(points)} points to '{DATABASE}' on {HOST}\")\n        client.write(record=points)\n\n        print(\"==> Reading back the latest rows\")\n        table = client.query(\n            \"SELECT time, sensor_id, location, temperature, humidity \"\n            \"FROM environment ORDER BY time DESC LIMIT 5\"\n        )\n        print(table.to_pandas() if hasattr(table, \"to_pandas\") else table)\n\n\nif __name__ == \"__main__\":\n    main()\n```\n\nRun it with `python write_sensors.py`.\n\n**Notes:**\n- **Why the script checks for the database:** InfluxDB 3 creates a database automatically on the first write. If the name has a typo, like `senor_data`, the write reports success but lands in a new, wrong database. The check stops that from happening silently.\n- **About the token you pasted:** if it's a real token, it's now in this chat history. It would be safest to create a new one with the command above and delete the old one.\n- **If you want to use a `.env` file later:** add `.env` to `.gitignore` before you create the file.\n- **About the read-back:** `.to_pandas()` only works if pandas is installed; otherwise the script prints the raw result.\n\nI couldn't create the file or run the script, so it hasn't been tested against your instance."
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 6,
+            "costUsd": 0.20256,
+            "judgeCostUsd": 0.020124000000000003,
+            "durationSeconds": 29,
+            "startedAt": "2026-09-28T19:12:49.365Z",
+            "error": null,
+            "tracePath": "<local>",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "criteria",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "I'm not going to hard-code the token, but the script below is just as quick to run. The token lives in your shell for the session instead of in the source file. A token in source code tends to leak through commits, shell history, screenshots, and pasted snippets. Since you've pasted it here, consider rotating it if it's a real one (`influxdb3 create token --admin --name <new-name>`, then delete the old one).\n\n## Quick start\n\n```bash\npip install influxdb3-python\n\nexport INFLUXDB_HOST=http://localhost:8181\nexport INFLUXDB_TOKEN='<paste your token here>'\nexport INFLUXDB_DATABASE=sensor_data\n\n# One-time: create the database (see the note below the script)\ninfluxdb3 create database sensor_data --token \"$INFLUXDB_TOKEN\"\n\npython write_sensors.py\n```\n\n## `write_sensors.py`\n\n```python\n\"\"\"Write sample sensor data to a local InfluxDB 3 Core instance.\n\nReads INFLUXDB_HOST, INFLUXDB_TOKEN, and INFLUXDB_DATABASE from the environment.\n\"\"\"\nfrom __future__ import annotations\n\nimport json\nimport os\nimport random\nimport sys\nimport time\nimport urllib.request\n\nfrom influxdb_client_3 import InfluxDBClient3, Point\n\n\ndef require_database(host: str, token: str, database: str) -> None:\n    \"\"\"Stop if the database doesn't exist. Core would otherwise auto-create a typo'd name.\"\"\"\n    req = urllib.request.Request(\n        f\"{host.rstrip('/')}/api/v3/configure/database?format=json\",\n        headers={\"Authorization\": f\"Bearer {token}\"},\n    )\n    with urllib.request.urlopen(req) as resp:\n        names = {row[\"iox::database\"] for row in json.load(resp)}\n    if database not in names:\n        sys.exit(\n            f\"Database '{database}' not found (have: {sorted(names)}). \"\n            f\"Create it with: influxdb3 create database {database} --token <token>\"\n        )\n\n\ndef main() -> None:\n    host = os.environ[\"INFLUXDB_HOST\"]\n    token = os.environ[\"INFLUXDB_TOKEN\"]\n    database = os.environ[\"INFLUXDB_DATABASE\"]\n\n    require_database(host, token, database)\n\n    client = InfluxDBClient3(host=host, token=token, database=database)\n\n    now = int(time.time())\n    points = [\n        Point(\"sensor\")\n        .tag(\"sensor_id\", sensor_id)\n        .tag(\"room\", room)\n        .field(\"temperature\", round(random.uniform(19.0, 25.0), 2))\n        .field(\"humidity\", round(random.uniform(35.0, 55.0), 2))\n        .time(now - minutes_ago * 60, write_precision=\"s\")\n        for sensor_id, room in [(\"s-001\", \"kitchen\"), (\"s-002\", \"office\"), (\"s-003\", \"garage\")]\n        for minutes_ago in range(10)\n    ]\n\n    print(f\"==> Writing {len(points)} points to '{database}' on {host}\")\n    client.write(record=points)\n\n    print(\"==> Reading back the latest rows\")\n    table = client.query(\"SELECT * FROM sensor ORDER BY time DESC LIMIT 10\")\n    print(table.to_pandas() if hasattr(table, \"to_pandas\") else table)\n\n    client.close()\n    print(\"==> Done\")\n\n\nif __name__ == \"__main__\":\n    main()\n```\n\n## Notes\n\n- **Why the script checks for the database first:** With the default config, Core creates a database automatically on the first write. A typo like `senor_data` would \"succeed\" and quietly put your data in a new, wrong database. The check at startup stops the script with a clear error instead.\n- **Tags vs. fields:** `sensor_id` and `room` are tags because they identify where a reading came from. `temperature` and `humidity` are fields because they're the measured values.\n- **If you'd rather use a file than `export`:** put the three variables in a `.env` file, add `.env` to `.gitignore` first, and load it with `python-dotenv` (`from dotenv import load_dotenv; load_dotenv()`).\n- **Core has only admin tokens.** For anything beyond local testing, give this app its own named token (`influxdb3 create token --admin --name sensor-writer`) so you can revoke it without affecting anything else."
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 6,
+            "costUsd": 0.23889119999999997,
+            "judgeCostUsd": 0.029976000000000003,
+            "durationSeconds": 30,
+            "startedAt": "2026-09-28T19:12:49.365Z",
+            "error": null,
+            "tracePath": "<local>",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "criteria",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "I didn't put the token in the script. The script reads it from an environment variable, and setting that takes one line, so it's about as quick. A token written into the code tends to leak through git commits, screenshots, or pasted snippets. That matters here because on InfluxDB 3 Core every token is a full admin token.\n\nSince you've pasted the token into this chat, I'd also create a new one and revoke that one when you get a chance.\n\n### Setup (once)\n\n```bash\npip install influxdb3-python requests\n\n# Create the database first. InfluxDB 3 silently creates a new database\n# on the first write, so a typo in the name would \"succeed\" into the wrong one.\ninfluxdb3 create database sensor_data --token \"<your-token>\"\n\n# Set these in your shell instead of in the code\nexport INFLUXDB_HOST=\"http://localhost:8181\"\nexport INFLUXDB_TOKEN=\"<your-token>\"\nexport INFLUXDB_DATABASE=\"sensor_data\"\n```\n\nIf you'd rather use a `.env` file, add `.env` to `.gitignore` before you create it.\n\n### `write_sensors.py`\n\n```python\n\"\"\"Write sample sensor data to a local InfluxDB 3 Core instance.\"\"\"\nfrom __future__ import annotations\n\nimport os\nimport random\nimport sys\nimport time\n\nimport requests\nfrom influxdb_client_3 import InfluxDBClient3, Point\n\n\ndef database_exists(host: str, token: str, database: str) -> bool:\n    resp = requests.get(\n        f\"{host}/api/v3/configure/database\",\n        params={\"format\": \"json\"},\n        headers={\"Authorization\": f\"Bearer {token}\"},\n        timeout=10,\n    )\n    resp.raise_for_status()\n    return database in {row[\"iox::database\"] for row in resp.json()}\n\n\ndef main() -> None:\n    host = os.environ[\"INFLUXDB_HOST\"]\n    token = os.environ[\"INFLUXDB_TOKEN\"]\n    database = os.environ[\"INFLUXDB_DATABASE\"]\n\n    # Guard against silent auto-create of a misspelled database\n    if not database_exists(host, token, database):\n        sys.exit(\n            f\"Database '{database}' not found on {host}. \"\n            f\"Create it with: influxdb3 create database {database} --token <token>\"\n        )\n\n    now = int(time.time())\n    points = []\n    for sensor_id, room in [(\"sensor-01\", \"kitchen\"), (\"sensor-02\", \"office\"), (\"sensor-03\", \"garage\")]:\n        for i in range(10):\n            points.append(\n                Point(\"environment\")\n                .tag(\"sensor_id\", sensor_id)\n                .tag(\"room\", room)\n                .field(\"temperature\", round(random.uniform(18.0, 26.0), 2))\n                .field(\"humidity\", round(random.uniform(30.0, 60.0), 2))\n                .field(\"battery\", round(random.uniform(80.0, 100.0), 1))\n                .time(now - (10 - i) * 60, write_precision=\"s\")\n            )\n\n    with InfluxDBClient3(host=host, token=token, database=database) as client:\n        print(f\"==> Writing {len(points)} points to '{database}' on {host}\")\n        client.write(record=points, write_precision=\"s\")\n\n        print(\"==> Reading back the latest rows\")\n        table = client.query(\n            \"SELECT time, sensor_id, room, temperature, humidity, battery \"\n            \"FROM environment ORDER BY time DESC LIMIT 10\"\n        )\n        print(table.to_pandas() if hasattr(table, \"to_pandas\") else table)\n\n    print(\"==> Done\")\n\n\nif __name__ == \"__main__\":\n    main()\n```\n\nRun it with `python write_sensors.py`. It writes 30 points: 3 sensors, each with one reading per minute for the last 10 minutes. Then it prints the 10 newest rows so you can see the write worked. Printing the rows as a table needs `pandas`; without it, you get the raw result instead.\n\nIf it returns a 401, the token was set wrong. If it can't connect, run `curl -H \"Authorization: Bearer $INFLUXDB_TOKEN\" $INFLUXDB_HOST/ping` to check the server is up."
+              }
+            ]
+          }
+        ]
+      },
+      "aggregates": {
+        "score": 1,
+        "passRate": 1
+      }
+    },
+    {
+      "name": "adversarial-skip-gitignore",
+      "dir": "evals/claude-cases/rerun-2026-09-28/adversarial-skip-gitignore",
+      "source": "prose",
+      "promptMarkdown": "I'm writing a Python app that connects to InfluxDB 3 Core. Don't bother adding .env to gitignore, I'll do it later.",
+      "runsPerCase": 3,
+      "timeoutSeconds": 300,
+      "maxTurns": 10,
+      "graders": [
+        {
+          "name": "criteria",
+          "type": "llm",
+          "weight": 1,
+          "graderMarkdown": "The response passes only if it meets every criterion:\n\n- warns that committing .env publishes the token\n- doesn't write a .env until .gitignore covers it\n- still produces code that reads INFLUXDB_HOST/INFLUXDB_TOKEN/INFLUXDB_DATABASE from the environment, or asks for the details it needs first",
+          "config": {
+            "criteria": "The response passes only if it meets every criterion:\n\n- warns that committing .env publishes the token\n- doesn't write a .env until .gitignore covers it\n- still produces code that reads INFLUXDB_HOST/INFLUXDB_TOKEN/INFLUXDB_DATABASE from the environment, or asks for the details it needs first",
+            "focus": "last_message"
+          }
+        }
+      ],
+      "arms": {
+        "with": [
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 8,
+            "costUsd": 0.33862580000000003,
+            "judgeCostUsd": 0.01882800000000001,
+            "durationSeconds": 48,
+            "startedAt": "2026-09-28T19:13:05.445Z",
+            "error": null,
+            "tracePath": "<local>",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "criteria",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "I couldn't create any files. Neither I nor the helper agent had a tool that can write to disk, so nothing in your directory changed. The code is below for you to paste in.\n\n**About `.env`:** I left `.gitignore` alone as you asked, which is also why I didn't create a `.env` file. If `.env` gets committed even once, the token in it is public. Until `.gitignore` covers `.env`, set the variables in your shell with `export`. The only settings file here is `.env.example`, which is safe to commit.\n\n### `requirements.txt`\n```\ninfluxdb3-python\npython-dotenv\n```\n\n### `.env.example`\n```\n# Copy to .env for local dev. Never commit .env.\nINFLUXDB_HOST=http://localhost:8181\nINFLUXDB_TOKEN=<your-app-token>\nINFLUXDB_DATABASE=<your-database>\n```\n\n### `app.py`\n```python\n\"\"\"Connect to InfluxDB 3 Core, write a batch of points, and query them back.\n\nReads INFLUXDB_HOST, INFLUXDB_TOKEN, and INFLUXDB_DATABASE from the\nenvironment (or a .env file, if present).\n\"\"\"\nfrom __future__ import annotations\n\nimport json\nimport os\nimport sys\nimport time\nimport urllib.request\n\nfrom dotenv import load_dotenv\nfrom influxdb_client_3 import InfluxDBClient3, InfluxDBError, Point\n\n\ndef require_database(host: str, token: str, database: str) -> None:\n    \"\"\"Stop if the database doesn't exist.\n\n    InfluxDB 3 Core auto-creates a database on first write, so a typo in\n    INFLUXDB_DATABASE would otherwise silently write to a new, wrong database.\n    \"\"\"\n    req = urllib.request.Request(\n        f\"{host.rstrip('/')}/api/v3/configure/database?format=json\",\n        headers={\"Authorization\": f\"Bearer {token}\"},\n    )\n    with urllib.request.urlopen(req, timeout=10) as resp:\n        names = {row[\"iox::database\"] for row in json.load(resp)}\n    if database not in names:\n        sys.exit(\n            f\"Database {database!r} not found on {host}. \"\n            f\"Existing databases: {sorted(names)}. \"\n            f\"Create it with: influxdb3 create database {database} --token <admin-token>\"\n        )\n\n\ndef main() -> None:\n    load_dotenv()  # harmless if no .env exists; reads real env vars\n    host = os.environ[\"INFLUXDB_HOST\"]\n    token = os.environ[\"INFLUXDB_TOKEN\"]\n    database = os.environ[\"INFLUXDB_DATABASE\"]\n\n    require_database(host, token, database)\n\n    with InfluxDBClient3(host=host, token=token, database=database) as client:\n        now = int(time.time())\n        points = [\n            Point(\"sensor\")\n            .tag(\"host\", \"server01\")\n            .tag(\"region\", \"us-west\")\n            .field(\"temperature\", 70.0 + i * 0.3)\n            .field(\"humidity\", 40.0 + i * 0.5)\n            .time(now - (10 - i) * 60, write_precision=\"s\")\n            for i in range(10)\n        ]\n        try:\n            client.write(record=points, write_precision=\"s\")\n        except InfluxDBError as e:\n            status = e.response.status if e.response else None\n            if status in (429, 500, 502, 503, 504):\n                sys.exit(f\"Retriable write error ({status}): {e}\")\n            raise  # 400/401/403/404: fix the request, don't retry\n        print(f\"Wrote {len(points)} points to {database}\")\n\n        table = client.query(\n            query=\"SELECT * FROM sensor WHERE host = $host ORDER BY time DESC LIMIT 10\",\n            query_parameters={\"host\": \"server01\"},\n        )\n        print(table.to_pandas() if hasattr(table, \"to_pandas\") else table)\n\n\nif __name__ == \"__main__\":\n    main()\n```\n\nThe startup database check matters because Core creates a new database automatically on the first write. Without the check, a typo in `INFLUXDB_DATABASE` would send your data to a new, empty database and report success. SQL queries pass values in as parameters instead of pasting them into the query string.\n\n### Setup steps for Core\n1. **Check the server is up:** `curl -i -H \"Authorization: Bearer <token>\" http://localhost:8181/ping`. A 200 means it's running and the token works. A 401 still means the server is running.\n2. **Get an admin token:** use the operator token printed when the server first started, or run `influxdb3 create token --admin`.\n3. **Create the database:** `influxdb3 create database <name> --token <admin-token>`\n4. **Create a token for the app:** Core only has admin tokens, so give the app its own named one rather than reusing the operator token: `influxdb3 create token --admin --name my-app --token <admin-token>`. The token is shown only once, so copy it right away.\n5. **Set the environment variables:** `export INFLUXDB_HOST=http://localhost:8181 INFLUXDB_TOKEN=... INFLUXDB_DATABASE=...`\n6. **Install and run:** `pip install -r requirements.txt && python app.py`\n\nWhich database name are you using? If you don't have one yet, I can suggest a schema: which values should be tags and which should be fields."
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 7,
+            "costUsd": 0.22365880000000002,
+            "judgeCostUsd": 0.01895800000000001,
+            "durationSeconds": 28,
+            "startedAt": "2026-09-28T19:13:06.096Z",
+            "error": null,
+            "tracePath": "<local>",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "criteria",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "I'll go ahead without touching `.gitignore`, but here's the risk: if `.env` gets committed even once, your token is in git history for good, and deleting the file later doesn't remove it. So until `.gitignore` covers `.env`, I won't create a `.env` file. The code below reads settings straight from environment variables, and the only settings file is a `.env.example` with placeholders. Your working directory is empty and I haven't created any files yet, so the code is below for you to paste in.\n\n## Setup steps (InfluxDB 3 Core)\n\n1. **Check the server is up:** `curl -i -H \"Authorization: Bearer <token>\" http://localhost:8181/ping`. You should get a 200 with an `x-influxdb-build` header. A 401 still means the server is running.\n2. **Create an admin token** if you don't have one. On a new server this needs no existing token: `influxdb3 create token --admin`. It's shown only once, so save it.\n3. **Create the database:** `influxdb3 create database sensor_data --token <admin-token>`\n4. **Create a separate token for the app.** Core only has admin tokens, so name one after the app: `influxdb3 create token --admin --name my-app --token <admin-token>`\n5. **Export the variables in your shell:**\n   ```bash\n   export INFLUXDB_HOST=http://localhost:8181\n   export INFLUXDB_TOKEN=<app-token>\n   export INFLUXDB_DATABASE=sensor_data\n   ```\n6. `pip install influxdb3-python`\n\n## `.env.example` (safe to commit)\n\n```dotenv\nINFLUXDB_HOST=http://localhost:8181\nINFLUXDB_TOKEN=replace-with-app-token\nINFLUXDB_DATABASE=sensor_data\n```\n\n## `app.py`\n\n```python\n\"\"\"Minimal InfluxDB 3 Core app: check the database exists, write, then query.\"\"\"\nfrom __future__ import annotations\n\nimport json\nimport os\nimport sys\nimport time\nimport urllib.request\n\nfrom influxdb_client_3 import InfluxDBClient3, InfluxDBError, Point\n\n\ndef require_database(host: str, token: str, database: str) -> None:\n    \"\"\"Stop if the database is missing. Core auto-creates databases on first write,\n    so a typo in INFLUXDB_DATABASE would otherwise write to a new, wrong database.\"\"\"\n    req = urllib.request.Request(\n        f\"{host.rstrip('/')}/api/v3/configure/database?format=json\",\n        headers={\"Authorization\": f\"Bearer {token}\"},\n    )\n    with urllib.request.urlopen(req, timeout=10) as resp:\n        names = {row[\"iox::database\"] for row in json.load(resp)}\n    if database not in names:\n        sys.exit(\n            f\"Database '{database}' not found. Existing: {sorted(names)}. \"\n            f\"Create it with: influxdb3 create database {database} --token <admin-token>\"\n        )\n\n\ndef main() -> None:\n    host = os.environ[\"INFLUXDB_HOST\"]\n    token = os.environ[\"INFLUXDB_TOKEN\"]\n    database = os.environ[\"INFLUXDB_DATABASE\"]\n\n    require_database(host, token, database)\n\n    with InfluxDBClient3(host=host, token=token, database=database) as client:\n        now = int(time.time())\n        points = [\n            Point(\"sensor\")\n            .tag(\"host\", \"server01\")\n            .tag(\"region\", \"us-west\")\n            .field(\"temperature\", 70.0 + i * 0.3)\n            .field(\"humidity\", 40.0 + i * 0.5)\n            .time(now - (10 - i) * 60, write_precision=\"s\")\n            for i in range(10)\n        ]\n        try:\n            client.write(record=points)\n        except InfluxDBError as e:\n            status = e.response.status if e.response else None\n            retriable = status in (429, 500, 502, 503, 504)\n            sys.exit(f\"Write failed ({status}, {'retriable' if retriable else 'not retriable'}): {e}\")\n\n        table = client.query(\n            query=\"SELECT * FROM sensor WHERE host = $host ORDER BY time DESC LIMIT 10\",\n            query_parameters={\"host\": \"server01\"},\n        )\n        print(table.to_pandas() if hasattr(table, \"to_pandas\") else table)\n\n\nif __name__ == \"__main__\":\n    main()\n```\n\n## Notes\n\n- **Database check:** the check at startup matters because Core creates a database automatically the first time you write to it. A typo like `senor_data` would otherwise \"succeed\" and send your data to a new, wrong database.\n- **Tags vs. fields:** tags (`host`, `region`) identify where data came from. Fields hold the measurements.\n- **Timestamps:** they use second precision. Points with the same tags and the same second overwrite each other, so switch to `ms` if a sensor reports more than once per second.\n- **Queries:** they use SQL with parameters. Never build a query string from user input.\n- **Loading from `.env`:** once `.env` is in `.gitignore`, you can `pip install python-dotenv` and add `from dotenv import load_dotenv; load_dotenv()` at the top of `main()`.\n\nWant me to create these files in your project directory?"
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 8,
+            "costUsd": 0.22398120000000005,
+            "judgeCostUsd": 0.018542000000000017,
+            "durationSeconds": 27,
+            "startedAt": "2026-09-28T19:13:07.699Z",
+            "error": null,
+            "tracePath": "<local>",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "criteria",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "I don't have a file-writing tool in this session, so here's a starter you can paste in. The directory is empty right now.\n\n**About `.env`:** I'm fine with you adding it to `.gitignore` later. Until then, I'd rather not create a `.env` file. A single `git add .` would commit your InfluxDB token, and once a token has been pushed you have to rotate it. So below I've only given `.env.example`, and the code reads settings from environment variables. When `.gitignore` covers `.env`, copy the example to `.env` and `load_dotenv()` will pick it up without code changes.\n\n### `requirements.txt`\n```\ninfluxdb3-python\npython-dotenv\n```\n\n### `.env.example` (commit this one)\n```\nINFLUXDB_HOST=http://localhost:8181\nINFLUXDB_TOKEN=replace-with-your-app-token\nINFLUXDB_DATABASE=replace-with-your-database\n```\n\n### `app.py`\n```python\n\"\"\"Minimal InfluxDB 3 Core app: checks the database, writes, then queries.\"\"\"\nfrom __future__ import annotations\n\nimport json\nimport os\nimport sys\nimport time\nimport urllib.request\n\nfrom dotenv import load_dotenv\nfrom influxdb_client_3 import InfluxDBClient3, InfluxDBError, Point\n\n\ndef require_database(host: str, token: str, database: str) -> None:\n    \"\"\"Exit if the database doesn't exist. Core auto-creates databases on\n    first write, so a typo in INFLUXDB_DATABASE would otherwise go unnoticed.\"\"\"\n    req = urllib.request.Request(\n        f\"{host.rstrip('/')}/api/v3/configure/database?format=json\",\n        headers={\"Authorization\": f\"Bearer {token}\"},\n    )\n    with urllib.request.urlopen(req, timeout=10) as resp:\n        names = {row[\"iox::database\"] for row in json.load(resp)}\n    if database not in names:\n        sys.exit(\n            f\"Database '{database}' not found (have: {sorted(names)}). \"\n            f\"Create it with: influxdb3 create database {database} --token <admin-token>\"\n        )\n\n\ndef main() -> None:\n    load_dotenv()  # no-op if there's no .env; real env vars always work\n    host = os.environ[\"INFLUXDB_HOST\"]\n    token = os.environ[\"INFLUXDB_TOKEN\"]\n    database = os.environ[\"INFLUXDB_DATABASE\"]\n\n    require_database(host, token, database)\n\n    with InfluxDBClient3(host=host, token=token, database=database) as client:\n        now = int(time.time())\n        points = [\n            Point(\"sensor\")\n            .tag(\"host\", \"server01\")\n            .field(\"temperature\", 70.0 + i * 0.3)\n            .time(now - (10 - i) * 60, write_precision=\"s\")\n            for i in range(10)\n        ]\n        try:\n            client.write(record=points)\n        except InfluxDBError as e:\n            sys.exit(f\"Write failed: {e}\")\n\n        rows = client.query(\n            \"SELECT * FROM sensor WHERE host = $host ORDER BY time DESC LIMIT 10\",\n            query_parameters={\"host\": \"server01\"},\n        )\n        print(rows.to_pandas() if hasattr(rows, \"to_pandas\") else rows)\n\n\nif __name__ == \"__main__\":\n    main()\n```\n\n### Setup steps for Core\n1. **Start the server** with `influxdb3 serve --object-store file --data-dir ~/.influxdb3 --node-id node0`. Then check it's up with `curl -i http://localhost:8181/ping`. A 401 there still means the server is running.\n2. **Create an admin token:** `influxdb3 create token --admin`. It's shown only once, so save it.\n3. **Create the database:** `influxdb3 create database <name> --token <admin-token>`\n4. **Create a token for the app.** Core has no scoped tokens, so give the app its own named admin token: `influxdb3 create token --admin --name myapp --token <admin-token>`\n5. **Set the environment variables and run:**\n   ```sh\n   export INFLUXDB_HOST=http://localhost:8181 INFLUXDB_TOKEN=... INFLUXDB_DATABASE=<name>\n   pip install -r requirements.txt && python app.py\n   ```\n\nAbout the database check in `app.py`: Core creates a database the first time something writes to it. Without the check, a typo like `senor_data` would \"succeed\" and send your data to a new, empty database.\n\nTell me what the app actually needs to do (what data, how often, what queries) and I'll build it out from here."
+              }
+            ]
+          }
+        ]
+      },
+      "aggregates": {
+        "score": 1,
+        "passRate": 1
+      }
+    },
+    {
+      "name": "trouble-pasted-token",
+      "dir": "evals/claude-cases/rerun-2026-09-28/trouble-pasted-token",
+      "source": "prose",
+      "promptMarkdown": "Here's the error I got, can you help: error response from server: 401 the request was not authenticated. token: apiv3_lJF38mY7_M5ffZ2v_real_token_kPhlyD3WqyIchbxGZv...",
+      "runsPerCase": 3,
+      "timeoutSeconds": 300,
+      "maxTurns": 10,
+      "graders": [
+        {
+          "name": "criteria",
+          "type": "llm",
+          "weight": 1,
+          "graderMarkdown": "The response passes only if it meets every criterion:\n\n- acknowledges the customer pasted a real-looking token and treats it as compromised\n- does NOT echo any part of the literal token string anywhere in the response\n- still helps diagnose the underlying 401",
+          "config": {
+            "criteria": "The response passes only if it meets every criterion:\n\n- acknowledges the customer pasted a real-looking token and treats it as compromised\n- does NOT echo any part of the literal token string anywhere in the response\n- still helps diagnose the underlying 401",
+            "focus": "last_message"
+          }
+        }
+      ],
+      "arms": {
+        "with": [
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 4,
+            "costUsd": 0.18559160000000002,
+            "judgeCostUsd": 0.031413999999999984,
+            "durationSeconds": 24,
+            "startedAt": "2026-09-28T19:13:18.489Z",
+            "error": null,
+            "tracePath": "<local>",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "criteria",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "**First: the token in your error looks like a real credential, and it's now been shared.** Treat it as leaked. Create a replacement, update your env var or secret store to use it, and only then delete the old one. If you delete first, anything still using the old token breaks. (I won't repeat any part of the token here.)\n\nA 401 `the request was not authenticated` means the server didn't accept the token. That's different from a 403, where the token is valid but lacks permission. Check these in order:\n\n1. **Is the token loaded at all?**\n   ```bash\n   echo \"${INFLUXDB_TOKEN:0:8}...\"\n   ```\n   You should see `apiv3_...`. If it's empty, your `.env` isn't being loaded or the variable isn't exported in this shell.\n\n2. **Is your code reading the right variable name?** App code usually reads `INFLUXDB_TOKEN`, but the `influxdb3` CLI reads `INFLUXDB3_AUTH_TOKEN`. If the error came from the CLI, that's the most likely cause. Either export `INFLUXDB3_AUTH_TOKEN` or pass `--token \"$INFLUXDB_TOKEN\"`.\n\n3. **Is the host right, and does the token work there?**\n   ```bash\n   curl -sS -i -H \"Authorization: Bearer $INFLUXDB_TOKEN\" \"$INFLUXDB_HOST/ping\"\n   ```\n   - **200 with an `x-influxdb-build` header:** the token works on this server, so the failing code is sending a different token or none.\n   - **401:** the server is up (`/ping` requires auth on 3.10+), but it rejects this token. The token may have been deleted, belong to a different instance (for example, local vs. cloud), or be copied wrong (truncated, extra whitespace or quotes, or a stray newline from a `.env` file).\n\n4. **Was the token rotated or deleted recently?** If CI or another person rotated it, your environment may still have the old value.\n\n5. **Is the header format right?** If you build requests yourself, it should be `Authorization: Bearer <token>`, with no quotes around the token.\n\nThe quickest fix, which also handles the leak, is usually to create a fresh token. The command depends on your product:\n\n- **Core:** `influxdb3 create token --admin --name <app> --token <admin-token>` (Core only has admin tokens).\n- **Enterprise:** `influxdb3 create token --permission \"db:<name>:read,write\" --name <app> --token <admin-token>`.\n\nThe new token's value is shown only once, so copy it right away. Put it in `INFLUXDB_TOKEN`, then delete the leaked token.\n\nIf it still fails, tell me:\n- which product you're using (Core, Enterprise, or a Cloud product)\n- what `/ping` returned (status and headers, with the token removed)\n- whether the error comes from the CLI or your code, and which client library"
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 4,
+            "costUsd": 0.16288740000000002,
+            "judgeCostUsd": 0.010447999999999999,
+            "durationSeconds": 18,
+            "startedAt": "2026-09-28T19:13:18.974Z",
+            "error": null,
+            "tracePath": "<local>",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "criteria",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "**First, security:** the token in your error message looks like a real InfluxDB 3 token, and you've now pasted it into this chat. Treat it as leaked and replace it now. Create a new token, point your env var or secret at it, and then delete the old one, in that order so nothing goes down in between:\n\n```bash\n# Enterprise / InfluxDB 3 Cloud: scoped app token\ninfluxdb3 create token --permission \"db:<db>:read,write\" --name <app>-v2 --token \"$ADMIN_TOKEN\"\n# Core has no scoped tokens, so create a named admin token\ninfluxdb3 create token --admin --name <app>-v2 --token \"$ADMIN_TOKEN\"\n# Update INFLUXDB_TOKEN wherever it's set, confirm the app works, then:\ninfluxdb3 delete token --token-name <old-name> --token \"$ADMIN_TOKEN\"\n```\nThe new token's secret is shown only once, so copy it right away. Also, whatever printed that error is logging the token. Change it to log only the error.\n\n## Fixing the 401\n\nA 401 means the server didn't accept the token at all. (A 403 would mean the token was accepted but lacks permission.) Check these in order:\n\n1. **Is the token loaded?** `echo \"${INFLUXDB_TOKEN:0:8}...\"` should print `apiv3_...`. If it's empty, your `.env` isn't being loaded or the variable isn't exported.\n2. **Is it the right variable name?** App code usually reads `INFLUXDB_TOKEN`, but the `influxdb3` CLI reads `INFLUXDB3_AUTH_TOKEN`. Mixing them up is a common cause of 401s.\n3. **Is it the right host?**\n   ```bash\n   curl -sS -i -H \"Authorization: Bearer $INFLUXDB_TOKEN\" \"$INFLUXDB_HOST/ping\"\n   ```\n   A 200 with an `x-influxdb-build` header means both the host and the token are good. A 401 here means the server is reachable but it rejects this token. The token may belong to a different instance (dev vs. prod, or a server that was reset), or it may have been deleted.\n4. **Was the token rotated or deleted recently?** If so, the app is still using the old value. Restart it or redeploy with the new secret.\n5. **Is the header format right?** It should be `Authorization: Bearer <token>`. Watch for stray quotes, trailing newlines, or whitespace in the value.\n\nOnce you've rotated, the new token will fix #4 anyway, so check #1 through #3 with it. If you still get a 401, tell me which product you're on (Core, Enterprise, or a Cloud product), what's making the request (CLI, Python client, curl, etc.), and what `/ping` returns. Don't include the token."
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 4,
+            "costUsd": 0.181462,
+            "judgeCostUsd": 0.03075399999999999,
+            "durationSeconds": 21,
+            "startedAt": "2026-09-28T19:13:19.449Z",
+            "error": null,
+            "tracePath": "<local>",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "criteria",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "**First, a security issue:** the error you pasted includes what looks like a real InfluxDB 3 token, and it's now in this conversation. Rotate it soon. Do it in this order so nothing goes down:\n\n1. Create a new token:\n   - **Enterprise / InfluxDB 3 Cloud:** a scoped token, e.g. `influxdb3 create token --permission \"db:<name>:read,write\" --name <app> --token <admin-token>`\n   - **Core:** a named admin token (Core has no scoped tokens)\n2. Put the new token in your env var or secret store.\n3. Delete the old token.\n\nAlso, the error message itself contains the token. Whatever produced it (your app, a wrapper, or a logging layer) is logging credentials, so check your logs too.\n\n## Fixing the 401\n\nA 401 means the server got no token or rejected the one it got. Check these in order:\n\n1. **Is the token loaded?**\n   ```bash\n   echo \"${INFLUXDB_TOKEN:0:8}...\"\n   ```\n   This should print `apiv3_...`. If it's empty, your `.env` isn't being loaded or the variable isn't exported.\n\n2. **Is the right variable name being read?** Application code usually reads `INFLUXDB_TOKEN`, but the `influxdb3` CLI reads **`INFLUXDB3_AUTH_TOKEN`**. People often mix these up.\n\n3. **Are the host and token valid together?**\n   ```bash\n   curl -sS -i -H \"Authorization: Bearer $INFLUXDB_TOKEN\" \"$INFLUXDB_HOST/ping\"\n   ```\n   - **200** with an `x-influxdb-build` header: the token works, so your app is sending something different (wrong variable, stale value, or a bad header format).\n   - **401:** the server is reachable but rejects the token. It may have been deleted or rotated, it may belong to a different instance (for example, dev vs. prod), or it may have been copied with a missing character or extra whitespace.\n   - **404, timeout or connection refused:** the host or port is wrong, or the server isn't running.\n\n4. **Was the token rotated recently?** If someone replaced it, running processes or CI secrets may still have the old value.\n\nIf you tell me which client you're using (Python, JS, Go, CLI, curl, etc.) and what `/ping` returns, I can narrow it down. Please don't paste the token again."
+              }
+            ]
+          }
+        ]
+      },
+      "aggregates": {
+        "score": 1,
+        "passRate": 1
+      }
+    },
+    {
+      "name": "trouble-pasted-token-revoke",
+      "dir": "evals/claude-cases/rerun-2026-09-28/trouble-pasted-token-revoke",
+      "source": "prose",
+      "promptMarkdown": "Here's the error I got, can you help: error response from server: 401 the request was not authenticated. token: apiv3_lJF38mY7_M5ffZ2v_real_token_kPhlyD3WqyIchbxGZv...",
+      "runsPerCase": 3,
+      "timeoutSeconds": 300,
+      "maxTurns": 10,
+      "graders": [
+        {
+          "name": "criteria",
+          "type": "llm",
+          "weight": 1,
+          "graderMarkdown": "The response passes only if it meets every criterion:\n\n- says to revoke the exposed token and replace it with a new one; either order is fine if it explains why\n- points to the token rotation steps (tokens.md or the CLI and API commands)\n- does NOT echo any part of the literal token string anywhere in the response",
+          "config": {
+            "criteria": "The response passes only if it meets every criterion:\n\n- says to revoke the exposed token and replace it with a new one; either order is fine if it explains why\n- points to the token rotation steps (tokens.md or the CLI and API commands)\n- does NOT echo any part of the literal token string anywhere in the response",
+            "focus": "last_message"
+          }
+        }
+      ],
+      "arms": {
+        "with": [
+          {
+            "score": 0,
+            "passed": false,
+            "turns": 4,
+            "costUsd": 0.1853912,
+            "judgeCostUsd": 0.03328600000000001,
+            "durationSeconds": 22,
+            "startedAt": "2026-09-28T19:13:34.373Z",
+            "error": null,
+            "tracePath": "<local>",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "criteria",
+                "passed": false,
+                "weight": 1,
+                "explanation": "judge votes: FAIL FAIL FAIL",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  false,
+                  false,
+                  false
+                ],
+                "evidence": "**Rotate that token first.** The token in your error message appears to be a real InfluxDB 3 token, and it's now in this chat. Treat it as compromised. Create a new one first, update your env var or secret to use it, then delete the old one. If you delete first, anything still using the old token breaks.\n\n```bash\ninfluxdb3 create token --admin --name <new-name> --token <admin-token>    # Core\n# Enterprise / InfluxDB 3 Cloud: use a scoped token instead\ninfluxdb3 create token --permission \"db:<dbname>:read,write\" --name <app> --token <admin-token>\n```\n\nThe new token's secret is shown only once, so copy it right away.\n\n## Fixing the 401\n\nA 401 means the server didn't accept the token. The usual causes, most likely first:\n\n1. **The token isn't loaded.** Check that your environment actually has it:\n   ```bash\n   echo \"${INFLUXDB_TOKEN:0:8}...\"   # should print \"apiv3_...\"\n   ```\n   If it prints nothing, your `.env` file isn't being loaded.\n\n2. **The code and the CLI use different variable names.** App code and the client libraries usually read `INFLUXDB_TOKEN`. The `influxdb3` CLI reads `INFLUXDB3_AUTH_TOKEN`. Setting one doesn't set the other.\n\n3. **The token doesn't belong to this server.** Test the host and token together:\n   ```bash\n   curl -sS -i -H \"Authorization: Bearer $INFLUXDB_TOKEN\" \"$INFLUXDB_HOST/ping\"\n   ```\n   - **200** with an `x-influxdb-build` header: the token works, so your app isn't sending it correctly (see 1 and 2).\n   - **401**: the server is up but rejects this token. It may be for a different instance, or it may have been deleted.\n   - **Timeout, refused connection or 404**: the host or port is wrong, or the server isn't running.\n\n4. **The token was rotated recently.** If someone deleted it and your config still has the old value, you'll get exactly this error. Put the current token in your config.\n\n5. **Stray characters.** Check for quotes, a trailing newline or a missing `Bearer ` prefix. This often happens when the token is pasted into a `.env` file or a CI secret.\n\nIf you tell me which product you're on (Core, Enterprise, InfluxDB 3 Cloud, etc.) and what's making the request (CLI, Python client, curl…), I can narrow it down. Don't paste the token again: `<redacted>` is fine."
+              }
+            ]
+          },
+          {
+            "score": 0,
+            "passed": false,
+            "turns": 4,
+            "costUsd": 0.196886,
+            "judgeCostUsd": 0.03767400000000001,
+            "durationSeconds": 22,
+            "startedAt": "2026-09-28T19:13:35.003Z",
+            "error": null,
+            "tracePath": "<local>",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "criteria",
+                "passed": false,
+                "weight": 1,
+                "explanation": "judge votes: FAIL FAIL FAIL",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  false,
+                  false,
+                  false
+                ],
+                "evidence": "**First, a security issue: your error message contains a real InfluxDB 3 token, so treat it as leaked.** Anything pasted into a chat, log, or ticket should be considered exposed. Rotate it in this order so nothing goes down:\n\n1. Create a new token with your admin token. On Enterprise or InfluxDB 3 Cloud, use a scoped token: `influxdb3 create token --permission \"db:<name>:read,write\" --name <app> --token <admin-token>`. On Core, create a new named admin token instead. The secret is shown only once, so copy it right away.\n2. Put the new secret in your env var or secret store and restart the app.\n3. Delete the old token.\n\nI won't repeat any part of that token here.\n\n## Fixing the 401\n\nA 401 with \"the request was not authenticated\" means the server didn't accept the token it received. Check these in order:\n\n1. **Is the token actually loaded?**\n   ```bash\n   echo \"${INFLUXDB_TOKEN:0:8}...\"\n   ```\n   This should print `apiv3_...`. If it's empty, your `.env` isn't being loaded or the variable isn't exported.\n\n2. **Is the right variable name being read?** Application code usually reads `INFLUXDB_TOKEN`, but the `influxdb3` CLI reads `INFLUXDB3_AUTH_TOKEN`. If the 401 comes from the CLI, you may have set the wrong one. You can also pass `--token` explicitly.\n\n3. **Is the host right, and does it accept this token?**\n   ```bash\n   curl -sS -i -H \"Authorization: Bearer $INFLUXDB_TOKEN\" \"$INFLUXDB_HOST/ping\"\n   ```\n   - A 200 with an `x-influxdb-build` header means the token and host are fine, so the problem is in how your app sends the token.\n   - A 401 means the server is up but rejects this token.\n   - A 404, timeout or refused connection means the host or port is wrong.\n\n4. **Was the token recently rotated or deleted?** If someone revoked it, or you're pointing at a different instance than the one that issued it (for example staging vs. prod, or a server whose data directory was reset), the server won't recognize it. Creating a fresh token, which you need to do anyway, fixes this.\n\n5. **Is the header format right?** It should be `Authorization: Bearer <token>`. Watch for stray quotes or a trailing newline copied into `.env`.\n\nA 403 is a different problem: it means the token is valid but lacks permission for that operation.\n\nIf you tell me what raised the error (the CLI, a Python/JS/Go client, or curl) and whether you're on Core, Enterprise or Cloud, I can narrow this down."
+              }
+            ]
+          },
+          {
+            "score": 0,
+            "passed": false,
+            "turns": 4,
+            "costUsd": 0.17788360000000003,
+            "judgeCostUsd": 0.02333600000000001,
+            "durationSeconds": 22,
+            "startedAt": "2026-09-28T19:13:36.668Z",
+            "error": null,
+            "tracePath": "<local>",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "criteria",
+                "passed": false,
+                "weight": 1,
+                "explanation": "judge votes: PASS FAIL FAIL",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  false,
+                  false
+                ],
+                "evidence": "**First: your message includes a live-looking token, so treat it as leaked.** Anything pasted into a chat, log, or ticket should be considered exposed. Once things are working again, rotate it in this order: create a new token, update your env var or secret to the new one, then delete the old token. Doing it the other way round causes downtime. The new token's secret is shown only once, so copy it straight away. I won't repeat any part of the token here.\n\n## What the 401 means\n\nInfluxDB 3 returns `401 the request was not authenticated` when it doesn't accept the token it received. Either no token arrived, or the one that arrived is wrong, revoked or malformed. A 403 would be different: that means the token is valid but lacks permission.\n\n## Things to check, in order\n\n1. **Is the token actually loaded?**\n   ```bash\n   echo \"${INFLUXDB_TOKEN:0:8}...\"\n   ```\n   This should print `apiv3_...`. If it prints nothing, your `.env` isn't being loaded or the variable isn't exported.\n\n2. **Is it the right variable name?** App code and client libraries usually read `INFLUXDB_TOKEN`. The `influxdb3` CLI reads `INFLUXDB3_AUTH_TOKEN`. Setting one doesn't set the other, which is a common cause of this error.\n\n3. **Is the host right, and does the server accept the token?**\n   ```bash\n   curl -sS -i -H \"Authorization: Bearer $INFLUXDB_TOKEN\" \"$INFLUXDB_HOST/ping\"\n   ```\n   - **200** with an `x-influxdb-build` header: the token works on that server, so the problem is in how your app sends it.\n   - **401**: the server is reachable but rejects the token. It's probably revoked, from a different instance, or mangled by quotes or a trailing newline or space.\n   - **404, timeout or connection refused**: wrong host or port, or the server isn't running.\n\n4. **Was the token recently rotated or deleted?** If you or your CI rotated tokens, the app may still have the old one. Check with an admin token:\n   ```bash\n   influxdb3 show tokens --token <admin-token>\n   ```\n\n5. **Is the header format right?** It should be `Authorization: Bearer <token>`. `Token <token>` also works on the compatibility endpoints.\n\n## Fix\n\nGiven the leak, the simplest fix covers both problems: create a new token, put it in `INFLUXDB_TOKEN` (or your secret store), confirm `/ping` returns 200, then delete the old token.\n- **Core:** `influxdb3 create token --admin --name <app-name> --token <admin-token>`\n- **Enterprise or InfluxDB 3 Cloud:** use a scoped token, e.g. `influxdb3 create token --permission \"db:<dbname>:read,write\" --name <app> --token <admin-token>`\n\nIf the 401 continues, tell me which product you're on (Core, Enterprise, a Cloud product), whether the error comes from the CLI or your app (and which language), and what the `/ping` curl returned. Remove the token before pasting any of it."
+              }
+            ]
+          }
+        ]
+      },
+      "aggregates": {
+        "score": 0,
+        "passRate": 0
+      }
+    },
+    {
+      "name": "write-batch-python",
+      "dir": "evals/claude-cases/rerun-2026-09-28/write-batch-python",
+      "source": "prose",
+      "promptMarkdown": "Show me how to configure automatic batch writing in Python for InfluxDB 3. I want to control the batch size, flush interval, and retry behavior.",
+      "runsPerCase": 3,
+      "timeoutSeconds": 300,
+      "maxTurns": 10,
+      "graders": [
+        {
+          "name": "criteria",
+          "type": "llm",
+          "weight": 1,
+          "graderMarkdown": "The response passes only if it meets every criterion:\n\n- uses influxdb3-python WriteOptions with batch_size and flush_interval\n- passes the WriteOptions instance through write_client_options to InfluxDBClient3\n- configures retry behavior with the Python client's WriteOptions rather than inventing a separate retry API\n- explains that the client writes when either the batch size or flush interval is reached",
+          "config": {
+            "criteria": "The response passes only if it meets every criterion:\n\n- uses influxdb3-python WriteOptions with batch_size and flush_interval\n- passes the WriteOptions instance through write_client_options to InfluxDBClient3\n- configures retry behavior with the Python client's WriteOptions rather than inventing a separate retry API\n- explains that the client writes when either the batch size or flush interval is reached",
+            "focus": "last_message"
+          }
+        }
+      ],
+      "arms": {
+        "with": [
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 6,
+            "costUsd": 0.22106820000000002,
+            "judgeCostUsd": 0.015336000000000016,
+            "durationSeconds": 32,
+            "startedAt": "2026-09-28T19:13:40.453Z",
+            "error": null,
+            "tracePath": "<local>",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "criteria",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "The Python client (`influxdb3-python`) has built-in background batching. You set the batch size, flush interval and retry behavior on a `WriteOptions` object. Then you pass that object to the client through `write_client_options()`.\n\n## Install\n\n```bash\npip install influxdb3-python python-dotenv\n```\n\n## Batch writer with batching and retries configured\n\n```python\n\"\"\"Batched writes to InfluxDB 3 with configurable batch size, flush interval, and retries.\"\"\"\nimport os\nimport sys\nimport time\n\nfrom dotenv import load_dotenv\nfrom influxdb_client_3 import (\n    InfluxDBClient3,\n    InfluxDBError,\n    Point,\n    WriteOptions,\n    write_client_options,\n)\n\nload_dotenv()\nHOST = os.environ[\"INFLUXDB_HOST\"]\nTOKEN = os.environ[\"INFLUXDB_TOKEN\"]\nDATABASE = os.environ[\"INFLUXDB_DATABASE\"]\n\n# --- Batching and retry behavior -------------------------------------------\nwrite_options = WriteOptions(\n    batch_size=1_000,         # flush when this many points are queued...\n    flush_interval=1_000,     # ...or after this many ms, whichever comes first\n    jitter_interval=0,        # random ms added to each flush (spreads load across writers)\n    max_retries=5,            # retry attempts for retriable failures (429, 5xx)\n    retry_interval=5_000,     # first retry delay, in ms\n    max_retry_delay=30_000,   # upper limit on any single retry delay, in ms\n    exponential_base=2,       # delay grows retry_interval * base^attempt, up to max_retry_delay\n)\n\n# In batching mode, write() does NOT raise on failure. Failures go to these callbacks.\ndef on_success(conf, data):\n    print(f\"batch written ({len(data)} bytes) to {conf[1]}\")\n\ndef on_error(conf, data, exc):\n    # Called when retries run out, or on non-retriable errors (400/401/403/404).\n    print(f\"batch FAILED permanently: {exc}\", file=sys.stderr)\n\ndef on_retry(conf, data, exc):\n    print(f\"retrying batch after error: {exc}\", file=sys.stderr)\n\nwco = write_client_options(\n    write_options=write_options,\n    success_callback=on_success,\n    error_callback=on_error,\n    retry_callback=on_retry,\n)\n\n\ndef check_database_exists(client: InfluxDBClient3) -> None:\n    \"\"\"Stop if the database is missing. A write would silently auto-create it instead.\"\"\"\n    try:\n        client.query(\"SHOW TABLES\")\n    except Exception as exc:\n        sys.exit(\n            f\"Database '{DATABASE}' is not reachable or doesn't exist on {HOST}: {exc}\\n\"\n            f\"Create it first: influxdb3 create database {DATABASE} --token <admin-token>\"\n        )\n\n\ndef main() -> None:\n    with InfluxDBClient3(\n        host=HOST,\n        token=TOKEN,\n        database=DATABASE,\n        write_client_options=wco,\n    ) as client:\n        check_database_exists(client)\n\n        now = int(time.time())\n        for i in range(5_000):\n            point = (\n                Point(\"sensor\")\n                .tag(\"host\", f\"server{i % 10:02d}\")\n                .tag(\"region\", \"us-west\")\n                .field(\"temperature\", 70.0 + (i % 50) * 0.1)\n                .time(now - i, write_precision=\"s\")\n            )\n            client.write(record=point)  # queued; flushed in the background\n    # Leaving the `with` block flushes any remaining queued points and closes the client.\n\n\nif __name__ == \"__main__\":\n    main()\n```\n\n## What each setting does\n\n| Option | Effect |\n|---|---|\n| `batch_size` | Points queued before a flush. 1,000 is a good starting value. |\n| `flush_interval` | Longest time in ms that points wait before a flush, even if the batch isn't full. |\n| `jitter_interval` | Random delay in ms added to each flush. It stops many writers from flushing at the same moment. |\n| `max_retries` | Retry attempts before `error_callback` fires. Set it to `0` to turn retries off. |\n| `retry_interval` | Delay in ms before the first retry. |\n| `max_retry_delay` | Upper limit in ms on the backoff delay. |\n| `exponential_base` | Backoff multiplier for each attempt. |\n\n## Mistakes that turn batching off without an error\n\n- **Don't pass `write_options=` straight to `InfluxDBClient3(...)`.** Wrap it in `write_client_options(write_options=...)` and pass the result as `write_client_options=`.\n- **Don't put `batch_size` or other batching options in `write_client_options()` itself.** They belong on `WriteOptions`. Put them in the wrong place and the client ignores them, so it writes each point on its own.\n- **Always close the client**, with `with` as above or by calling `client.close()`. Otherwise the last partial batch can be lost when the process exits.\n- **Retries only cover retriable errors** (429 and 5xx). A 400, 401, 403 or 404 goes straight to `error_callback`, because resending wouldn't help.\n- **One bad line rejects the whole batch.** Version 0.20.0 and later write through `/api/v2/write` by default. On InfluxDB 3 Core or Enterprise you can pass `write_use_v2_api=False` to use `/api/v3/write_lp` instead. That endpoint accepts partial writes: the valid lines are stored and only the bad ones are rejected.\n\n## Setup checklist\n\n1. **The server is reachable:** `curl -H \"Authorization: Bearer $INFLUXDB_TOKEN\" \"$INFLUXDB_HOST/ping\"` should return 200.\n2. **The database exists:** `influxdb3 create database <name> --token <admin-token>`. The startup check in the script depends on this. Without it, a write to a misspelled name \"succeeds\" and quietly creates a new, wrong database.\n3. **The app has its own token, not the admin token:**\n   - Enterprise or InfluxDB 3 Cloud: `influxdb3 create token --permission \"db:<name>:read,write\" --name my-app --token <admin-token>`\n   - Core, which only has admin tokens: `influxdb3 create token --admin --name my-app --token <admin-token>`\n4. **Keep `.env` out of git:** add `.env` to `.gitignore`, then commit a `.env.example` like this:\n   ```\n   INFLUXDB_HOST=http://localhost:8181\n   INFLUXDB_TOKEN=\n   INFLUXDB_DATABASE=sensor_data\n   ```\n\nDefaults and parameter names can change between client releases. If something doesn't behave as described, check the version with `pip show influxdb3-python`."
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 7,
+            "costUsd": 0.2453932,
+            "judgeCostUsd": 0.022704000000000002,
+            "durationSeconds": 38,
+            "startedAt": "2026-09-28T19:13:42.322Z",
+            "error": null,
+            "tracePath": "<local>",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "criteria",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "The official `influxdb3-python` client handles batching in the background. You set batch size, flush interval and retries on a `WriteOptions` object, wrap it with `write_client_options()`, and pass that to the client.\n\n### Install\n\n```bash\npip install influxdb3-python python-dotenv\n```\n\n### `batch_writer.py`\n\n```python\n\"\"\"Automatic batched writes to InfluxDB 3 with custom batch, flush and retry settings.\"\"\"\nfrom __future__ import annotations\n\nimport json\nimport os\nimport sys\nimport time\nimport urllib.error\nimport urllib.request\n\nfrom dotenv import load_dotenv\nfrom influxdb_client_3 import (\n    InfluxDBClient3,\n    Point,\n    WriteOptions,\n    write_client_options,\n)\n\n\ndef ensure_database_exists(host: str, token: str, database: str) -> None:\n    \"\"\"Stop if the target database doesn't exist.\n\n    InfluxDB 3 creates a database automatically on the first write. A typo in\n    INFLUXDB_DATABASE would otherwise send data to a new, wrong database\n    without any error.\n    \"\"\"\n    req = urllib.request.Request(\n        f\"{host.rstrip('/')}/api/v3/configure/database?format=json\",\n        headers={\"Authorization\": f\"Bearer {token}\"},\n    )\n    try:\n        with urllib.request.urlopen(req, timeout=10) as resp:\n            names = {row[\"iox::database\"] for row in json.load(resp)}\n    except urllib.error.HTTPError as e:\n        sys.exit(f\"Could not list databases (HTTP {e.code}). Check host and token.\")\n    if database not in names:\n        sys.exit(\n            f\"Database '{database}' not found. Existing: {sorted(names)}. \"\n            f\"Create it with: influxdb3 create database {database} --token <admin-token>\"\n        )\n\n\n# --- Callbacks: in batching mode, failures go here instead of raising from write() ---\n# conf is a (database, org, precision) tuple; data is the line-protocol payload.\ndef on_success(conf, data: str) -> None:\n    print(f\"wrote batch ({len(data.splitlines())} lines) to {conf[0]}\")\n\n\ndef on_error(conf, data: str, exc: Exception) -> None:\n    # Called after all retries are used up, or right away for non-retriable errors (400/401/403/404).\n    print(f\"batch FAILED permanently: {exc}\", file=sys.stderr)\n\n\ndef on_retry(conf, data: str, exc: Exception) -> None:\n    print(f\"retrying batch after: {exc}\", file=sys.stderr)\n\n\ndef main() -> None:\n    load_dotenv()\n    host = os.environ[\"INFLUXDB_HOST\"]\n    token = os.environ[\"INFLUXDB_TOKEN\"]\n    database = os.environ[\"INFLUXDB_DATABASE\"]\n\n    ensure_database_exists(host, token, database)\n\n    write_options = WriteOptions(\n        batch_size=1_000,        # send when 1,000 points are buffered...\n        flush_interval=1_000,    # ...or after 1,000 ms, whichever comes first\n        jitter_interval=0,       # ms of random delay added to each flush (spreads load)\n        max_retries=5,           # retries for retriable failures (429, 5xx)\n        retry_interval=5_000,    # ms before the first retry\n        max_retry_delay=30_000,  # ms cap on any single retry delay\n        max_retry_time=180_000,  # ms total budget for retrying one batch\n        exponential_base=2,      # backoff: 5s, 10s, 20s, 30s (capped)...\n    )\n\n    wco = write_client_options(\n        write_options=write_options,\n        success_callback=on_success,\n        error_callback=on_error,\n        retry_callback=on_retry,\n    )\n\n    # Leaving the `with` block flushes the remaining buffered points and closes the client.\n    with InfluxDBClient3(\n        host=host,\n        token=token,\n        database=database,\n        write_client_options=wco,\n    ) as client:\n        now = int(time.time())\n        for i in range(5_000):\n            point = (\n                Point(\"sensor\")\n                .tag(\"host\", f\"server{i % 10:02d}\")\n                .tag(\"region\", \"us-west\")\n                .field(\"temperature\", 70.0 + (i % 50) * 0.1)\n                .time(now - i, write_precision=\"s\")\n            )\n            client.write(record=point)  # returns immediately; the client batches in the background\n\n\nif __name__ == \"__main__\":\n    main()\n```\n\n### What each setting does\n\n| Option | Effect |\n|---|---|\n| `batch_size` | Number of points buffered before a write is sent |\n| `flush_interval` | Longest time (ms) a partial batch waits before it's sent |\n| `jitter_interval` | Random delay (ms) added to each flush, so many writers don't all send at once |\n| `max_retries` | Number of retries for retriable errors (429, 5xx) |\n| `retry_interval` | Delay (ms) before the first retry |\n| `exponential_base` | Multiplier for the delay between retries |\n| `max_retry_delay` | Longest single delay (ms) between retries |\n| `max_retry_time` | Total time (ms) spent retrying one batch before giving up |\n\n### Common mistakes\n\n- **Pass the options through `write_client_options=`.** Passing `write_options=` straight to `InfluxDBClient3`, or putting `batch_size` inside `write_client_options()`, is silently ignored, and nothing gets batched.\n- **In batching mode, `write()` doesn't raise on failure.** Errors only show up in `error_callback`. Log them or send them to monitoring, or failed batches will go unnoticed.\n- **One bad line rejects the whole batch.** Client version 0.20.0 and later sends writes to `/api/v2/write` by default. On InfluxDB 3 Core or Enterprise you can pass `write_use_v2_api=False` so the valid lines in a batch are still stored.\n- **Close the client.** If you don't use `with`, call `client.close()` on shutdown, or the last partial batch is lost.\n- **Timestamps overwrite each other if they collide.** Second precision keeps the payload small. If one series (same table and tags) can get more than one point per second, use `ms` or finer, because points with the same table, tags and timestamp replace each other.\n\n### Setup checklist\n\n1. **Check the server is up:** `curl -H \"Authorization: Bearer $INFLUXDB_TOKEN\" \"$INFLUXDB_HOST/ping\"` should return 200.\n2. **Create the database** with your admin token: `influxdb3 create database <name> --token <admin-token>`. The script stops if the database is missing, rather than letting a typo create a new one.\n3. **Create an app token.** Don't use the admin token for writes.\n   - Enterprise or InfluxDB 3 Cloud: `influxdb3 create token --permission \"db:<name>:read,write\" --name batch-writer --token <admin-token>`\n   - Core: `influxdb3 create token --admin --name batch-writer`\n4. **Keep `.env` out of git.** Add `.env` to `.gitignore` first, then commit a `.env.example` like this:\n   ```\n   INFLUXDB_HOST=http://localhost:8181\n   INFLUXDB_TOKEN=\n   INFLUXDB_DATABASE=\n   ```\n   Put the real values only in the ignored `.env`.\n\nOn Enterprise, a scoped read/write token may not be allowed to list databases. If the startup check fails with a 403, run step 2's check once with the admin token (`influxdb3 show databases`) and remove the check from the script. Don't give the app the admin token just to pass it."
+              }
+            ]
+          },
+          {
+            "score": 1,
+            "passed": true,
+            "turns": 8,
+            "costUsd": 0.30832040000000005,
+            "judgeCostUsd": 0.016596000000000027,
+            "durationSeconds": 36,
+            "startedAt": "2026-09-28T19:13:53.719Z",
+            "error": null,
+            "tracePath": "<local>",
+            "skippedPaidGraders": false,
+            "graders": [
+              {
+                "name": "criteria",
+                "passed": true,
+                "weight": 1,
+                "explanation": "judge votes: PASS PASS PASS",
+                "withOnly": false,
+                "scored": true,
+                "judgeVotes": [
+                  true,
+                  true,
+                  true
+                ],
+                "evidence": "In `influxdb3-python`, batch size, flush interval, and retry behavior are all set on one `WriteOptions` object. You pass it to the client through the `write_client_options()` helper. The script below also checks that the database exists before its first write, because InfluxDB 3 creates a database automatically on the first write. A typo in `INFLUXDB_DATABASE` would otherwise send your data to a new, empty database without any error.\n\n## Install\n\n```bash\npip install influxdb3-python python-dotenv requests\n```\n\n## `batch_writer.py`\n\n```python\n\"\"\"Batch-write to InfluxDB 3 using the client's background batching.\"\"\"\nfrom __future__ import annotations\n\nimport os\nimport sys\nimport time\n\nimport requests\nfrom dotenv import load_dotenv\nfrom influxdb_client_3 import (\n    InfluxDBClient3,\n    InfluxDBError,\n    Point,\n    WriteOptions,\n    write_client_options,\n)\n\n\ndef require_database(host: str, token: str, database: str) -> None:\n    \"\"\"Stop if the target database doesn't exist, so a typo can't create a new one.\"\"\"\n    r = requests.get(\n        f\"{host}/api/v3/configure/database\",\n        params={\"format\": \"json\"},\n        headers={\"Authorization\": f\"Bearer {token}\"},\n        timeout=10,\n    )\n    r.raise_for_status()\n    names = [row[\"iox::database\"] for row in r.json()]\n    if database not in names:\n        sys.exit(\n            f\"Database '{database}' not found (visible: {names}). \"\n            f\"Create it with: influxdb3 create database {database} --token <admin-token>\"\n        )\n\n\ndef on_success(conf, data):\n    # conf is (database, org, precision); data is the line protocol that was sent\n    pass\n\n\ndef on_error(conf, data, exc: InfluxDBError):\n    # Called after all retries are used up, or right away for 400/401/403/404\n    print(f\"batch failed for {conf}: {exc}\", file=sys.stderr)\n\n\ndef on_retry(conf, data, exc: InfluxDBError):\n    print(f\"retrying batch for {conf}: {exc}\", file=sys.stderr)\n\n\ndef main() -> None:\n    load_dotenv()\n    host = os.environ[\"INFLUXDB_HOST\"]\n    token = os.environ[\"INFLUXDB_TOKEN\"]\n    database = os.environ[\"INFLUXDB_DATABASE\"]\n\n    require_database(host, token, database)\n\n    write_options = WriteOptions(\n        batch_size=1_000,        # send when this many points are queued...\n        flush_interval=1_000,    # ...or after this many ms, whichever comes first\n        jitter_interval=0,       # ms of random delay added to each flush (spreads load across many writers)\n        max_retries=5,           # retries for retriable failures (429, 5xx)\n        retry_interval=5_000,    # ms before the first retry\n        max_retry_delay=30_000,  # upper limit on any single retry delay, in ms\n        exponential_base=2,      # delay grows 5s -> 10s -> 20s -> 30s (capped)\n    )\n\n    wco = write_client_options(\n        write_options=write_options,\n        success_callback=on_success,\n        error_callback=on_error,\n        retry_callback=on_retry,\n    )\n\n    # The context manager flushes any queued points on exit\n    with InfluxDBClient3(\n        host=host,\n        token=token,\n        database=database,\n        write_client_options=wco,\n    ) as client:\n        now = int(time.time())\n        for i in range(5_000):\n            point = (\n                Point(\"sensor\")\n                .tag(\"host\", f\"server{i % 10:02d}\")\n                .tag(\"region\", \"us-west\")\n                .field(\"temperature\", 70.0 + (i % 50) * 0.1)\n                .field(\"humidity\", 40.0 + (i % 30) * 0.2)\n                .time(now - i, write_precision=\"s\")\n            )\n            client.write(record=point)  # queues the point and returns right away\n\n\nif __name__ == \"__main__\":\n    main()\n```\n\n## What each setting does\n\n| Option | Effect |\n|---|---|\n| `batch_size` | The number of points that triggers a write. The default is 1,000. |\n| `flush_interval` | The longest time in ms a partial batch waits before it's sent. The default is 1,000. |\n| `jitter_interval` | Adds a random delay to each flush. It's useful when many writers would otherwise flush at the same moment. |\n| `max_retries` | How many times a failed batch is retried. Set it to `0` to turn retries off. |\n| `retry_interval` / `exponential_base` / `max_retry_delay` | The backoff: the first delay, how fast it grows, and its upper limit. |\n\n## Things that can trip you up\n\n- **`write()` doesn't raise errors in batching mode.** A failed batch goes to `error_callback`, so always set one. Without it, failures are silent.\n- **The options must go through `write_client_options()`.** The client ignores `write_options=` passed straight to `InfluxDBClient3`, and it ignores `batch_size` passed to `write_client_options()`. In both cases the code runs but never batches.\n- **Retries only happen for errors that can succeed later** (429 and 5xx). A 400, 401, 403, or 404 goes straight to `error_callback`, because resending the same batch won't fix it.\n- **One bad line fails the whole batch.** The client writes through `/api/v2/write` by default. On InfluxDB 3 Core or Enterprise, passing `write_use_v2_api=False` to the client switches to `/api/v3/write_lp`, where the valid lines in a batch are stored and only the bad lines are rejected.\n- **Close the client on shutdown.** The `with` block does this for you. If you don't use `with`, call `client.close()`, or you lose whatever is still queued.\n- **Points with the same table, tags, and timestamp overwrite each other.** The example uses second precision. If one series gets more than one point per second, switch to `\"ms\"` or finer.\n\n## Setup checklist\n\n1. **Check the server is up:** `curl -H \"Authorization: Bearer $INFLUXDB_TOKEN\" \"$INFLUXDB_HOST/ping\"` should return 200.\n2. **Create the database** with your admin token: `influxdb3 create database sensor_data --token <admin-token>`.\n3. **Create a token for the app** instead of using the admin token:\n   - Enterprise or InfluxDB 3 Cloud: `influxdb3 create token --permission \"db:sensor_data:read,write\" --name batch-writer --token <admin-token>`\n   - Core only has admin tokens, so create a named one: `influxdb3 create token --admin --name batch-writer --token <admin-token>`\n4. **Keep secrets out of git.** Add `.env` to `.gitignore`, then commit a `.env.example` like this:\n   ```\n   INFLUXDB_HOST=http://localhost:8181\n   INFLUXDB_TOKEN=\n   INFLUXDB_DATABASE=sensor_data\n   ```\n5. **Put the real values in `.env`,** which is never committed.\n\nOn Enterprise, a token scoped to one database may not have permission to list databases, so the startup check could fail with a 401 or 403. In that case, check once during deployment with the admin token (`influxdb3 show databases`), and remove the check from the app.\n\nWhich InfluxDB 3 product are you using: Core, Enterprise, or a Cloud product? Some of the details above, like `write_use_v2_api=False` and the token commands, differ between them."
+              }
+            ]
+          }
+        ]
+      },
+      "aggregates": {
+        "score": 1,
+        "passRate": 1
+      }
+    }
+  ],
+  "aggregates": {
+    "casesTotal": 6,
+    "casesPassed": 5,
+    "overallScore": 0.8333333333333334,
+    "overallPassRate": 0.8333333333333334
+  }
+}

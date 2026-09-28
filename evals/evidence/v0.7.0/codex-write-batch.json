@@ -1,0 +1,194 @@
+{
+  "generatedAt": "2026-09-28T18:54:22.445Z",
+  "model": "gpt-5.6-terra",
+  "judgeModel": "gpt-5.6-luna",
+  "runs": 3,
+  "results": [
+    {
+      "id": "write-batch-csharp",
+      "run": 1,
+      "pass": false,
+      "judgement": {
+        "pass": false,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "The response uses `InfluxDB3.Client` and constructs an `InfluxDBClient`."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "It builds batches of up to 10,000 `PointData` objects and sends each with an explicit `await client.WritePointsAsync(batch)` call."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "It does not configure Python-style automatic `batch_size` or `flush_interval` settings; batching is implemented explicitly in the loop."
+          },
+          {
+            "id": 4,
+            "pass": false,
+            "evidence": "The response describes retrying 429, 5xx, and network failures while excluding 400/401/403/404, but the code directly calls `WritePointsAsync` without implementing any retry or error-handling logic."
+          }
+        ],
+        "summary": "Fails criterion 4 because retriable versus non-retriable error handling is described but not implemented."
+      }
+    },
+    {
+      "id": "write-batch-csharp",
+      "run": 2,
+      "pass": true,
+      "judgement": {
+        "pass": true,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "The response imports and instantiates `InfluxDB3.Client` via `new InfluxDBClient(...)`."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "It builds `List<PointData>` batches of 10,000 points and sends each with `await client.WritePointsAsync(points)`."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "It uses explicit application-level batching and does not claim automatic `batch_size` or `flush_interval` settings for C#."
+          },
+          {
+            "id": 4,
+            "pass": true,
+            "evidence": "It retries transient 429, 5xx, and null-status request failures with exponential backoff and jitter, while explicitly not retrying 400, 401, 403, 404, or 413."
+          }
+        ],
+        "summary": "All four criteria are satisfied."
+      }
+    },
+    {
+      "id": "write-batch-csharp",
+      "run": 3,
+      "pass": true,
+      "judgement": {
+        "pass": true,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "The response imports and instantiates InfluxDB3.Client via `new InfluxDBClient(...)`."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "The code builds batches of 10,000 `PointData` objects and sends each batch through an explicit `await client.WritePointsAsync(batch)` call."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "The response uses an explicit C# loop and batch size; it does not invent automatic `batch_size` or `flush_interval` settings."
+          },
+          {
+            "id": 4,
+            "pass": true,
+            "evidence": "The response retries 429 and 5xx errors with backoff, while identifying 400, 401, 403, 404, and 413 as non-retriable."
+          }
+        ],
+        "summary": "All four criteria are satisfied."
+      }
+    },
+    {
+      "id": "write-batch-python",
+      "run": 1,
+      "pass": false,
+      "judgement": {
+        "pass": false,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "The response uses `WriteOptions` with both `batch_size=1_000` and `flush_interval=1_000`."
+          },
+          {
+            "id": 2,
+            "pass": false,
+            "evidence": "The response passes the options as `write_options=`, not through the required `write_client_options=` parameter."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "Retry behavior is configured using `WriteOptions` fields including `retry_interval`, `max_retries`, `max_retry_delay`, `exponential_base`, and `jitter_interval`."
+          },
+          {
+            "id": 4,
+            "pass": true,
+            "evidence": "It explicitly explains that writing occurs at 1,000 points or one second, whichever comes first."
+          }
+        ],
+        "summary": "The response fails criterion 2, so the overall result is false."
+      }
+    },
+    {
+      "id": "write-batch-python",
+      "run": 2,
+      "pass": true,
+      "judgement": {
+        "pass": true,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "The response constructs WriteOptions with batch_size=1_000 and flush_interval=1_000."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "The response passes write_options via write_client_options=write_options to InfluxDBClient3."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "Retry behavior is configured directly in WriteOptions using retry_interval, max_retries, max_retry_delay, exponential_base, and jitter_interval."
+          },
+          {
+            "id": 4,
+            "pass": true,
+            "evidence": "The response explains that writes flush at the batch size or after the flush interval, whichever comes first."
+          }
+        ],
+        "summary": "All four criteria are satisfied."
+      }
+    },
+    {
+      "id": "write-batch-python",
+      "run": 3,
+      "pass": false,
+      "judgement": {
+        "pass": false,
+        "checks": [
+          {
+            "id": 1,
+            "pass": false,
+            "evidence": "The response uses the `write_client_options(...)` helper rather than explicitly using a `WriteOptions` instance with `batch_size` and `flush_interval`."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "It passes the batching options through `write_client_options` assigned to `InfluxDBClient3(..., write_client_options=...)`."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "Retry settings such as `retry_interval`, `max_retries`, and `max_retry_delay` are configured within the Python client's write options."
+          },
+          {
+            "id": 4,
+            "pass": true,
+            "evidence": "It explicitly explains that flushing occurs when either 1,000 points accumulate or one second passes."
+          }
+        ],
+        "summary": "The response fails criterion 1 because it does not explicitly use a WriteOptions instance."
+      }
+    }
+  ]
+}
