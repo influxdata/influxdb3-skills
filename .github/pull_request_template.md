@@ -21,7 +21,15 @@ List what you ran and the result. Examples:
 - live example runs, with product and version (for example, Core 3.11.5)
 - eval cases rerun: `node evals/run-codex-evals.mjs --case <id> --runs 3`
   or `claude plugin eval ./ --case <id>`
+
+For any skill change that states or relies on product behavior, cite the
+claim IDs from the docs-tooling verification claims ledger
+(`research/claims/<run-id>/claims.yml`), for example `claim-20260925-0188`.
+If no claim covers the behavior, record one there first, and add the skill
+lines to the claim's `cites`.
 -->
+
+Claims:
 
 ## Checklist
 
@@ -30,4 +38,4 @@ List what you ran and the result. Examples:
 - [ ] Skills validate: `uvx --from <skills-ref> skills-ref validate skills/<skill>/` (see `.github/workflows/validate.yml`)
 - [ ] Versions match: `scripts/check-versions.sh`
 - [ ] `CHANGELOG.md` updated for user-visible changes
-- [ ] Product claims checked against docs or a live instance, with version support written as `X+`
+- [ ] Product claims cite the docs-tooling claims ledger, with version support written as `X+`
