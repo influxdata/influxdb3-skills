@@ -16,17 +16,18 @@ const rubricSchema = join(evalsDir, 'codex-rubric.schema.json');
 
 function usage(message) {
   if (message) console.error(`Error: ${message}\n`);
-  console.error('Usage: node evals/run-codex-evals.mjs [--case id[,id...]] [--runs N] [--model MODEL]');
+  console.error('Usage: node evals/run-codex-evals.mjs [--case id[,id...]] [--runs N] [--model MODEL] [--judge-model MODEL]');
   process.exit(message ? 2 : 0);
 }
 
 function args(argv) {
-  const options = { caseIds: null, runs: 1, model: null };
+  const options = { caseIds: null, runs: 1, model: null, judgeModel: null };
   for (let i = 0; i < argv.length; i += 1) {
     const value = argv[i];
     if (value === '--case') options.caseIds = (argv[++i] ?? '').split(',').filter(Boolean);
     else if (value === '--runs') options.runs = Number(argv[++i]);
     else if (value === '--model') options.model = argv[++i];
+    else if (value === '--judge-model') options.judgeModel = argv[++i];
     else if (value === '--help' || value === '-h') usage();
     else usage(`unknown argument '${value}'`);
   }
@@ -54,6 +55,15 @@ function promptFor(testCase, byId) {
   return `Earlier in this conversation I asked: "${promptFor(parent, byId)}"\n\n${testCase.prompt}`;
 }
 
+function skillPrompt(testCase) {
+  if (testCase.id.startsWith('plugins-')) {
+    return `You are answering a user with the InfluxDB 3 Processing Engine plugins skill from this checked-out repository. ` +
+      `Before answering, read skills/influxdb3-plugins/SKILL.md and any references it routes you to. `;
+  }
+  return `You are answering a user with the InfluxDB 3 skill from this checked-out repository. ` +
+    `Before answering, read skills/influxdb3/SKILL.md and any references it routes you to. `;
+}
+
 function runCodex({ prompt, tracePath, outputPath, model, schemaPath }) {
   const command = ['exec', '--ephemeral', '--json', '--sandbox', 'read-only', '--cd', repoDir,
     '--output-last-message', outputPath];
@@ -75,7 +85,7 @@ function evaluatorPrompt(testCase, response) {
     `Set pass to true only when every criterion passes. Evidence must cite the response without exposing any secret-like value.`;
 }
 
-function grade(testCase, response, resultDir, runNumber, model) {
+function grade(testCase, response, resultDir, runNumber, judgeModel) {
   const responsePath = join(resultDir, `${testCase.id}.run-${runNumber}.response.txt`);
   const judgePath = join(resultDir, `${testCase.id}.run-${runNumber}.judge.json`);
   writeFileSync(responsePath, response, 'utf8');
@@ -83,7 +93,7 @@ function grade(testCase, response, resultDir, runNumber, model) {
     prompt: evaluatorPrompt(testCase, response),
     tracePath: join(resultDir, `${testCase.id}.run-${runNumber}.judge.trace.jsonl`),
     outputPath: judgePath,
-    model,
+    model: judgeModel,
     schemaPath: rubricSchema,
   });
   if (execution.exitCode !== 0 || !existsSync(judgePath)) {
@@ -113,8 +123,7 @@ const results = [];
 for (const testCase of cases) {
   for (let runNumber = 1; runNumber <= options.runs; runNumber += 1) {
     const execution = runCodex({
-      prompt: `You are answering a user with the InfluxDB 3 skill from this checked-out repository. ` +
-        `Before answering, read skills/influxdb3/SKILL.md and any references it routes you to. ` +
+      prompt: skillPrompt(testCase) +
         `Do not edit files or run external commands. Answer the following request directly:\n\n${promptFor(testCase, byId)}`,
       tracePath: join(resultDir, `${testCase.id}.run-${runNumber}.trace.jsonl`),
       outputPath: join(resultDir, `${testCase.id}.run-${runNumber}.answer.txt`),
@@ -125,11 +134,17 @@ for (const testCase of cases) {
       results.push({ id: testCase.id, run: runNumber, pass: false, reason: `agent failed (exit ${execution.exitCode})`, execution });
       continue;
     }
-    results.push({ id: testCase.id, run: runNumber, ...grade(testCase, readFileSync(answerPath, 'utf8'), resultDir, runNumber, options.model) });
+    results.push({ id: testCase.id, run: runNumber, ...grade(testCase, readFileSync(answerPath, 'utf8'), resultDir, runNumber, options.judgeModel) });
   }
 }
 
-const summary = { generatedAt: new Date().toISOString(), model: options.model ?? 'Codex default', runs: options.runs, results };
+const summary = {
+  generatedAt: new Date().toISOString(),
+  model: options.model ?? 'Codex default',
+  judgeModel: options.judgeModel ?? 'Codex default',
+  runs: options.runs,
+  results,
+};
 writeFileSync(join(resultDir, 'summary.json'), `${JSON.stringify(summary, null, 2)}\n`, 'utf8');
 const passed = results.filter((result) => result.pass).length;
 console.log(`${passed}/${results.length} Codex eval runs passed. Results: ${resultDir}`);
