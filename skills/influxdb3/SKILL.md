@@ -206,7 +206,7 @@ Add at most one line of guidance after that.
 Don't write setup steps, tuning procedures, or code for these topics.
 
 - **Air-gapped setup:** custom plugin repos (`--plugin-repo`), offline mirrors, and offline package installs. To block plugin package installation, see `influxdb3-plugins` → `references/dependencies.md`.
-- **Performance tuning:** slow queries, slow writes, cardinality remediation, and batch-size optimization.
+- **Performance tuning:** slow queries, slow writes, cardinality remediation, and workload-specific batch-size optimization. Basic batching and write error handling are in scope; see §5.
 - **Migration from v1 or v2 to InfluxDB 3,** including rewriting v1 or v2 client code or Flux queries. Don't offer to do the rewrite.
 - **App-pattern templates:** IoT pipelines, dashboards, alerts, and downsampling.
 - **Processing Engine plugins:** Python code that runs inside InfluxDB 3 (`process_writes`, `process_scheduled_call`, `process_request`, `influxdb3_local`, `LineBuilder`). Use `influxdb3-plugins`.

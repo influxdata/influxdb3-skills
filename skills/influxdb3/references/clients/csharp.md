@@ -36,6 +36,17 @@ var points = Enumerable.Range(0, 1000).Select(_ =>
 await client.WritePointsAsync(points);
 ```
 
+## Batch-write error handling
+
+For bulk writes, build fixed-size `List<PointData>` batches and send each batch with `WritePointsAsync`.
+Put the call in a bounded retry loop.
+Retry 429 and 5xx responses with exponential backoff and jitter.
+Surface 400, 401, 403, and 404 without retrying.
+This is basic write correctness, not workload-specific batch-size tuning.
+The C# client doesn't expose the Python client's automatic `batch_size` or `flush_interval` settings.
+
+See `references/writing.md` → "Error handling" for the status-code meanings.
+
 `InfluxDB3.Client` 1.9.0+ writes through `/api/v2/write` by default, so one invalid line rejects the whole batch. For partial writes or `NoSync` on InfluxDB 3 Core or Enterprise, set the `UseV2Api` write option to `false`. See `references/writing.md` → "Official clients write through `/api/v2/write` by default".
 
 ## Parameterized SQL query

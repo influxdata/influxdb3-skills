@@ -72,7 +72,7 @@ Run these from `evals/prompts.jsonl` using the exact prompt text. Use the `crite
 
 **Schema (4):** `schema-gpu-fleet`, `schema-naming`, `schema-types`, `schema-tag-bool`
 
-**Write (4):** `write-batch-csharp`, `write-precision`, `write-error-handling`, `write-precision-precision`
+**Write (5):** `write-batch-csharp`, `write-batch-python`, `write-precision`, `write-error-handling`, `write-precision-precision`
 
 **Flavor (2):** `flavor-detection`, `flavor-cloud-vs-core`
 
