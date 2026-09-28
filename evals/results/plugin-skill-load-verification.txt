@@ -1,1 +1,0 @@
-2026-05-07T23:37:07Z: second skill influxdb3-plugins declared in plugin.json (v0.2.0), symlink resolves, both skills visible, SKILL.md frontmatter parses (literal block scalar to avoid 'gh:' YAML ambiguity)

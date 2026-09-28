@@ -141,7 +141,7 @@ Findings from a hands-on test pass (local bring-up + sustained write/query load)
 ## [0.5.2] — 2026-05-19
 
 ### Fixed
-- **Plugin write API**: skill content now teaches `influxdb3_local.write_sync(line, no_sync=True)` as the preferred plugin-write pattern instead of the legacy `influxdb3_local.write(line)`. Per Plugins-PM reviewer feedback (Ryan Cater) and confirmed by introspecting the live Enterprise 3.8.4 binary, the runtime itself labels `write` and `write_to_db` as **legacy** in their own docstrings:
+- **Plugin write API**: skill content now teaches `influxdb3_local.write_sync(line, no_sync=True)` as the preferred plugin-write pattern instead of the legacy `influxdb3_local.write(line)`. Confirmed by introspecting the live Enterprise 3.8.4 binary, the runtime itself labels `write` and `write_to_db` as **legacy** in their own docstrings:
   - `write` / `write_to_db`: "Legacy api that batches writes and writes them at the end of plugin execution."
   - `write_sync` / `write_sync_to_db`: "Writes synchronously via the write buffer."
 - Corrected the documented `write_sync(line, no_sync)` signature in `references/runtime-api.md` — `no_sync` is a **required positional argument** (no default), not the `no_sync=False` shown previously. Verified by attempting `write_sync(line)` on the live runtime, which fails with `TypeError: PyPluginCallApi.write_sync() missing 1 required positional argument: 'no_sync'`.

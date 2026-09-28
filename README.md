@@ -4,9 +4,7 @@ Agent skills that teach AI coding agents to write correct InfluxDB 3 code, manag
 
 Stands alone — no MCP server required.
 
-**Status:** v0.7.0 (unreleased). Two skills, versioned together with the plugin. Distributed as a plugin for Claude Code, Codex, and other agents from this repo. Version history in [`CHANGELOG.md`](CHANGELOG.md); roadmap in [What it does NOT cover yet](#what-it-does-not-cover-yet).
-
-> **Reviewers:** if you've been invited to review this skill, start with [`TESTING.md`](TESTING.md) and your area-specific briefing under [`evals/reviewer-briefings/`](evals/reviewer-briefings/).
+**Status:** v0.7.0. Two skills, versioned together with the plugin. Distributed as a plugin for Claude Code, Codex, and other agents from this repo. Version history in [`CHANGELOG.md`](CHANGELOG.md); roadmap in [What it does NOT cover yet](#what-it-does-not-cover-yet).
 
 ## What it does
 
@@ -107,17 +105,9 @@ Claude Code reads a local marketplace from the directory's working tree, so it u
 To test a branch, check it out or add its worktree directory as the marketplace.
 After you edit files, start a new session to load the changes.
 
-### Validate
+### Test
 
-CI runs these checks on every pull request. To run them locally:
-
-```sh
-for skill in skills/*/; do
-  uvx --from "git+https://github.com/agentskills/agentskills@69ef37e9424c0a7ea9dd2293b559e43ec8176379#subdirectory=skills-ref" \
-    skills-ref validate "$skill"
-done
-scripts/check-versions.sh
-```
+[`TESTING.md`](TESTING.md) covers validation, the link check, the runnable examples, and the evals.
 
 ## Use it
 
@@ -160,10 +150,8 @@ To make a change:
 
 1. Edit the relevant `SKILL.md`, `references/`, or `examples/` file. Follow the evidence rules in [`docs/publishing.md`](docs/publishing.md).
 2. Use full product names, never "Cloud" alone, and keep skill text agent-neutral.
-3. Run the checks in [Validate](#validate) and the eval suite in [`evals/README.md`](evals/README.md). Adversarial cases must pass 100%.
+3. Run the checks in [`TESTING.md`](TESTING.md) for your change. Adversarial eval cases must pass 100%.
 4. Open a PR.
-
-Reviewer-onboarding details, including the four-area review split for the current MVP review pass, are in [`TESTING.md`](TESTING.md).
 
 ## License
 
