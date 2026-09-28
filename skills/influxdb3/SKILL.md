@@ -250,6 +250,7 @@ Use this section when something stopped working: connection errors, writes that 
 - **When a write "succeeded" but the data is missing, check for auto-create.** List the databases the token can see and look for misspelled siblings (`references/troubleshooting.md` → "Silent auto-create misroute").
 - **When the symptom is unclear, run `examples/diagnose/`.** It prints a one-page health report to paste into the conversation.
 - **Defer performance questions** (slow queries, slow writes, cardinality remediation). Open with the deferral and the performance-tuning URL (§9). Then give at most one line of triage, such as adding a time filter or a `LIMIT`.
+
 | Symptom | Read |
 |---|---|
 | 401 or 403 from any operation | `references/troubleshooting.md` → "Auth failures" |

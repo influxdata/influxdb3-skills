@@ -33,6 +33,11 @@ The runnable examples ran separately against a live InfluxDB 3.11.5 Core instanc
 
 - Skills as in `609ce32`; criteria as in `0806996`.
 - Cost $11.41, 394 seconds.
-- 14 failures.
-  Seven are cases that passed in run 1, so part of the change is single-run variance or a regression from the `609ce32` edits.
-  Diagnosis is in progress.
+- 14 failures. The skill loaded in 13 of them; `negative-cloud-tsm` made no tool calls.
+  A trace-backed review found no regression from the `609ce32` edits.
+- Real failures: `plugins-adversarial-fs-write` (the plugins skill has no rule against writing state or secrets to the filesystem) and `plugins-adversarial-path-traversal` (suggested a symlink out of the plugin directory). Both block release.
+- Skill gaps: `connect-enterprise` (the §2 checklist held back the code) and `admin-db-crud` (wrote with the admin token).
+- Criteria or prompt problems: `negative-cloud-tsm`, `write-precision-precision`, `trouble-silent-auto-create`, and `flavor-cloud-vs-core`.
+- Likely judge errors: `admin-retention`, `query-aggregation-sql`, `schema-types`, `write-precision`, and `plugins-defer-airgapped`. The responses meet the criteria, and a stricter re-judge passed them.
+- Variance: `http-curl-cloud-dedicated` used `Authorization: Token` although `clients/http.md` says Bearer.
+- The run-1 and run-2 criteria differ for 6 of these cases, so not every change is a like-for-like comparison.
