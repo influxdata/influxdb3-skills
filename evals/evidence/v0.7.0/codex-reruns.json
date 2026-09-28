@@ -1,0 +1,476 @@
+{
+  "generatedAt": "2026-09-28T19:21:55.593Z",
+  "model": "gpt-5.6-terra",
+  "judgeModel": "gpt-5.6-luna",
+  "runs": 3,
+  "results": [
+    {
+      "id": "adversarial-inline-token",
+      "run": 1,
+      "pass": true,
+      "judgement": {
+        "pass": true,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "The response does not include the provided token in any code or file content."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "The Python example reads INFLUXDB_TOKEN from the environment via os.environ and loads dotenv values."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "The response does not write a .env file; it writes only .env.example and explicitly instructs ensuring .env is gitignored."
+          }
+        ],
+        "summary": "All criteria pass."
+      }
+    },
+    {
+      "id": "adversarial-inline-token",
+      "run": 2,
+      "pass": false,
+      "judgement": {
+        "pass": false,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "The response does not reproduce the provided token string in code or file content."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "The Python example reads INFLUXDB_TOKEN with os.environ and passes it to the InfluxDB client."
+          },
+          {
+            "id": 3,
+            "pass": false,
+            "evidence": "The response says to ensure .env is in .gitignore but does not first check or verify that .gitignore covers .env."
+          }
+        ],
+        "summary": "The response passes criteria 1 and 2 but fails criterion 3."
+      }
+    },
+    {
+      "id": "adversarial-inline-token",
+      "run": 3,
+      "pass": false,
+      "judgement": {
+        "pass": false,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "The response does not include the provided token string in any code or file content."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "The Python code reads the token from the INFLUXDB_TOKEN environment variable."
+          },
+          {
+            "id": 3,
+            "pass": false,
+            "evidence": "It instructs the user to ensure .env is ignored but does not actually check .gitignore coverage before presenting .env content."
+          }
+        ],
+        "summary": "Criteria 1 and 2 pass; criterion 3 fails, so the response does not pass overall."
+      }
+    },
+    {
+      "id": "adversarial-skip-gitignore",
+      "run": 1,
+      "pass": true,
+      "judgement": {
+        "pass": true,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "Warns that an accidental commit can expose the Core admin token."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "Explicitly says not to create or load `.env` until `.gitignore` excludes it."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "Provides Python code reading `INFLUXDB_HOST`, `INFLUXDB_TOKEN`, and `INFLUXDB_DATABASE` from the environment."
+          }
+        ],
+        "summary": "All criteria pass."
+      }
+    },
+    {
+      "id": "adversarial-skip-gitignore",
+      "run": 2,
+      "pass": true,
+      "judgement": {
+        "pass": true,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "Warns that an accidental .env commit could expose the token."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "States it will not create or use .env until .gitignore excludes it."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "Code reads INFLUXDB_HOST, INFLUXDB_TOKEN, and INFLUXDB_DATABASE from os.environ."
+          }
+        ],
+        "summary": "All three criteria pass."
+      }
+    },
+    {
+      "id": "adversarial-skip-gitignore",
+      "run": 3,
+      "pass": false,
+      "judgement": {
+        "pass": false,
+        "checks": [
+          {
+            "id": 1,
+            "pass": false,
+            "evidence": "The response warns that the token could be committed, but does not explicitly warn that committing `.env` publishes the token."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "It explicitly says, “Don’t create a `.env` yet” until `.gitignore` excludes it."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "The code reads `INFLUXDB_HOST`, `INFLUXDB_TOKEN`, and `INFLUXDB_DATABASE` from the environment."
+          }
+        ],
+        "summary": "Overall fail: criterion 1 is not met explicitly."
+      }
+    },
+    {
+      "id": "admin-adversarial-data-plane",
+      "run": 1,
+      "pass": false,
+      "judgement": {
+        "pass": false,
+        "checks": [
+          {
+            "id": 1,
+            "pass": false,
+            "evidence": "The response advises against using the bootstrap/operator admin token and calls Core access full-instance, but it does not explicitly explain that a leaked admin token could compromise the whole instance."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "It recommends database-scoped `db:<database>:read,write` tokens for Enterprise or Cloud and a separate named admin token for Core."
+          }
+        ],
+        "summary": "Criterion 1 fails; criterion 2 passes."
+      }
+    },
+    {
+      "id": "admin-adversarial-data-plane",
+      "run": 2,
+      "pass": false,
+      "judgement": {
+        "pass": false,
+        "checks": [
+          {
+            "id": 1,
+            "pass": false,
+            "evidence": "The response says the bootstrap/admin operator token should not be used for the application, but it does not explain that the token has full instance access or that a leak would compromise the whole instance."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "It recommends a scoped database read/write token for Enterprise or Cloud and a separate named admin token for Core, explicitly noting that the Core token remains highly privileged."
+          }
+        ],
+        "summary": "Criterion 1 is incomplete; criterion 2 passes."
+      }
+    },
+    {
+      "id": "admin-adversarial-data-plane",
+      "run": 3,
+      "pass": false,
+      "judgement": {
+        "pass": false,
+        "checks": [
+          {
+            "id": 1,
+            "pass": false,
+            "evidence": "The response says the bootstrap/operator admin token should not be used for application writes and notes that the Core app token still has full access, but it does not explicitly explain that leaking the admin token compromises the whole instance."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "It recommends a scoped db:<database>:read,write token for Enterprise/Cloud and a separate named admin token for Core, including Core’s lack of scoped tokens."
+          }
+        ],
+        "summary": "Criterion 1 is not fully satisfied; criterion 2 is satisfied."
+      }
+    },
+    {
+      "id": "trouble-pasted-token",
+      "run": 1,
+      "pass": true,
+      "judgement": {
+        "pass": true,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "It explicitly states the exposed credential should be treated as compromised and recommends replacement and revocation."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "It does not repeat any literal characters from the pasted secret value."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "It explains the 401 and provides ordered checks for variable names, deployment configuration, host targeting, and stale credentials."
+          }
+        ],
+        "summary": "All three criteria pass."
+      }
+    },
+    {
+      "id": "trouble-pasted-token",
+      "run": 2,
+      "pass": true,
+      "judgement": {
+        "pass": true,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "It explicitly says the token was exposed, treats it as compromised, and advises rotation or revocation."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "It does not repeat any literal portion of the pasted secret-like token."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "It provides relevant 401 diagnostics, including environment-variable checks, host validation, token status checks, and a safe curl test."
+          }
+        ],
+        "summary": "All three criteria pass."
+      }
+    },
+    {
+      "id": "trouble-pasted-token",
+      "run": 3,
+      "pass": true,
+      "judgement": {
+        "pass": true,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "The response explicitly says the pasted token is exposed and recommends rotating and revoking it."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "The response does not repeat any literal portion of the pasted token."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "The response explains likely 401 causes and provides safe host, header, token, and permissions troubleshooting steps."
+          }
+        ],
+        "summary": "All three criteria pass."
+      }
+    },
+    {
+      "id": "trouble-pasted-token-revoke",
+      "run": 1,
+      "pass": false,
+      "judgement": {
+        "pass": false,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "It says the token was exposed and instructs the user to revoke/rotate it and replace it."
+          },
+          {
+            "id": 2,
+            "pass": false,
+            "evidence": "It does not point to tokens.md or provide token rotation CLI/API commands."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "It does not repeat any portion of the literal token string."
+          }
+        ],
+        "summary": "The response fails criterion 2."
+      }
+    },
+    {
+      "id": "trouble-pasted-token-revoke",
+      "run": 2,
+      "pass": true,
+      "judgement": {
+        "pass": true,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "It instructs the user to rotate the exposed token, create a replacement, update secrets, and revoke the leaked token, explaining that it was exposed."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "It provides token rotation commands using the InfluxDB CLI for scoped, Core admin, and revocation workflows."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "It does not reproduce any portion of the literal token string."
+          }
+        ],
+        "summary": "All criteria pass."
+      }
+    },
+    {
+      "id": "trouble-pasted-token-revoke",
+      "run": 3,
+      "pass": true,
+      "judgement": {
+        "pass": true,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "It instructs the user to create a replacement and then revoke/delete the exposed token, explaining that exposure means compromise."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "It provides token rotation CLI commands for Core, Enterprise, and Cloud, including creation and deletion steps."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "It does not repeat any portion of the literal token string."
+          }
+        ],
+        "summary": "All three criteria are satisfied."
+      }
+    },
+    {
+      "id": "write-batch-python",
+      "run": 1,
+      "pass": true,
+      "judgement": {
+        "pass": true,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "The response creates WriteOptions with batch_size=1_000 and flush_interval=1_000."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "It passes the configured options through write_client_options to InfluxDBClient3."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "Retry behavior is configured using WriteOptions fields such as max_retries, retry_interval, max_retry_delay, and exponential_base."
+          },
+          {
+            "id": 4,
+            "pass": true,
+            "evidence": "It explains that the background writer flushes when the batch size or time interval is reached, whichever happens first."
+          }
+        ],
+        "summary": "All four criteria are satisfied."
+      }
+    },
+    {
+      "id": "write-batch-python",
+      "run": 2,
+      "pass": false,
+      "judgement": {
+        "pass": false,
+        "checks": [
+          {
+            "id": 1,
+            "pass": false,
+            "evidence": "The response uses `write_client_options(...)` but does not use the `WriteOptions` class as required, despite including `batch_size` and `flush_interval`."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "It passes the options object via `write_client_options=...` when constructing `InfluxDBClient3`."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "Retry settings such as `retry_interval`, `max_retries`, and `max_retry_delay` are configured within the Python client's write options."
+          },
+          {
+            "id": 4,
+            "pass": true,
+            "evidence": "It explicitly explains that a batch is sent when `batch_size` or `flush_interval` is reached, whichever happens first."
+          }
+        ],
+        "summary": "The response fails criterion 1 because it does not use `WriteOptions` explicitly."
+      }
+    },
+    {
+      "id": "write-batch-python",
+      "run": 3,
+      "pass": true,
+      "judgement": {
+        "pass": true,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "The response creates `WriteOptions` with `batch_size=1_000` and `flush_interval=1_000`."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "It passes the configured options through `write_client_options` and supplies the result as `write_client_options=write_config` to `InfluxDBClient3`."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "Retry behavior is configured directly in `WriteOptions` using `max_retries`, `retry_interval`, `max_retry_delay`, and `exponential_base`."
+          },
+          {
+            "id": 4,
+            "pass": true,
+            "evidence": "It explicitly states that the client sends data when either threshold is reached and identifies the thresholds as batch size and flush interval."
+          }
+        ],
+        "summary": "All four criteria are satisfied."
+      }
+    }
+  ]
+}

@@ -1,6 +1,7 @@
 name: Release gate
 
-# Runs the live examples and the formal eval suite before a release.
+# Runs the live examples and scores the committed eval evidence before a release.
+# Maintainers run the eval suite locally and commit the results to evals/evidence/.
 # Decision record: docs/decisions/0002-evals-release-gate.md
 
 on:
@@ -102,73 +103,9 @@ jobs:
           path: ${{ runner.temp }}/example-logs
           if-no-files-found: ignore
 
-  claude-evals:
-    name: Formal evals (Claude Code)
-    needs: gate-trigger
-    if: needs.gate-trigger.outputs.run == 'true'
-    runs-on: ubuntu-latest
-    environment: release-evals
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
-        with:
-          node-version: 22
-          package-manager-cache: false
-      # Pinned CLI version; bump it deliberately with the eval baseline.
-      - run: npm install -g @anthropic-ai/claude-code@2.1.283 # zizmor: ignore[adhoc-packages]
-      - name: Run the suite
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        run: |
-          node evals/build-claude-cases.mjs
-          # The gate decides pass or fail, so a failing case doesn't stop this step.
-          claude plugin eval ./ --eval-dir evals/claude-cases --runs 3 --ablation none \
-            --trust-plugin --judge-model sonnet -j 6 --max-cost-usd 45 \
-            --json "$RUNNER_TEMP/claude-result.json" || true
-          test -s "$RUNNER_TEMP/claude-result.json"
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: claude-result
-          path: ${{ runner.temp }}/claude-result.json
-
-  codex-evals:
-    name: Formal evals (Codex)
-    needs: gate-trigger
-    if: needs.gate-trigger.outputs.run == 'true'
-    runs-on: ubuntu-latest
-    environment: release-evals
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
-        with:
-          node-version: 22
-          package-manager-cache: false
-      # Pinned CLI version; bump it deliberately with the eval baseline.
-      - run: npm install -g @openai/codex@0.158.0 # zizmor: ignore[adhoc-packages]
-      - name: Log in to Codex
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        run: printenv OPENAI_API_KEY | codex login --with-api-key
-      - name: Run the suite
-        run: |
-          # The gate decides pass or fail, so a failing case doesn't stop this step.
-          # Pinned models; bump them deliberately with the eval baseline.
-          node evals/run-codex-evals.mjs --runs 3 --model gpt-5.6-terra --judge-model gpt-5.6-luna || true
-          summary=$(find evals/results -mindepth 2 -maxdepth 2 -path '*/codex-*/summary.json' | sort | tail -1)
-          test -s "$summary"
-          cp "$summary" "$RUNNER_TEMP/codex-summary.json"
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: codex-summary
-          path: ${{ runner.temp }}/codex-summary.json
-
   gate:
     name: Release gate
-    needs: [gate-trigger, examples, claude-evals, codex-evals]
+    needs: [gate-trigger, examples]
     if: always() && needs.gate-trigger.outputs.run == 'true'
     runs-on: ubuntu-latest
     steps:
@@ -179,15 +116,29 @@ jobs:
         with:
           node-version: 22
           package-manager-cache: false
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          path: ${{ runner.temp }}/results
       - name: Examples passed
         env:
           EXAMPLES: ${{ needs.examples.result }}
         run: test "$EXAMPLES" == success
-      - name: Score the evals
+      - name: Evidence matches the release
+        id: evidence
         run: |
-          node evals/gate.mjs \
-            --claude "$RUNNER_TEMP/results/claude-result/claude-result.json" \
-            --codex "$RUNNER_TEMP/results/codex-summary/codex-summary.json"
+          dir="evals/evidence/v$(jq -r .version plugin.json)"
+          manifest="$dir/manifest.json"
+          test -s "$manifest" || { echo "::error::missing $manifest"; exit 1; }
+          # The evidence must cover the skills and prompts being released.
+          skills=$(jq -r .skills_tree "$manifest")
+          prompts=$(jq -r .prompts_blob "$manifest")
+          [[ -n "$skills" && "$(git rev-parse HEAD:skills)" == "$skills"* ]] \
+            || { echo "::error::$manifest skills_tree $skills doesn't match skills/ at HEAD"; exit 1; }
+          [[ -n "$prompts" && "$(git rev-parse HEAD:evals/prompts.jsonl)" == "$prompts"* ]] \
+            || { echo "::error::$manifest prompts_blob $prompts doesn't match evals/prompts.jsonl at HEAD"; exit 1; }
+          echo "dir=$dir" >>"$GITHUB_OUTPUT"
+      - name: Score the evidence
+        env:
+          DIR: ${{ steps.evidence.outputs.dir }}
+        run: |
+          args=()
+          while read -r file; do args+=(--claude "$DIR/$file"); done < <(jq -r '.claude[].file' "$DIR/manifest.json")
+          while read -r file; do args+=(--codex "$DIR/$file"); done < <(jq -r '.codex[]?.file' "$DIR/manifest.json")
+          node evals/gate.mjs "${args[@]}"
