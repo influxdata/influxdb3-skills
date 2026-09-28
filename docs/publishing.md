@@ -3,7 +3,7 @@
 ## When to release
 
 The release notes for InfluxDB 3 Core and Enterprise are the cue to review the skills.
-Before publication, product management provides internal release notes; after, use the published docs-v2 release notes.
+Use the published InfluxDB 3 release notes, or pre-release notes when they're available before publication.
 Scope each update by what changed, not by the database version: a patch release can change behavior.
 
 All skills share the plugin version ([ADR-0001](decisions/0001-single-package-versioning.md)).
