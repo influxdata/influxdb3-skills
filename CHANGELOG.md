@@ -4,7 +4,7 @@ All notable changes to this skill will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased] — 0.7.0
+## [0.7.0] — 2026-09-28
 
 ### Packaging
 - Renamed the repo from `influxdata/claude-skill-for-influxdb3` to `influxdata/influxdb3_skills`, the plugin from `claude-influxdb3` to `influxdb3-skills`, and its marketplace from `influxdata` to `influxdata-influxdb3`. Skill names don't change.
@@ -81,10 +81,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   Its `quirks.md` links point at the `influxdb3` skill, where the file lives.
 - Examples run on the current client minors: influxdb3-python 0.21, JavaScript 2.4, Go 2.17, Java 1.11, and C# 1.10 (live-verified on Core and Enterprise 3.11.5).
   The Go README adds `go mod tidy`, and the Java docs add the Arrow Flight JVM options, including `--sun-misc-unsafe-memory-access=allow` on JDK 27.
+- `clients/python.md` shows automatic batching: pass `WriteOptions` through `write_client_options()`. The client ignores `write_options=` passed to `InfluxDBClient3` and `batch_size` placed in `write_client_options()`, so that code doesn't batch.
+- `clients/csharp.md` says `InfluxDB3.Client` has no batching or retry options, so generated code builds fixed-size batches and retries 429 and 5xx responses.
+- When a user pastes a token, the skill gives both the command that creates the replacement and the command that deletes the leaked token.
 
 ### Changed
 - Both skills drop verification history (build dates, "verified against" notes, and "per source" notes) and skill-version roadmap references (`v0.x`).
   Version-support notes stay, written as `X+` (for example, `3.10+`).
+- The SKILL.md performance-tuning deferral covers workload-specific batch-size tuning, not basic batching.
+- Added a release-gate workflow that runs the eval suite on Claude Code and Codex and scores it with `evals/gate.mjs` (ADR-0002).
+- Removed `TRY-IT.md`. Its sample prompts are in the README's "Use it" section.
 
 ## 0.6.0 (unreleased)
 
