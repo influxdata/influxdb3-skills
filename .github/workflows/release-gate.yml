@@ -1,0 +1,192 @@
+name: Release gate
+
+# Runs the live examples and the formal eval suite before a release.
+# Decision record: docs/decisions/0002-evals-release-gate.md
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled]
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-gate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gate-trigger:
+    name: Should the gate run?
+    runs-on: ubuntu-latest
+    outputs:
+      run: ${{ steps.check.outputs.run }}
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - id: check
+        env:
+          EVENT: ${{ github.event_name }}
+          HAS_RELEASE_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'release') }}
+        run: |
+          if [[ "$EVENT" != pull_request || "$HAS_RELEASE_LABEL" == true ]]; then
+            echo "run=true" >>"$GITHUB_OUTPUT"
+          else
+            echo "run=false" >>"$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - id: version
+        name: Read the InfluxDB 3 version the docs were checked against
+        run: |
+          version=$(sed -n 's/.*docs_checked_against: "influxdb3-core \([0-9.]*\),.*/\1/p' skills/influxdb3/SKILL.md)
+          test -n "$version"
+          echo "version=$version" >>"$GITHUB_OUTPUT"
+
+  examples:
+    name: Examples on InfluxDB 3 Core ${{ needs.gate-trigger.outputs.version }}
+    needs: gate-trigger
+    if: needs.gate-trigger.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ needs.gate-trigger.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: 22
+          package-manager-cache: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: stable
+          cache: false
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: 8.0.x
+      - name: Start InfluxDB 3 Core
+        run: |
+          docker run -d --name core -p 8181:8181 "influxdb:${VERSION}-core" \
+            serve --node-id ci --object-store memory
+          for _ in $(seq 1 60); do
+            status=$(curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:8181/health || true)
+            [[ "$status" == 401 ]] && break
+            sleep 1
+          done
+      - name: Create the operator token
+        id: token
+        run: |
+          token=$(docker exec core influxdb3 create token --admin --format json | jq -r .token)
+          test -n "$token"
+          echo "::add-mask::$token"
+          echo "token=$token" >>"$GITHUB_OUTPUT"
+      - name: Run the examples
+        env:
+          INFLUXDB_HOST: http://127.0.0.1:8181
+          INFLUXDB_TOKEN: ${{ steps.token.outputs.token }}
+          PRODUCT: core
+          OUT: ${{ runner.temp }}/example-logs
+        run: evals/run-examples.sh
+      - if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: example-logs
+          path: ${{ runner.temp }}/example-logs
+          if-no-files-found: ignore
+
+  claude-evals:
+    name: Formal evals (Claude Code)
+    needs: gate-trigger
+    if: needs.gate-trigger.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    environment: release-evals
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: 22
+          package-manager-cache: false
+      # Pinned CLI version; bump it deliberately with the eval baseline.
+      - run: npm install -g @anthropic-ai/claude-code@2.1.283 # zizmor: ignore[adhoc-packages]
+      - name: Run the suite
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          node evals/build-claude-cases.mjs
+          # The gate decides pass or fail, so a failing case doesn't stop this step.
+          claude plugin eval ./ --eval-dir evals/claude-cases --runs 3 --ablation none \
+            --trust-plugin --judge-model sonnet -j 6 --max-cost-usd 45 \
+            --json "$RUNNER_TEMP/claude-result.json" || true
+          test -s "$RUNNER_TEMP/claude-result.json"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: claude-result
+          path: ${{ runner.temp }}/claude-result.json
+
+  codex-evals:
+    name: Formal evals (Codex)
+    needs: gate-trigger
+    if: needs.gate-trigger.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    environment: release-evals
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: 22
+          package-manager-cache: false
+      # Pinned CLI version; bump it deliberately with the eval baseline.
+      - run: npm install -g @openai/codex@0.158.0 # zizmor: ignore[adhoc-packages]
+      - name: Log in to Codex
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: printenv OPENAI_API_KEY | codex login --with-api-key
+      - name: Run the suite
+        run: |
+          # The gate decides pass or fail, so a failing case doesn't stop this step.
+          node evals/run-codex-evals.mjs --runs 3 || true
+          summary=$(find evals/results -mindepth 2 -maxdepth 2 -path '*/codex-*/summary.json' | sort | tail -1)
+          test -s "$summary"
+          cp "$summary" "$RUNNER_TEMP/codex-summary.json"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: codex-summary
+          path: ${{ runner.temp }}/codex-summary.json
+
+  gate:
+    name: Release gate
+    needs: [gate-trigger, examples, claude-evals, codex-evals]
+    if: always() && needs.gate-trigger.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: 22
+          package-manager-cache: false
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          path: ${{ runner.temp }}/results
+      - name: Examples passed
+        env:
+          EXAMPLES: ${{ needs.examples.result }}
+        run: test "$EXAMPLES" == success
+      - name: Score the evals
+        run: |
+          node evals/gate.mjs \
+            --claude "$RUNNER_TEMP/results/claude-result/claude-result.json" \
+            --codex "$RUNNER_TEMP/results/codex-summary/codex-summary.json"

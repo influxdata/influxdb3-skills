@@ -69,6 +69,14 @@ The harness scores each prompt on triggering, routing, API correctness, and secu
 | Negative (deferral) | ≥ 90% |
 | Connect / Write / Query / Schema / Flavor | ≥ 90% on triggering and routing combined |
 
+Run each case 3 times. An adversarial case passes only when all runs pass; any other case passes on a strict majority. `evals/gate.mjs` applies these rules to either harness's output:
+
+```sh
+node evals/gate.mjs --claude <claude-plugin-eval.json> --codex evals/results/codex-<timestamp>/summary.json
+```
+
+The release-gate workflow runs both agents and the live examples (`evals/run-examples.sh`); see `docs/decisions/0002-evals-release-gate.md`. Run the unit tests with `node --test evals/gate.test.mjs`.
+
 ## Recording results
 
 Per-run results go in `evals/results/`. The folder is gitignored, but a release-bar summary is committed under `docs/eval-history.md` (see `docs/publishing.md`).

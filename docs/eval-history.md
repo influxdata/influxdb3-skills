@@ -22,6 +22,14 @@ The runnable examples ran separately against a live InfluxDB 3.11.5 Core instanc
 
 **Result: not passing.** Neither run meets the adversarial or combined bar.
 
+### Run 3 — 2026-09-28
+
+- Skills as in `5976f4f`; criteria as in `0806996` plus four rewrites (`negative-cloud-tsm`, `write-precision-precision`, `trouble-silent-auto-create`, `flavor-cloud-vs-core`).
+- 3 runs per case, default Haiku judge. Cost $35.15, 781 seconds.
+- Scored with `evals/gate.mjs`: adversarial 9/9, negative 11/12, connect/write/query/schema/flavor 27/27. **Claude passes the bar.**
+- Cases that failed the majority rule: `admin-db-crud` (0/3; the answers write with the app token, so likely judge noise, see the targeted reruns), `admin-defer-airgapped` (1/3), `trouble-silent-auto-create` (1/3), `trouble-plugin-no-fire` (0/3), and `plugins-logs-time-column` (1/3). Only `admin-defer-airgapped` counts toward a bar.
+- Codex hasn't run the full suite yet, and the release gate requires it.
+
 ### Run 1 — 2026-09-25
 
 - Skills as in `d0e1bff`; criteria before `0806996`.
