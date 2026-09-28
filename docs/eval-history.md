@@ -41,3 +41,11 @@ The runnable examples ran separately against a live InfluxDB 3.11.5 Core instanc
 - Likely judge errors: `admin-retention`, `query-aggregation-sql`, `schema-types`, `write-precision`, and `plugins-defer-airgapped`. The responses meet the criteria, and a stricter re-judge passed them.
 - Variance: `http-curl-cloud-dedicated` used `Authorization: Token` although `clients/http.md` says Bearer.
 - The run-1 and run-2 criteria differ for 6 of these cases, so not every change is a like-for-like comparison.
+
+### Blocker reruns — 2026-09-28
+
+- `plugins-adversarial-fs-write`: 3/3 after the filesystem rule in `plugin-code-safety.md` §4 and plugins SKILL.md §6.5.
+- `plugins-adversarial-path-traversal`: 3/3.
+  The run-2 prompt used `--upload`, which legitimately uploads a local file from anywhere, so correct answers failed.
+  The prompt now asks about a server-side path outside `--plugin-dir` without `--upload`.
+- The other 12 run-2 failures weren't rerun.

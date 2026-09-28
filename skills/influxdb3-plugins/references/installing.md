@@ -129,7 +129,7 @@ Schema columns: `plugin_name` (str), `file_name` (str), `file_path` (str), `size
 Plugin upload, update, and trigger creation **require an admin token**. Use a database-scoped token for the application code that *talks to* InfluxDB; use the admin token only for plugin lifecycle operations.
 
 The server enforces:
-- **Path traversal protection** — paths containing `..` or starting with `/` are rejected. Always use relative paths under `--plugin-dir`, or absolute paths only with `--upload` (the server resolves the upload destination).
+- **Path traversal protection** — without `--upload`, `--path` is relative to `--plugin-dir`, and the server rejects paths that contain `..` or start with `/`. With `--upload`, `--path` names a local file or directory; the CLI uploads it and the server chooses where it lands inside `--plugin-dir`.
 - **Symlink escape protection** — symlinks that resolve outside `--plugin-dir` are rejected.
 - **Admin-only deploys** — non-admin tokens cannot upload, update, or create triggers.
 

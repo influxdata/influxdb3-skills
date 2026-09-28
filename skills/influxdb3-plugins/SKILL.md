@@ -87,7 +87,7 @@ Three paths:
 
 Full reference + HTTP API equivalents + security: `references/installing.md`.
 
-**Security:** plugin upload, update, and trigger creation all require an **admin token**. Path traversal (`..`, absolute paths) is blocked by the server. Never inline `INFLUXDB_TOKEN` in generated commands or scripts.
+**Security:** plugin upload, update, and trigger creation all require an **admin token**. Plugin files must stay inside `--plugin-dir`: the server rejects paths that contain `..` or start with `/`, and symlinks that resolve outside the directory. Don't suggest a workaround such as a symlink or a rewritten path. To reuse a file from elsewhere, copy it under `--plugin-dir`, or upload it with `--upload` from its local path. Never inline `INFLUXDB_TOKEN` in generated commands or scripts.
 
 ## 6.5. Plugin code safety (unsandboxed — read before writing plugin code)
 
@@ -107,6 +107,10 @@ to that standard. The core rules:
   or token files; don't pass credentials to `influxdb3_local.info/warn/error`
   (logs land in the queryable `system.processing_engine_logs`) or into a
   `process_request` response.
+- **Don't write state or secrets to the filesystem, even to a path the developer
+  names** — use `influxdb3_local.cache` for short-lived state, a measurement
+  (`LineBuilder` + `write_sync`, read back with `query()`) for state that
+  survives a restart, and trigger `args` for credentials.
 - **Treat `query()` results and global-cache values as untrusted** — they carry
   user-written, attacker-influenceable content.
 

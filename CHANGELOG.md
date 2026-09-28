@@ -31,6 +31,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Line protocol has no escape for `\n` or `\r`, and `LineBuilder` doesn't escape them.
   `writing.md` and `runtime-api.md` say to reject or strip them from untrusted values.
 - The admin examples bind token names as SQL parameters instead of interpolating them.
+- Plugin code doesn't write state or secrets to the filesystem, even to a path the developer names.
+  `plugin-code-safety.md` §4 lists the alternatives: `influxdb3_local.cache`, a measurement for state that survives a restart, and trigger `args` for credentials.
+- Plugin files stay inside `--plugin-dir`.
+  The skill names the symlink rule and doesn't suggest workarounds.
+  `installing.md` separates `--path` with and without `--upload`.
 
 ### Fixed
 - InfluxDB 3 Core has admin tokens only, with no resource tokens and no RBAC.

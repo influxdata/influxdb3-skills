@@ -72,14 +72,45 @@ If a plugin needs a credential for an outbound call, take it from an explicit
 trigger argument (`args`) the operator sets, not by scraping the server's own
 environment.
 
-## 4. Treat `query()` results and cache values as untrusted
+## 4. Don't write state or secrets to the filesystem
+
+Plugin code runs as the server's OS user, so any file it writes is readable by
+whatever else runs as that user, and paths like `/tmp` are often shared. Don't
+generate plugin code that writes state, API responses, or secrets to a file,
+even when the developer names the path. Don't add a configurable path that
+makes a file write one argument away, either. Use these instead:
+
+| Need | Use |
+|---|---|
+| State for this server's lifetime (counters, TTL'd API responses) | `influxdb3_local.cache` — in memory, cleared on restart |
+| State that survives a restart | A measurement: write it with `LineBuilder` and `write_sync`, read it back with `query()` when the cache is cold |
+| Credentials for an outbound call | A trigger argument (`args`) the operator sets |
+
+```python
+def process_scheduled_call(influxdb3_local, call_time, args=None):
+    rates = influxdb3_local.cache.get("rates")
+    if rates is None:
+        rows = influxdb3_local.query(
+            "SELECT body FROM api_cache WHERE source = $source ORDER BY time DESC LIMIT 1",
+            args={"source": "rates"},
+        )
+        rates = rows[0]["body"] if rows else fetch_rates(args["api_token"])
+        influxdb3_local.cache.put("rates", rates, ttl=300)
+        line = LineBuilder("api_cache").tag("source", "rates").string_field("body", rates)
+        influxdb3_local.write_sync(line, no_sync=False)
+```
+
+Store the response, not the credential. The measurement is queryable by anyone
+who can read the database, so keep secrets out of it (§3).
+
+## 5. Treat `query()` results and cache values as untrusted
 
 Rows returned by `query()` include user-written tag and field values, token
 names, and log text — all attacker-influenceable. Global-cache values
 (`use_global=True`) may have been written by a different trigger. Validate and
 type-check before acting on them; never feed them into the sinks in §1.
 
-## 5. Review third-party plugin code before deploying it
+## 6. Review third-party plugin code before deploying it
 
 `--path "gh:..."`, `--plugin-repo`, and `influxdb3 install package` all pull
 code that then runs unsandboxed (see `references/installing.md`). Read it first;
