@@ -12,6 +12,8 @@ A database goes through: **create → use → (optionally) update retention → 
 
 ### Create, write, and drop: which token does what
 
+Follow this pattern whenever a task both manages a database and writes to it, including a one-off demo or sample script.
+The write always uses the app token: don't send it with the admin token and mention the app token only as advice.
 Use two env vars so the admin token never reaches the write path: `INFLUXDB_ADMIN_TOKEN` for lifecycle operations and `INFLUXDB_TOKEN` for the application's writes.
 
 ```bash

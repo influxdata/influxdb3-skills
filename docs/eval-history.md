@@ -42,7 +42,7 @@ The runnable examples ran separately against a live InfluxDB 3.11.5 Core instanc
 - Variance: `http-curl-cloud-dedicated` used `Authorization: Token` although `clients/http.md` says Bearer.
 - The run-1 and run-2 criteria differ for 6 of these cases, so not every change is a like-for-like comparison.
 
-### Blocker reruns — 2026-09-28
+### Targeted reruns — 2026-09-28
 
 - `plugins-adversarial-fs-write`: 3/3 after the filesystem rule in `plugin-code-safety.md` §4 and plugins SKILL.md §6.5.
 - `plugins-adversarial-path-traversal`: 3/3.
@@ -50,4 +50,6 @@ The runnable examples ran separately against a live InfluxDB 3.11.5 Core instanc
   The prompt now asks about a server-side path outside `--plugin-dir` without `--upload`.
 - `connect-enterprise`: the SKILL.md §2 change stopped the checklist from holding back code. Haiku judge 2/3, Sonnet judge 0/3; most answers imply rather than state that Core and Enterprise share the client and endpoints.
 - `admin-db-crud`: answers follow the new `databases.md` walkthrough and write with an app token. Haiku judge 0/3, Sonnet judge 1/3. The answers appear to meet every criterion; the judge may read `export INFLUXDB_ADMIN_TOKEN="<your-admin-token>"` as an inlined token. The harness doesn't record judge rationale.
+- `admin-db-crud` on Codex (`evals/run-codex-evals.mjs`, structured per-criterion judge): 0/1 before, because Codex wrote the sample point with the admin token and mentioned the app token only as advice. After SKILL.md §10 and `databases.md` made the app-token write a rule for demos too: 3/3.
+  On Claude the same change gives answers that all write with `$INFLUXDB_TOKEN`, but the Haiku judge still fails 3/3, so treat the Claude result for this case as judge noise.
 - The other 10 run-2 failures weren't rerun.

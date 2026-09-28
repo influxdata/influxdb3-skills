@@ -218,6 +218,7 @@ Example reply:
 ## 10. Database management
 
 - Creating and deleting databases and changing retention periods require an **admin token**. Check that it's set before you generate provisioning code.
+- **Writes use an app token, never the admin token, even in a one-off demo.** When a task both manages a database and writes to it, include creating the app token as a step, and send the write with it: a resource token on Enterprise or InfluxDB 3 Cloud, a named admin token on Core. The admin token only creates and drops. Pattern: `references/databases.md` → "Create, write, and drop: which token does what".
 - InfluxDB 3 Core and Enterprise use the APIs in this skill. InfluxDB Cloud Serverless, InfluxDB Cloud Dedicated, and InfluxDB Clustered use different management APIs, so route to that product's docs. For InfluxDB 3 Cloud, check its docs. For scripts that span products, detect the product first (§3).
 - Database names follow the measurement naming conventions in `references/schema-design.md`. Watch for auto-create (§5 and `references/connecting.md`).
 
