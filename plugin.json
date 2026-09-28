@@ -7,7 +7,7 @@
     "name": "InfluxData",
     "email": "product@influxdata.com"
   },
-  "homepage": "https://github.com/influxdata/influxdb3_skills",
-  "repository": "https://github.com/influxdata/influxdb3_skills",
+  "homepage": "https://github.com/influxdata/influxdb3-skills",
+  "repository": "https://github.com/influxdata/influxdb3-skills",
   "license": "MIT"
 }

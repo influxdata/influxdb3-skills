@@ -10,7 +10,7 @@ so any agent that supports the format can load them.
 ### Claude Code
 
 ```text
-/plugin marketplace add influxdata/influxdb3_skills
+/plugin marketplace add influxdata/influxdb3-skills
 /plugin install influxdb3-skills@influxdata-influxdb3
 ```
 
@@ -28,7 +28,7 @@ To update the plugin:
 ### Codex
 
 ```sh
-codex plugin marketplace add influxdata/influxdb3_skills
+codex plugin marketplace add influxdata/influxdb3-skills
 codex plugin add influxdb3-skills@influxdata-influxdb3
 ```
 
@@ -43,7 +43,7 @@ To install the skills into any agent that reads Agent Skills,
 use the [`skills` CLI](https://github.com/vercel-labs/skills):
 
 ```sh
-npx skills add influxdata/influxdb3_skills
+npx skills add influxdata/influxdb3-skills
 ```
 
 You can also copy the directories under `skills/` to the location where your agent reads skills.
@@ -158,7 +158,7 @@ Release history is in [`CHANGELOG.md`](CHANGELOG.md).
 To install your working copy instead of the published version, clone the repo:
 
 ```bash
-git clone https://github.com/influxdata/influxdb3_skills.git ~/Projects/influxdb3-skills
+git clone https://github.com/influxdata/influxdb3-skills.git ~/Projects/influxdb3-skills
 ```
 
 In Claude Code, remove the published marketplace first, because both use the name `influxdata-influxdb3`:
