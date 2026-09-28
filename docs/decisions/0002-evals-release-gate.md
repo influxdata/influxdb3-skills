@@ -27,7 +27,7 @@ The evidence directory holds:
 - `manifest.json`: the git tree hash of `skills/` and the blob hash of `evals/prompts.jsonl` being released, plus each file's cases, runs, judge, CLI version, and the skills tree it ran against
 
 A later file replaces earlier runs of the cases it contains, so targeted reruns can be layered over a full-suite run.
-`.github/CODEOWNERS` lists the maintainers who own `evals/evidence/`. With "Require review from Code Owners" on `main`, one of them must approve the evidence.
+`.github/CODEOWNERS` makes the `@influxdata/product-managers` team the owner of `evals/evidence/`. With "Require review from Code Owners" on `main`, a team member must approve the evidence.
 
 `.github/workflows/release-gate.yml` runs on pull requests labeled `release`, on `v*` tags, and on manual dispatch.
 
