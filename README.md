@@ -43,9 +43,6 @@ Both skills cover all three trigger types and single-node deployments. Multi-nod
 The skills follow the [Agent Skills specification](https://agentskills.io/specification),
 so any agent that supports the format can load them.
 
-> **GitHub access:** the repo is internal to InfluxData, so installs use your existing GitHub credentials.
-> If adding the marketplace fails with a 401 or 403, run `gh auth login` (GitHub.com, HTTPS) once, then retry.
-
 ### Claude Code
 
 ```text
@@ -126,9 +123,20 @@ scripts/check-versions.sh
 
 In any project that uses InfluxDB 3, write code as normal. The skill triggers when your agent sees imports of any official InfluxDB 3 client, references to line protocol, `INFLUXDB_*` env vars, admin keywords (`influxdb3 create token`, `/api/v3/configure/database`, etc.), or troubleshooting language ("getting a 401", "writes succeed but data isn't there", etc.).
 
-If you want to test it cleanly:
+To try it, start a fresh session and paste a prompt.
 
-> "I'm starting a new Python project that talks to InfluxDB 3 Core. Help me set up the connection and write 10 sample points."
+These need no database:
+
+- "I'm using InfluxDB 3. Help me design a schema for tracking temperature across 10,000 sensors."
+- "Write a Python script that queries the last hour of data from InfluxDB 3."
+- "I'm getting a 401 from InfluxDB 3. Walk me through diagnosing it."
+- "What's the difference between InfluxDB 3 Core and Enterprise for my client code?"
+- "Write an InfluxDB 3 Processing Engine plugin that logs the row count whenever data hits my `sensors` table."
+
+To run the generated code, set up a local instance first:
+
+1. "I don't have InfluxDB 3 yet. Help me get a Core instance running."
+2. "Write and run a Python script that connects to my InfluxDB 3 Core, creates a database, and writes 10 sample points."
 
 ## What it does NOT cover yet
 
