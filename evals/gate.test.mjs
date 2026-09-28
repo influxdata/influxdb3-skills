@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { runsFromClaude, runsFromCodex, score, scoreCase } from './gate.mjs';
+import { mergeRuns, runsFromClaude, runsFromCodex, score, scoreCase } from './gate.mjs';
 
 const runs = (...passed) => passed.map((p) => ({ passed: p, error: null }));
 
@@ -72,4 +72,12 @@ test('codex summaries group runs by case and flag harness errors', () => {
   });
   assert.deepEqual(runs.get('a'), [{ passed: true, error: null }, { passed: false, error: 'agent failed (exit 1)' }]);
   assert.deepEqual(runs.get('b'), [{ passed: false, error: null }]);
+});
+
+test('later results replace earlier runs of the same case', () => {
+  const full = runsFromCodex({ results: [{ id: 'a', pass: false }, { id: 'b', pass: true }] });
+  const rerun = runsFromCodex({ results: [{ id: 'a', pass: true }, { id: 'a', pass: true }] });
+  const merged = mergeRuns([full, rerun]);
+  assert.deepEqual(merged.get('a'), [{ passed: true, error: null }, { passed: true, error: null }]);
+  assert.deepEqual(merged.get('b'), [{ passed: true, error: null }]);
 });
