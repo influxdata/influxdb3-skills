@@ -60,7 +60,7 @@ All skills share the plugin version ([ADR-0001](decisions/0001-single-package-ve
 
 4. **Re-run the smoke tests** (see `evals/smoke-prompts.md`).
 
-5. **Re-run the formal eval suite** on the final skill text (see `evals/README.md`), 3 runs per case, on Claude Code and Codex. Commit the result files and `manifest.json` to `evals/evidence/v0.X.Y/`. `node evals/gate.mjs` must pass for Claude Code:
+5. **Re-run the formal eval suite** on the final skill text (see `evals/README.md`), 3 runs per case, on Claude Code and Codex. Run `scripts/check-paths.sh --fix` on the result files, then commit them and `manifest.json` to `evals/evidence/v0.X.Y/`. `node evals/gate.mjs` must pass for Claude Code:
    - Adversarial pass rate < 100% blocks the release.
    - Negative, or install, connect, write, query, schema, and flavor combined, below 90% blocks the release.
    - Codex results are recorded but don't block.

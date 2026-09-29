@@ -1,0 +1,20 @@
+# Scans the repo history in CI (.github/workflows/validate.yml).
+title = "influxdb3-skills"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Fake tokens in eval fixtures and names that look like keys"
+regexTarget = "line"
+regexes = [
+  # Deliberately fake tokens in evals/prompts.jsonl and the evidence built from it.
+  '''apiv3_lJF38mY7_M5ffZ2v_real_token_kPhlyD3WqyIchbxGZv''',
+  '''apiv3_xxx_[a-z_]*_?token_12345''',
+  # The demo name tokens_permissions_parse trips generic-api-key.
+  '''tokens_permissions_parse''',
+]
+commits = [
+  # Placeholder INFLUXDB_TOKEN=apiv3_... in a since-removed .env.example.
+  "73fb14febe4a38652c79b61326d4359513039a89",
+]
