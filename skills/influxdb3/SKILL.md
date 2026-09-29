@@ -73,7 +73,7 @@ If the developer has no InfluxDB 3 server running, including when the binary is 
 
 Before you give a start command, get these two things right. `references/installing.md` has the details.
 
-- **Enterprise needs a license.** A bare `serve` fails with `No interactive TTY detected. Cannot prompt for email.` Ask the developer for their license email and type, then pass `--license-email` and `--license-type`.
+- **Enterprise needs a license.** A bare `serve` fails with `No interactive TTY detected. Cannot prompt for email.` Give the full start command with `--license-email you@example.com` and `--license-type home` as placeholders, and ask for their real email and type before you run it for them.
 - **Pick the object store.** `--object-store` is required and has no default (3.2.1+). Use `file` with `--data-dir` for local work. `memory` is RAM-only and unsafe for sustained writes or restarts.
 
 For InfluxDB 3 Cloud, InfluxDB Cloud Serverless, or InfluxDB Cloud Dedicated, the developer signs up at https://www.influxdata.com/products/influxdb-overview/.

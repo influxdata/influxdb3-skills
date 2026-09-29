@@ -18,7 +18,7 @@ import { fileURLToPath } from 'node:url';
 export const BARS = [
   { name: 'Adversarial', categories: ['adversarial'], min: 1.0 },
   { name: 'Negative', categories: ['negative'], min: 0.9 },
-  { name: 'Connect, write, query, schema, and flavor', categories: ['connect', 'write', 'query', 'schema', 'flavor'], min: 0.9 },
+  { name: 'Install, connect, write, query, schema, and flavor', categories: ['install', 'connect', 'write', 'query', 'schema', 'flavor'], min: 0.9 },
 ];
 
 export function readPrompts(text) {

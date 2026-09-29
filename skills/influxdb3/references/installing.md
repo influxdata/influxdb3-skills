@@ -133,7 +133,7 @@ If you already have a license file, pass `--license-file <path>` and skip `--lic
 
 Each flag has an environment variable: `INFLUXDB3_LICENSE_EMAIL`, `INFLUXDB3_LICENSE_TYPE`, `INFLUXDB3_LICENSE_FILE` (v3.11+). The older `INFLUXDB3_ENTERPRISE_LICENSE_*` and `INFLUXDB3_ENTERPRISE_CLUSTER_ID` names still work but log a deprecation warning. Other `serve` flags follow the same pattern, for example `INFLUXDB3_OBJECT_STORE`, `INFLUXDB3_DATA_DIR` (formerly `INFLUXDB3_DB_DIR`) and `INFLUXDB3_PLUGIN_DIR`.
 
-> **ASK for the license — don't run a bare `serve`.** On a new/fresh cluster (no cached license), ask the developer for their license email and type before generating the start command, then pass `--license-email` + `--license-type` (use their real email, not the placeholder). A license-less non-interactive start **fails fast** with `No interactive TTY detected. Cannot prompt for email.` — it does not hang; supplying `--license-email` is what avoids the prompt. Note: `--object-store memory` can't cache the license, so prefer a file store (below).
+> **Don't run a bare `serve`.** On a new/fresh cluster (no cached license), give the complete start command with `--license-email you@example.com` and `--license-type home` as marked placeholders, and ask the developer for their real email and type before you run it for them. Never run it with the placeholder email. A license-less non-interactive start **fails fast** with `No interactive TTY detected. Cannot prompt for email.` — it does not hang; supplying `--license-email` is what avoids the prompt. Note: `--object-store memory` can't cache the license, so prefer a file store (below).
 
 ## Object store: required; use `file`, and avoid `memory` for anything you run more than once
 
