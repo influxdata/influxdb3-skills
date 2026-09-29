@@ -104,7 +104,7 @@ Start a new session after each edit so the agent loads the changed files.
 
 ## Report a problem
 
-[Open an issue](https://github.com/influxdata/influxdb3_skills/issues/new) with:
+[Open an issue](https://github.com/influxdata/influxdb3-skills/issues/new) with:
 
 - the prompt you used
 - what you expected

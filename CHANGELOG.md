@@ -4,6 +4,19 @@ All notable changes to this skill will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.7.1] — 2026-09-28
+
+The first public release. The skills don't change.
+
+### Changed
+- Renamed the repo from `influxdata/influxdb3_skills` to `influxdata/influxdb3-skills`, so it matches the plugin name. GitHub redirects the old URL. The plugin and marketplace names don't change.
+- The README opens with install steps, then sample prompts to try, and describes only what the skills do now.
+- The README says the skills use the InfluxDB Documentation MCP server when it's connected. The server is hosted and needs only an OAuth login.
+- `TESTING.md` is now a testing guide for contributors: validation, the version and link checks, workflow linters, unit tests, the runnable examples, and the evals.
+
+### Removed
+- The internal review material: reviewer briefings, the scorecard template, and old per-run result files.
+
 ## [0.7.0] — 2026-09-28
 
 ### Packaging
