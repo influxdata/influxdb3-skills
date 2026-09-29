@@ -14,6 +14,12 @@ A catalogue of behaviors that aren't in the official docs but customers will hit
 
 **What to do:** Use `GET` for `/ping` health checks. Documented in `references/flavor-detection.md`.
 
+### `/ping` also needs a token by default
+
+By default `/ping` (like `/health`) requires authentication, so an unauthenticated `GET` returns `401`. Send `Authorization: Bearer <token>` to get `200`. A `401` still proves the host and port are right and the server is up.
+
+Since 3.10 you can opt out of authorization for these routes with `--disable-authz` (env `INFLUXDB3_DISABLE_AUTHZ`). It takes a comma-separated list of `health`, `ping` and `metrics`. On such a server the token is optional. Source: the InfluxDB 3 API spec (`GetPing`) and the config options reference. The default 401 was observed on a 3.10 instance; the opt-out flag has not been run against a live server.
+
 ---
 
 ## 2. Silent auto-create on first write

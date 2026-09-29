@@ -8,7 +8,7 @@
 set -euo pipefail
 
 : "${INFLUXDB_HOST:?INFLUXDB_HOST is required}"
-: "${INFLUXDB_TOKEN:?INFLUXDB_TOKEN is required}"   # /ping is auth-gated on 3.10+
+: "${INFLUXDB_TOKEN:?INFLUXDB_TOKEN is required}"   # /ping needs a token by default (quirks.md entry 1)
 
 # Token is sent so the only difference from fixed.sh is the HTTP method:
 # HEAD /ping returns 404 (the quirk), GET /ping returns 200. Without the token,

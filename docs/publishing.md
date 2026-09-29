@@ -40,7 +40,8 @@ All skills share the plugin version ([ADR-0001](decisions/0001-single-package-ve
 
 2. **Update the verification metadata** under `metadata:` in each `SKILL.md`:
    - `docs_checked` and `docs_checked_against`: the date and exact InfluxDB 3 versions whose docs and release notes you checked.
-   - `live_verified` and `live_verified_against`: change these only after live evals pass on those exact versions.
+   - `live_verified`: the date you last checked claims against live instances, including verified claims from the docs-tooling ledger. Change it only after that check.
+   - `live_verified_against`: set it only when live evals pass on one exact version. Omit it when the evidence spans several versions, because a pinned value goes stale with each release.
    - `clients_verified_against` (`influxdb3` skill): for each official client, look up the current minor version on its GitHub releases page and pin to it. Sources:
    - https://github.com/InfluxCommunity/influxdb3-python
    - https://github.com/InfluxCommunity/influxdb3-js
@@ -101,7 +102,7 @@ Subscribed to release feeds for the five clients? Good. When a breaking change d
 
 When releasing a version that includes plugin-skill changes:
 
-1. **Bump `.claude-plugin/plugin.json` `version` and update `skills/influxdb3-plugins/SKILL.md` `metadata:`** as in the per-release checklist. Set `live_verified_against` to the server versions you actually tested.
+1. **Bump `.claude-plugin/plugin.json` `version` and update `skills/influxdb3-plugins/SKILL.md` `metadata:`** as in the per-release checklist. Set `live_verified` to the date you tested. Set `live_verified_against` only if you tested one exact server version.
 
 2. **Re-run the five plugin example round-trips** against a known-good live instance:
    - `examples/wal/` — write to `sensors_demo`, check log + `processed_summary`
