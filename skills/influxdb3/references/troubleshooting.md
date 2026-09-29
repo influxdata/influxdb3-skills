@@ -65,7 +65,7 @@ reading it:
 
 1. Is `INFLUXDB_TOKEN` set? `echo "${INFLUXDB_TOKEN:0:8}..."` should show the first 8 chars (typically `apiv3_`). (This is the developer truncating their own env var to verify it's loaded — it does NOT violate the redaction rule above, which only forbids echoing tokens pasted into the conversation.)
 2. Is the script reading from the right env var name? App code reads `INFLUXDB_TOKEN`; the `influxdb3` CLI reads `INFLUXDB3_AUTH_TOKEN`. See `quirks.md` entry 5.
-3. Is the host correct? `curl -sS -i -H "Authorization: Bearer $INFLUXDB_TOKEN" "$INFLUXDB_HOST/ping"` — should return 200 with the `x-influxdb-build` header. (`/ping` is auth-gated on 3.10+; unauthenticated it returns 401 — which still proves the host/port is right and the server is up.)
+3. Is the host correct? `curl -sS -i -H "Authorization: Bearer $INFLUXDB_TOKEN" "$INFLUXDB_HOST/ping"` — should return 200 with the `x-influxdb-build` header. (A 401 without a token still proves the host/port is right; see `references/quirks.md` entry 1.)
 4. Was the token recently rotated? See [Token rotation aftermath](#token-rotation-aftermath).
 5. Is the token still valid? Run the diagnostic toolkit (`examples/diagnose/diagnose.py`) — it reports token validity.
 

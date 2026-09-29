@@ -17,11 +17,10 @@ description: >-
   INFLUXDB_DATABASE. For Processing Engine plugin code, use
   influxdb3-plugins.
 metadata:
-  version: "0.7.1"
-  docs_checked: "2026-09-23"
+  version: "0.7.2"
+  docs_checked: "2026-09-29"
   docs_checked_against: "influxdb3-core 3.11.5, influxdb3-enterprise 3.11.5"
-  live_verified: "2026-05-24"
-  live_verified_against: "influxdb3-core 3.9, influxdb3-enterprise 3.9"
+  live_verified: "2026-09-29"
   clients_verified_against: "influxdb3-python 0.21, influxdb3-js 2.4, influxdb3-go 2.17, influxdb3-java 1.11, influxdb3-csharp 1.10"
 ---
 
@@ -70,11 +69,11 @@ Migration from v1 or v2 to InfluxDB 3 is also out of scope.
 ## 1.5. No instance yet
 
 If the developer has no InfluxDB 3 server running, including when the binary is installed but not started, help them start one before §2.
-`references/installing.md` covers Core and Enterprise install (script and Docker), the object store, the operator token, and checking `/ping`.
+`references/installing.md` covers Core and Enterprise install (script and Docker), the object store, the operator token, and checking `/ping`. It names the other install methods (DEB/RPM packages, binaries, Docker Compose) and points to the docs for their steps.
 
 Before you give a start command, get these two things right. `references/installing.md` has the details.
 
-- **Enterprise needs a license.** A bare `serve` fails with `No interactive TTY detected. Cannot prompt for email.` Ask the developer for their license email and type, then pass `--license-email` and `--license-type`.
+- **Enterprise needs a license.** A bare `serve` fails with `No interactive TTY detected. Cannot prompt for email.` Give the full start command with `--license-email you@example.com` and `--license-type home` as placeholders, and ask for their real email and type before you run it for them.
 - **Pick the object store.** `--object-store` is required and has no default (3.2.1+). Use `file` with `--data-dir` for local work. `memory` is RAM-only and unsafe for sustained writes or restarts.
 
 For InfluxDB 3 Cloud, InfluxDB Cloud Serverless, or InfluxDB Cloud Dedicated, the developer signs up at https://www.influxdata.com/products/influxdb-overview/.
@@ -92,7 +91,7 @@ Give the checklist as setup steps in the same reply as the code.
 Don't hold the code back to ask questions: read settings from the env vars below, use placeholders, and ask only for values you can't default.
 The generated code checks at startup that the database exists, and stops with a clear error if it doesn't.
 
-- [ ] **The server is reachable.** `curl -H "Authorization: Bearer <token>" <host>/ping` returns 200 with an `x-influxdb-build` header. `/ping` is auth-gated (3.10+). An unauthenticated 401 still confirms that the server is up.
+- [ ] **The server is reachable.** `curl -H "Authorization: Bearer <token>" <host>/ping` returns 200 with an `x-influxdb-build` header. `/ping` needs a token by default; a 401 still means the server is up (see `references/quirks.md` entry 1).
 - [ ] **An admin token exists.** For Core and Enterprise, it's the operator token printed at first start, or one created with `influxdb3 create token --admin`. For other products, follow that product's token docs.
 - [ ] **The target database exists.** Check with `influxdb3 show databases --token <admin-token>` or `GET /api/v3/configure/database?format=json`. Create it with `influxdb3 create database <name> --token <admin-token>` or `POST /api/v3/configure/database` with body `{"db":"<name>"}`.
 - [ ] **An application token exists** with read and write on that database. For InfluxDB 3 Enterprise and InfluxDB 3 Cloud, best practice is a scoped token, not the admin token: `influxdb3 create token --permission "db:<name>:read,write" --name <app> --token <admin-token>`. Core has admin tokens only (§11).

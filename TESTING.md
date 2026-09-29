@@ -32,6 +32,17 @@ The plugin manifests and each `SKILL.md` must carry the same version:
 scripts/check-versions.sh
 ```
 
+## Check for home directories and secrets
+
+Eval results record working directories, so tracked files must not contain a personal home directory such as `/Users/<name>` or `/home/<name>`.
+`scripts/check-paths.sh` lists matches, and `scripts/check-paths.sh --fix` rewrites them to `/Users/USER`.
+CI also scans the history and working tree with gitleaks, using `.gitleaks.toml`.
+To run both checks before every commit, enable the hook once:
+
+```sh
+git config core.hooksPath .githooks
+```
+
 ## Check links
 
 CI checks links with [lychee](https://github.com/lycheeverse/lychee). To run the same check locally:

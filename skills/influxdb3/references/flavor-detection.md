@@ -27,7 +27,7 @@ Explorer runs up to six sequential checks. The first check that matches wins; la
 ```
 1. GET <host>/ping  (no token — pure connectivity check)
    ├─ 200 OK        → proceed
-   ├─ 401           → treat as 200 (auth-gated server; continue)
+   ├─ 401           → treat as 200 (token required; server is up; continue)
    ├─ 500           → abort: ServerError
    └─ network/other → abort: InvalidUrl
 

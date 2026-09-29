@@ -1,0 +1,596 @@
+{
+ "schemaVersion": 1,
+ "claudeVersion": "2.1.284",
+ "startedAt": "2026-09-29T17:49:25.107Z",
+ "durationSeconds": 363,
+ "costUsd": 2.6939332,
+ "partial": false,
+ "suite": {
+  "root": "/Users/USER/gh/influxdata/influxdb3-skills",
+  "ablation": "none",
+  "judgeModel": "sonnet",
+  "caseFilter": "install-other-methods",
+  "threshold": 1,
+  "concurrency": 1,
+  "plugins": [
+   {
+    "name": "influxdb3-skills",
+    "version": "0.7.2",
+    "path": "/Users/USER/gh/influxdata/influxdb3-skills"
+   }
+  ]
+ },
+ "cases": [
+  {
+   "name": "install-other-methods",
+   "dir": "evals/claude-cases/install-other-methods",
+   "source": "prose",
+   "promptMarkdown": "I'm deploying InfluxDB 3 Core to a production Linux server. Should I use the install script?",
+   "runsPerCase": 3,
+   "timeoutSeconds": 300,
+   "maxTurns": 10,
+   "graders": [
+    {
+     "name": "criteria",
+     "type": "llm",
+     "weight": 1,
+     "graderMarkdown": "The response passes only if it meets every criterion:\n\n- names DEB/RPM packages as the recommended non-Docker production route because of systemd sandboxing\n- mentions Docker as another option\n- points to the docs install page for package steps instead of inventing them\n- does NOT walk through full hardening or systemd unit configuration",
+     "config": {
+      "criteria": "The response passes only if it meets every criterion:\n\n- names DEB/RPM packages as the recommended non-Docker production route because of systemd sandboxing\n- mentions Docker as another option\n- points to the docs install page for package steps instead of inventing them\n- does NOT walk through full hardening or systemd unit configuration",
+      "focus": "last_message"
+     }
+    }
+   ],
+   "arms": {
+    "with": [
+     {
+      "score": 1,
+      "passed": true,
+      "turns": 4,
+      "costUsd": 0.1807536,
+      "judgeCostUsd": 0.006624000000000001,
+      "durationSeconds": 20,
+      "startedAt": "2026-09-29T17:49:25.171Z",
+      "error": null,
+      "tracePath": "/private/tmp/e-om5UPc/out/trace.jsonl",
+      "skippedPaidGraders": false,
+      "graders": [
+       {
+        "name": "criteria",
+        "passed": true,
+        "weight": 1,
+        "explanation": "judge votes: PASS PASS PASS",
+        "withOnly": false,
+        "scored": true,
+        "judgeVotes": [
+         true,
+         true,
+         true
+        ],
+        "evidence": "I'd skip the install script for a production server. It's built for a quick first-time or single-machine setup: it downloads the binary into your home directory (`~/.influxdb/`) and leaves the rest to you. You'd still have to set up a service, a dedicated user, a config file and restart handling yourself.\n\n**For a non-Docker production install on Linux, use the DEB or RPM package** (`influxdb3-core`). InfluxData's docs recommend it for this case because:\n- It installs a systemd unit with sandboxing already set up.\n- Settings live in `/etc/influxdb3/influxdb3-core.conf` (TOML). The package fills in `object-store`, `data-dir`, `plugin-dir` and `node-id` for you.\n- You get upgrades through your normal package manager.\n\nAdding the repository and signing key takes a few steps, and those can change between releases. Follow the official page rather than copying commands from memory: https://docs.influxdata.com/influxdb3/core/install/\n\n**If you already run containers**, the Docker image is also a good choice. Pin a version tag (for example `influxdb:3.10-core`), not the floating `3-core` tag.\n\n**Things to get right whichever method you use:**\n\n1. **Lock down the port before first boot.** Until the first admin token exists, the token endpoint accepts requests without authentication. The server also listens on all interfaces by default (`0.0.0.0:8181`). Either:\n   - start bound to `127.0.0.1:8181`, run `influxdb3 create token --admin`, then rebind to the address you want, or\n   - start with a preconfigured admin token (covered in the docs).\n2. **Save the admin token right away.** It's shown only once. Put it in your secrets manager, not a file in a repo.\n3. **Pick the object store on purpose.** `--object-store` is required and has no default. For one server, use `file` with a `--data-dir` on durable, backed-up storage. Use `s3`, `google` or `azure` if you want the data off the host. Never use `memory` in production.\n4. **Give each app its own named admin token.** Core only has admin tokens (no scoped or per-database tokens), so separate tokens are what let you revoke one app's access without touching the others. If you need per-database permissions or high availability, you need Enterprise.\n5. **Check it's working:** `curl -i -H \"Authorization: Bearer $TOKEN\" http://<host>:8181/ping` should return 200 with an `x-influxdb-build: Core` header.\n\nIf you tell me your distro (Debian/Ubuntu or RHEL-family) and where the data will live, I can go through the config file settings with you."
+       }
+      ]
+     },
+     {
+      "score": 1,
+      "passed": true,
+      "turns": 4,
+      "costUsd": 0.184226,
+      "judgeCostUsd": 0.007062000000000001,
+      "durationSeconds": 24,
+      "startedAt": "2026-09-29T17:49:44.965Z",
+      "error": null,
+      "tracePath": "/private/tmp/e-MXxy8b/out/trace.jsonl",
+      "skippedPaidGraders": false,
+      "graders": [
+       {
+        "name": "criteria",
+        "passed": true,
+        "weight": 1,
+        "explanation": "judge votes: PASS PASS PASS",
+        "withOnly": false,
+        "scored": true,
+        "judgeVotes": [
+         true,
+         true,
+         true
+        ],
+        "evidence": "No. The install script is meant for trying InfluxDB out or running it on a single machine. For a production Linux server that isn't using Docker, the InfluxDB docs recommend the **DEB or RPM package** (`influxdb3-core`).\n\n**Why the package is better for production:**\n- **It runs as a proper service.** The package includes a systemd unit with sandboxing. The script just drops a binary into `~/.influxdb/` in your home directory, and you'd have to write the service setup yourself.\n- **Settings live in a config file.** They go in `/etc/influxdb3/influxdb3-core.conf` instead of a long `serve` command line. The package fills in `object-store`, `data-dir`, `plugin-dir` and `node-id` for you.\n- **Upgrades are simpler.** You update it with your normal `apt` or `dnf` workflow.\n\nIf you'd rather use containers, the `influxdb:3-core` Docker image is also a good choice. Pin a version tag, such as `influxdb:3.10-core`, instead of using the floating `3-core` tag.\n\nFor the package repository and key setup, follow the official steps at https://docs.influxdata.com/influxdb3/core/install/. They change between releases, so I won't guess at them here.\n\n**Check these whichever way you install:**\n1. **Create the admin token before the port is reachable.** The server listens on `0.0.0.0:8181` by default. Until the first admin token exists, the token endpoint accepts requests without any authentication, so anyone who can reach the port could claim it. Either:\n   - bind to `127.0.0.1:8181` first, run `influxdb3 create token --admin`, then switch to your real bind address, or\n   - start the server with a preconfigured admin token.\n\n   The token is shown only once, so store it in your secrets manager right away.\n2. **Choose the object store on purpose.** It's required and has no default. Use `file` with a data directory on durable, backed-up storage, or `s3`, `google` or `azure` for remote storage. Never use `memory` in production: it keeps all data in RAM and loses it on restart.\n3. **Know Core's limits.** Core runs on a single node with no high availability or read replicas, and it only has admin tokens (no permission-scoped tokens). If you need HA, or tokens limited to one database, you'll need InfluxDB 3 Enterprise. Otherwise, give each application its own named admin token so you can revoke one without affecting the others.\n4. **Check that it's running** with `curl -i -H \"Authorization: Bearer $TOKEN\" http://<host>:8181/ping`. You should get a 200 response with an `x-influxdb-build: Core` header.\n\nIf you tell me whether the server runs Debian/Ubuntu or a RHEL-family distro, and whether you want local disk or S3-compatible storage, I can help you fill in the config file."
+       }
+      ]
+     },
+     {
+      "score": 1,
+      "passed": true,
+      "turns": 4,
+      "costUsd": 0.1818292,
+      "judgeCostUsd": 0.006551999999999997,
+      "durationSeconds": 19,
+      "startedAt": "2026-09-29T17:50:08.659Z",
+      "error": null,
+      "tracePath": "/private/tmp/e-OqPloS/out/trace.jsonl",
+      "skippedPaidGraders": false,
+      "graders": [
+       {
+        "name": "criteria",
+        "passed": true,
+        "weight": 1,
+        "explanation": "judge votes: PASS PASS PASS",
+        "withOnly": false,
+        "scored": true,
+        "judgeVotes": [
+         true,
+         true,
+         true
+        ],
+        "evidence": "**No, not for production.** The install script is for trying InfluxDB out on one machine. For a production Linux server, the InfluxDB docs recommend the **DEB or RPM package**.\n\n**Why the package is better for production:**\n\n| | Install script | DEB/RPM package |\n|---|---|---|\n| Where it installs | `~/.influxdb/` under your user account | System-wide install |\n| Runs as a service | No. You run `influxdb3 serve` yourself. | Yes. It comes with a systemd unit, which adds sandboxing. |\n| Configuration | Flags on the command line | A config file at `/etc/influxdb3/influxdb3-core.conf`, already filled in with `object-store`, `data-dir`, `plugin-dir` and `node-id` |\n| Upgrades | Run the script again | Your normal `apt` or `dnf` upgrades |\n\nThe alternative is **Docker**, with a pinned version tag such as `influxdb:3.10-core` rather than the floating `3-core`. Pick it if you already run your services in containers.\n\nPackage steps and repository setup: https://docs.influxdata.com/influxdb3/core/install/\n\n**Things to check before you go live:**\n\n1. **Don't expose the port until you've created the admin token.** Until the first admin token exists, the token endpoint accepts requests without authentication. By default the server listens on all interfaces at `0.0.0.0:8181`. Either:\n   - bind to `127.0.0.1:8181` first, run `influxdb3 create token --admin`, then switch to the address you want, or\n   - start the server with a preconfigured admin token.\n\n   The token is shown only once, so store it in your secrets manager right away.\n2. **Object store.** Use `file` with a persistent `data-dir` on a disk you back up, or `s3`/`google`/`azure` if you want remote storage. Never use `memory` in production: it keeps all data in RAM and loses it on restart.\n3. **Core's limits.** Core runs on a single node, with no high availability or read replicas. It also has only admin tokens, with no per-database scoped tokens. Give each application its own named admin token so you can revoke them one at a time. If you need high availability or access control per database, you need Enterprise.\n4. **Check it's running:**\n   ```bash\n   curl -i -H \"Authorization: Bearer $INFLUXDB_TOKEN\" http://<host>:8181/ping\n   ```\n   You should get a 200 with an `x-influxdb-build: Core` header.\n\nThe package's exact flags and config keys can change between releases, so check them against the docs for the version you install."
+       }
+      ]
+     }
+    ]
+   },
+   "aggregates": {
+    "score": 1,
+    "passRate": 1
+   }
+  },
+  {
+   "name": "admin-defer-airgapped",
+   "dir": "evals/claude-cases/admin-defer-airgapped",
+   "source": "prose",
+   "promptMarkdown": "My InfluxDB 3 deployment runs in an air-gapped network. How do I configure --package-manager disabled?",
+   "runsPerCase": 3,
+   "timeoutSeconds": 300,
+   "maxTurns": 10,
+   "graders": [
+    {
+     "name": "criteria",
+     "type": "llm",
+     "weight": 1,
+     "graderMarkdown": "The response passes only if it meets every criterion:\n\n- says full air-gapped setup isn't covered and points to the docs\n- does NOT pretend to walk through full air-gapped configuration\n- points at official docs for now",
+     "config": {
+      "criteria": "The response passes only if it meets every criterion:\n\n- says full air-gapped setup isn't covered and points to the docs\n- does NOT pretend to walk through full air-gapped configuration\n- points at official docs for now",
+      "focus": "last_message"
+     }
+    }
+   ],
+   "arms": {
+    "with": [
+     {
+      "score": 1,
+      "passed": true,
+      "turns": 4,
+      "costUsd": 0.1254326,
+      "judgeCostUsd": 0.005771999999999999,
+      "durationSeconds": 17,
+      "startedAt": "2026-09-29T17:50:28.614Z",
+      "error": null,
+      "tracePath": "/private/tmp/e-wtIc1x/out/trace.jsonl",
+      "skippedPaidGraders": false,
+      "graders": [
+       {
+        "name": "criteria",
+        "passed": true,
+        "weight": 1,
+        "explanation": "judge votes: PASS PASS PASS",
+        "withOnly": false,
+        "scored": true,
+        "judgeVotes": [
+         true,
+         true,
+         true
+        ],
+        "evidence": "I can't cover the full air-gapped setup here: offline package mirrors, custom plugin repos and offline `pip` installs are out of scope. The official guide is https://docs.influxdata.com/influxdb3/core/plugins/, in the section \"Disable package installation for secure environments\". For Enterprise, use `enterprise` instead of `core` in that URL.\n\nWhat I can give you is the flag that stops the server from installing packages at runtime.\n\n**The right flag depends on your server version**\n\n| Server version | Flag | Notes |\n|---|---|---|\n| 3.11.0+ | `--disable-package-management` (env `INFLUXDB3_DISABLE_PACKAGE_MANAGEMENT`) | The server never creates or changes a virtual environment and never runs `pip`. You manage the virtual environment yourself and point the server at it with `VIRTUAL_ENV`. This flag overrides `--package-manager`. |\n| 3.10.x | `--package-manager disabled` | Still works, but `--package-manager` is deprecated and the server prints a warning. |\n| Earlier than 3.10 | `--package-manager disabled` | Blocks package-install API calls. |\n\nOn 3.11+, the `--disable-package-management` behavior described above comes from the server's `--help` text. The reference docs don't describe the flag yet, and I haven't tested its behavior.\n\nFirst, run `influxdb3 serve --help` to see which flag your binary accepts.\n\n**Example for a pre-3.11 server:**\n```bash\ninfluxdb3 serve \\\n  --node-id node0 \\\n  --object-store file \\\n  --data-dir ~/.influxdb3 \\\n  --plugin-dir ~/.plugins \\\n  --package-manager disabled\n```\nOn 3.11+, replace the last line with `--disable-package-management`, or set `INFLUXDB3_DISABLE_PACKAGE_MANAGEMENT`.\n\n**What happens when installation is blocked**\n- Packages that were already installed keep working.\n- The Processing Engine keeps running triggers as usual.\n- `influxdb3 install package` and the HTTP install endpoint are rejected.\n\n**Install every package your plugins need before you turn this on.** Once it's on, the server rejects install requests, so plugins can't install anything new at runtime."
+       }
+      ]
+     },
+     {
+      "score": 1,
+      "passed": true,
+      "turns": 4,
+      "costUsd": 0.12423799999999999,
+      "judgeCostUsd": 0.005544,
+      "durationSeconds": 15,
+      "startedAt": "2026-09-29T17:50:45.735Z",
+      "error": null,
+      "tracePath": "/private/tmp/e-1uEgfv/out/trace.jsonl",
+      "skippedPaidGraders": false,
+      "graders": [
+       {
+        "name": "criteria",
+        "passed": true,
+        "weight": 1,
+        "explanation": "judge votes: PASS PASS PASS",
+        "withOnly": false,
+        "scored": true,
+        "judgeVotes": [
+         true,
+         true,
+         true
+        ],
+        "evidence": "I can't cover a full air-gapped setup here, meaning offline mirrors, custom plugin repos or offline `pip` installs. The official guide is https://docs.influxdata.com/influxdb3/core/plugins/, under \"Disable package installation for secure environments\". For Enterprise, change `core` to `enterprise` in the URL.\n\n## Which flag to use depends on your server version\n\n| Server version | Flag | Notes |\n|---|---|---|\n| **3.11.0+** | `--disable-package-management` (env: `INFLUXDB3_DISABLE_PACKAGE_MANAGEMENT`) | The server never creates or changes a virtual environment and never runs `pip`. You manage the virtual environment yourself and point the server at it with `VIRTUAL_ENV`. This flag overrides `--package-manager`. |\n| **3.10.x** | `--package-manager disabled` | Still blocks package installs, but the flag is deprecated and the server prints a warning. |\n| **Before 3.10** | `--package-manager disabled` | Blocks package installs. |\n\nRun `influxdb3 serve --help` to confirm which flag your binary accepts. The 3.11 flag's behavior is taken from the `--help` text and hasn't been fully documented or tested yet.\n\n**3.10 and earlier:**\n```bash\ninfluxdb3 serve \\\n  --node-id node0 \\\n  --object-store file \\\n  --data-dir ~/.influxdb3 \\\n  --plugin-dir ~/.plugins \\\n  --package-manager disabled\n```\n\n**3.11.0+:**\n```bash\ninfluxdb3 serve \\\n  --node-id node0 \\\n  --object-store file \\\n  --data-dir ~/.influxdb3 \\\n  --plugin-dir ~/.plugins \\\n  --disable-package-management\n```\n\n## What happens once installs are blocked\n\n- Packages that were already installed keep working.\n- The Processing Engine runs triggers as usual.\n- New installs are rejected, whether you use `influxdb3 install package` or the HTTP install endpoint.\n\n**Install every package your plugins need before you turn installs off.** You won't be able to add any more from the server afterwards."
+       }
+      ]
+     },
+     {
+      "score": 1,
+      "passed": true,
+      "turns": 4,
+      "costUsd": 0.1310152,
+      "judgeCostUsd": 0.005934000000000002,
+      "durationSeconds": 16,
+      "startedAt": "2026-09-29T17:51:01.202Z",
+      "error": null,
+      "tracePath": "/private/tmp/e-D5psEL/out/trace.jsonl",
+      "skippedPaidGraders": false,
+      "graders": [
+       {
+        "name": "criteria",
+        "passed": true,
+        "weight": 1,
+        "explanation": "judge votes: PASS PASS PASS",
+        "withOnly": false,
+        "scored": true,
+        "judgeVotes": [
+         true,
+         true,
+         true
+        ],
+        "evidence": "This covers only the flag. It doesn't cover a full air-gapped setup: offline mirrors, custom plugin repos, or offline `pip` installs. For that, see the official docs at https://docs.influxdata.com/influxdb3/core/plugins/, under **\"Disable package installation for secure environments\"**. For Enterprise, use `enterprise` in place of `core` in the URL.\n\n## Which flag to use\n\n`--package-manager disabled` is the right flag only on older servers. Starting with 3.11.0, there's a newer flag.\n\n| Server version | Flag | Behavior |\n|---|---|---|\n| **3.11.0+** | `--disable-package-management` (env `INFLUXDB3_DISABLE_PACKAGE_MANAGEMENT`) | The server never creates or changes a virtual environment and never runs `pip`. It rejects package-install API calls. You manage the venv yourself and point the server at it with `VIRTUAL_ENV`. This flag overrides `--package-manager`. |\n| **3.10.x** | `--package-manager disabled` | Still blocks package-install API calls, but the flag is deprecated and the server prints a warning. |\n| **Before 3.10** | `--package-manager disabled` | Blocks package-install API calls. |\n\nBefore you edit your startup command, run `influxdb3 serve --help` to confirm your binary accepts the flag. The 3.11 flag isn't in the reference docs yet. Its behavior above comes from the 3.11.5 `--help` text and hasn't been tested.\n\n## Example\n\nOn 3.10 or earlier:\n\n```bash\ninfluxdb3 serve \\\n  --node-id node0 \\\n  --object-store file \\\n  --data-dir ~/.influxdb3 \\\n  --plugin-dir ~/.plugins \\\n  --package-manager disabled\n```\n\nOn 3.11+, replace the last line with `--disable-package-management`, or set `INFLUXDB3_DISABLE_PACKAGE_MANAGEMENT`.\n\n## What changes once it's set\n\n- `influxdb3 install package` and the `/api/v3/configure/plugin_environment/install_packages` endpoint are rejected.\n- Packages that are already installed keep working, and triggers run normally.\n\n**Install every package your plugins need before you turn installation off.** If a plugin imports a missing package, it fails with an `ImportError`."
+       }
+      ]
+     }
+    ]
+   },
+   "aggregates": {
+    "score": 1,
+    "passRate": 1
+   }
+  },
+  {
+   "name": "trouble-defer-cluster-plugin",
+   "dir": "evals/claude-cases/trouble-defer-cluster-plugin",
+   "source": "prose",
+   "promptMarkdown": "My processing engine plugin is configured on a 5-node InfluxDB 3 Enterprise cluster but only fires on writes that arrive at certain nodes. How do I fix the routing?",
+   "runsPerCase": 3,
+   "timeoutSeconds": 300,
+   "maxTurns": 10,
+   "graders": [
+    {
+     "name": "criteria",
+     "type": "llm",
+     "weight": 1,
+     "graderMarkdown": "The response passes only if it meets every criterion:\n\n- says cluster placement isn't covered\n- does NOT invent --node-spec semantics\n- mentions that single-node deployments don't have this concern\n- points at official cluster docs for now",
+     "config": {
+      "criteria": "The response passes only if it meets every criterion:\n\n- says cluster placement isn't covered\n- does NOT invent --node-spec semantics\n- mentions that single-node deployments don't have this concern\n- points at official cluster docs for now",
+      "focus": "last_message"
+     }
+    }
+   ],
+   "arms": {
+    "with": [
+     {
+      "score": 0,
+      "passed": false,
+      "turns": 4,
+      "costUsd": 0.1198042,
+      "judgeCostUsd": 0.0048779999999999995,
+      "durationSeconds": 15,
+      "startedAt": "2026-09-29T17:51:17.757Z",
+      "error": null,
+      "tracePath": "/private/tmp/e-trFgLy/out/trace.jsonl",
+      "skippedPaidGraders": false,
+      "graders": [
+       {
+        "name": "criteria",
+        "passed": false,
+        "weight": 1,
+        "explanation": "judge votes: FAIL FAIL FAIL",
+        "withOnly": false,
+        "scored": true,
+        "judgeVotes": [
+         false,
+         false,
+         false
+        ],
+        "evidence": "I can't give you a reliable routing fix for this. The InfluxDB plugin guidance I have covers single-node plugin work and explicitly leaves out distributed cluster placement: which nodes run which triggers, ingest vs. query node roles, and how WAL writes spread across nodes. The relevant settings change between releases, and I'd rather not guess at flags for your production cluster.\n\nThese are the official sources for it:\n\n- **Processing engine reference** (enabling the engine, distributed considerations): https://docs.influxdata.com/influxdb3/enterprise/reference/processing-engine/\n- **`influxdb3 create trigger`** (every flag, including any that control which node a trigger runs on): https://docs.influxdata.com/influxdb3/enterprise/reference/cli/influxdb3/create/trigger/\n- **5-node Enterprise reference architecture** (a working cluster layout with plugins): https://github.com/influxdata/influxdb3-ref-network-telemetry\n\nIt's also worth running `influxdb3 create trigger --help` on your own server binary. That shows which flags your version accepts, though the descriptions there can be out of date.\n\n**What I can help with here:** checking whether the trigger fires and errors on the nodes you think are skipping it, rather than never running. Run this against each node:\n\n```sql\nSELECT event_time, log_level, log_text\nFROM system.processing_engine_logs\nWHERE trigger_name = '<your_trigger>'\nORDER BY event_time DESC\nLIMIT 50\n```\n\nAlso check that the trigger spec matches the table the writes go to. For example, `table:foo` won't fire on writes to `bar`, and `all_tables` fires on every table. If the logs show errors, or the spec doesn't match, that's plugin-level debugging and I can help you work through it."
+       }
+      ]
+     },
+     {
+      "score": 0,
+      "passed": false,
+      "turns": 4,
+      "costUsd": 0.12736440000000002,
+      "judgeCostUsd": 0.009386000000000002,
+      "durationSeconds": 19,
+      "startedAt": "2026-09-29T17:51:32.647Z",
+      "error": null,
+      "tracePath": "/private/tmp/e-kaEUqQ/out/trace.jsonl",
+      "skippedPaidGraders": false,
+      "graders": [
+       {
+        "name": "criteria",
+        "passed": false,
+        "weight": 1,
+        "explanation": "judge votes: FAIL FAIL FAIL",
+        "withOnly": false,
+        "scored": true,
+        "judgeVotes": [
+         false,
+         false,
+         false
+        ],
+        "evidence": "The InfluxDB 3 plugins skill I have doesn't cover how plugins are placed or routed across a cluster, so I can't give you a reliable fix for your 5-node setup. That includes which nodes run the Processing Engine, `--node-spec`, ingest versus query nodes, and how writes spread across nodes. I don't want to guess at flags or topology rules from memory, because they change between releases.\n\nThese official sources cover it:\n\n- **Processing engine reference (includes the distributed setup section):** https://docs.influxdata.com/influxdb3/enterprise/reference/processing-engine/\n- **`influxdb3 create trigger` flags** (check the node-targeting options your version supports): https://docs.influxdata.com/influxdb3/enterprise/reference/cli/influxdb3/create/trigger/\n- **A reference 5-node Enterprise cluster from InfluxData:** https://github.com/influxdata/influxdb3-ref-network-telemetry. It's a working example of how triggers are laid out across nodes.\n\nBefore you change the cluster layout, you can rule out a plugin-level cause with these checks:\n\n1. **Check each node's logs.** Run this query on every node, including the ones where you think the trigger doesn't fire:\n   ```sql\n   SELECT event_time, log_level, log_text\n   FROM system.processing_engine_logs\n   WHERE trigger_name = '<your_trigger>'\n   ORDER BY event_time DESC LIMIT 50\n   ```\n   Sometimes the trigger fires on a node but errors, which looks like it never fired.\n2. **Check the trigger spec.** Confirm whether it's `table:<name>` or `all_tables`. If the \"missing\" writes go to a different table than the ones that work, the spec is the cause, not routing.\n3. **Check the plugin files and packages on every node.** Are the plugin file and any packages installed with `influxdb3 install package` present in each engine-enabled node's `--plugin-dir`? A node that's missing the file or a dependency will fail when the trigger runs there.\n4. **Check the flags your binary accepts.** Run `influxdb3 create trigger --help` on your server. Treat the help text's descriptions and defaults as hints and confirm them against the docs above.\n\nIf one of these checks turns up a plugin problem, such as errors in the logs, a spec mismatch or a missing dependency, send me the output and I can help fix it."
+       }
+      ]
+     },
+     {
+      "score": 0,
+      "passed": false,
+      "turns": 5,
+      "costUsd": 0.1628874,
+      "judgeCostUsd": 0.011322,
+      "durationSeconds": 23,
+      "startedAt": "2026-09-29T17:51:52.064Z",
+      "error": null,
+      "tracePath": "/private/tmp/e-a6j1MV/out/trace.jsonl",
+      "skippedPaidGraders": false,
+      "graders": [
+       {
+        "name": "criteria",
+        "passed": false,
+        "weight": 1,
+        "explanation": "judge votes: FAIL FAIL FAIL",
+        "withOnly": false,
+        "scored": true,
+        "judgeVotes": [
+         false,
+         false,
+         false
+        ],
+        "evidence": "I can't give you a verified routing fix for this, because multi-node trigger placement is outside what my InfluxDB 3 plugin reference covers. It points to one likely cause, though.\n\n**Likely cause:** a WAL trigger runs on the node that ingests the write. If the trigger is placed on only some nodes, or writes go to nodes that aren't running it, it will look like it fires \"only for certain nodes.\" `influxdb3 create trigger` has a `--node-spec` flag that controls placement, and the reference lists its default as `all`. How `--node-spec` interacts with node modes (ingest vs. query) and write routing isn't documented there. I won't guess at the exact values or topology, since those change between releases.\n\n**Checks you can run now:**\n\n1. **Check the trigger's definition** on a node where it fires and on one where it doesn't:\n   ```bash\n   influxdb3 query -d \"$INFLUXDB_DATABASE\" --token \"$INFLUXDB_TOKEN\" \\\n     \"SELECT trigger_name, plugin_filename, trigger_specification, disabled\n      FROM system.processing_engine_triggers\n      WHERE trigger_name = '<your_trigger>'\"\n   ```\n2. **Check the engine is enabled on every node.** Each node running the trigger needs `--plugin-dir` (or `INFLUXDB3_PLUGIN_DIR`), and the plugin file has to be in that directory. A node without it can't run the plugin.\n3. **Check the flags your binary accepts:**\n   ```bash\n   influxdb3 create trigger --help\n   ```\n   Look at the `--node-spec` syntax, and compare it to how the trigger was created and to your nodes' `--node-id` and mode settings.\n4. **Compare logs per node** with `SELECT event_time, log_level, log_text FROM system.processing_engine_logs WHERE trigger_name='<your_trigger>' ORDER BY event_time DESC LIMIT 50`. Run it against a node that fires and one that doesn't. No log rows means the trigger isn't running there, not that the plugin is failing.\n5. **Check the load balancer.** See which nodes your write clients actually hit. If writes should only go to the nodes running the trigger, the fix may be in your load balancer rather than in InfluxDB.\n\n**Authoritative docs for the actual fix:**\n- Processing engine reference (includes distributed considerations): https://docs.influxdata.com/influxdb3/enterprise/reference/processing-engine/\n- `create trigger` flags, including `--node-spec`: https://docs.influxdata.com/influxdb3/enterprise/reference/cli/influxdb3/create/trigger/\n- A 5-node Enterprise cluster reference architecture: https://github.com/influxdata/influxdb3-ref-network-telemetry\n\nIf you share the output of `influxdb3 create trigger --help`, your nodes' startup flags (node IDs and modes), and how writes are load-balanced, I can help work out why they don't match."
+       }
+      ]
+     }
+    ]
+   },
+   "aggregates": {
+    "score": 0,
+    "passRate": 0
+   }
+  },
+  {
+   "name": "http-curl-cloud-dedicated",
+   "dir": "evals/claude-cases/http-curl-cloud-dedicated",
+   "source": "prose",
+   "promptMarkdown": "I don't want to use the official client. Just give me curl examples for write and query against InfluxDB 3 Cloud Dedicated.",
+   "runsPerCase": 3,
+   "timeoutSeconds": 300,
+   "maxTurns": 10,
+   "graders": [
+    {
+     "name": "criteria",
+     "type": "llm",
+     "weight": 1,
+     "graderMarkdown": "The response passes only if it meets every criterion:\n\n- writes with POST /api/v2/write\n- queries with InfluxQL over the v1 /query endpoint, or says SQL queries need Flight (gRPC)\n- uses no /api/v3 endpoint\n- Authorization: Bearer header with env var token",
+     "config": {
+      "criteria": "The response passes only if it meets every criterion:\n\n- writes with POST /api/v2/write\n- queries with InfluxQL over the v1 /query endpoint, or says SQL queries need Flight (gRPC)\n- uses no /api/v3 endpoint\n- Authorization: Bearer header with env var token",
+      "focus": "last_message"
+     }
+    }
+   ],
+   "arms": {
+    "with": [
+     {
+      "score": 0,
+      "passed": false,
+      "turns": 6,
+      "costUsd": 0.21453360000000005,
+      "judgeCostUsd": 0.009942,
+      "durationSeconds": 33,
+      "startedAt": "2026-09-29T17:52:16.409Z",
+      "error": null,
+      "tracePath": "/private/tmp/e-k6iBNo/out/trace.jsonl",
+      "skippedPaidGraders": false,
+      "graders": [
+       {
+        "name": "criteria",
+        "passed": false,
+        "weight": 1,
+        "explanation": "judge votes: FAIL FAIL FAIL",
+        "withOnly": false,
+        "scored": true,
+        "judgeVotes": [
+         false,
+         false,
+         false
+        ],
+        "evidence": "Cloud Dedicated has no `/api/v3` endpoints. That limits what you can do with plain curl:\n\n- **Writes** work over HTTP through `/api/v2/write` (or v1 `/write`).\n- **SQL queries** only run over Arrow Flight, which is gRPC, so curl can't send them. The only query curl can send is **InfluxQL** through the v1 `/query` endpoint.\n\n## Setup\n\n- **Database:** Create it first, using `influxctl database create <name>` or the Cloud Dedicated console. Run `influxctl database list` to check the exact name, because a misspelled database in your env var is the most common reason writes fail.\n- **Token:** Use a **database token** with read and write access to that database. Don't use a management token. Create one with `influxctl token create`.\n- **Env vars:** Keep credentials in env vars, never in the command. If you use a `.env` file, add it to `.gitignore`.\n\n```bash\nexport INFLUXDB_HOST=\"https://<cluster-id>.a.influxdb.io\"\nexport INFLUXDB_TOKEN=\"<database-token>\"\nexport INFLUXDB_DATABASE=\"sensor_data\"\n```\n\n## Write (line protocol \u2192 `/api/v2/write`)\n\n```bash\ncurl -sS -w \"%{http_code}\\n\" -X POST \\\n  \"$INFLUXDB_HOST/api/v2/write?bucket=$INFLUXDB_DATABASE&precision=s\" \\\n  -H \"Authorization: Token $INFLUXDB_TOKEN\" \\\n  -H \"Content-Type: text/plain; charset=utf-8\" \\\n  --data-binary \"sensor,host=server01,region=us-west temperature=72.4,humidity=45.1 $(date +%s)\"\n```\n\n- A successful write returns **204**.\n- `bucket` takes the database name. You don't need `org` on Cloud Dedicated.\n- `precision` accepts `s`, `ms`, `us`, or `ns`. Use `s` unless one series gets more than one point per second. Points with the same table, tags and timestamp overwrite each other.\n- For a batch, put one point per line and send the file with `--data-binary @points.lp`. Aim for about 1,000 lines per request.\n- On this endpoint, one bad line rejects the whole batch with a **400**. Don't retry 400, 401, 403 or 404. Retry 429 and 5xx with backoff.\n\n## Query (InfluxQL \u2192 v1 `/query`)\n\n```bash\ncurl -sS -G \"$INFLUXDB_HOST/query\" \\\n  -H \"Authorization: Token $INFLUXDB_TOKEN\" \\\n  -H \"Accept: application/json\" \\\n  --data-urlencode \"db=$INFLUXDB_DATABASE\" \\\n  --data-urlencode \"q=SELECT * FROM sensor WHERE time > now() - 1h ORDER BY time DESC LIMIT 5\"\n```\n\nFor CSV output, use `-H \"Accept: application/csv\"`. `--data-urlencode` is what lets the query contain spaces and quotes safely. If any part of the query comes from user input, don't paste it into `q`. Use InfluxQL bind parameters instead (`--data-urlencode 'params={\"host\":\"server01\"}'` with `WHERE host = $host`), and test that first because I haven't checked them on Cloud Dedicated.\n\n## If you need SQL\n\ncurl can't run SQL against this product. Your options without the client libraries:\n\n- `influxctl query --database \"$INFLUXDB_DATABASE\" --token \"$INFLUXDB_TOKEN\" \"SELECT ...\"` for ad-hoc queries from a shell. This is InfluxData's management CLI.\n- Any generic Arrow Flight SQL client, such as `pyarrow.flight` or the ADBC Flight SQL driver, pointed at `$INFLUXDB_HOST:443` with a Bearer token and the database name in the `database` header.\n\nI wrote this from the reference material, not by running it against a cluster. Check two details in the Cloud Dedicated docs:\n\n- The docs use `Authorization: Token`. `Bearer` should also work on these compatibility endpoints.\n- The v1 `/query` endpoint is InfluxQL-only."
+       }
+      ]
+     },
+     {
+      "score": 0,
+      "passed": false,
+      "turns": 6,
+      "costUsd": 0.239151,
+      "judgeCostUsd": 0.019752,
+      "durationSeconds": 37,
+      "startedAt": "2026-09-29T17:52:49.798Z",
+      "error": null,
+      "tracePath": "/private/tmp/e-XrkkIe/out/trace.jsonl",
+      "skippedPaidGraders": false,
+      "graders": [
+       {
+        "name": "criteria",
+        "passed": false,
+        "weight": 1,
+        "explanation": "judge votes: PASS FAIL FAIL",
+        "withOnly": false,
+        "scored": true,
+        "judgeVotes": [
+         true,
+         false,
+         false
+        ],
+        "evidence": "Cloud Dedicated doesn't have the `/api/v3/*` endpoints that Core and Enterprise use. With plain curl you have two options: write line protocol through the v2 (or v1) compatible write endpoint, and query with **InfluxQL** through the v1 `/query` endpoint. **SQL isn't available over plain HTTP.** On Cloud Dedicated, SQL only runs over Arrow Flight (gRPC), which curl can't send.\n\n### Setup\n\nCreate the database and a database token with read/write access in the Cloud Dedicated console or with `influxctl`. Then put the values in environment variables so the token isn't pasted into commands or your shell history:\n\n```bash\nexport INFLUXDB_HOST=\"https://<cluster-id>.a.influxdb.io\"   # your cluster's hostname\nexport INFLUXDB_TOKEN=\"<database-token>\"\nexport INFLUXDB_DATABASE=\"sensor_data\"\n```\n\nCheck the spelling of `INFLUXDB_DATABASE`. Writes go to whatever database name you pass.\n\n### Write (v2-compatible endpoint, recommended)\n\n```bash\ncurl -sS -w \"%{http_code}\\n\" -X POST \\\n  \"$INFLUXDB_HOST/api/v2/write?bucket=$INFLUXDB_DATABASE&precision=s\" \\\n  -H \"Authorization: Bearer $INFLUXDB_TOKEN\" \\\n  -H \"Content-Type: text/plain; charset=utf-8\" \\\n  --data-binary \"sensor,host=server01,region=us-west temperature=72.4,humidity=45.1 $(date +%s)\"\n```\n\n- A `204` response means it worked.\n- `bucket` is the database name. Cloud Dedicated ignores `org`, so you can leave it out.\n- To send a batch, put one point per line, e.g. `--data-binary @points.lp`. Aim for about 1,000 lines per request. On this endpoint, a single bad line rejects the whole batch.\n- `precision=s` is enough unless one series gets more than one point per second. Points with the same table, tags and timestamp overwrite each other.\n\n### Write (v1-compatible endpoint, alternative)\n\n```bash\ncurl -sS -w \"%{http_code}\\n\" -X POST \\\n  \"$INFLUXDB_HOST/write?db=$INFLUXDB_DATABASE&precision=s\" \\\n  -H \"Authorization: Token $INFLUXDB_TOKEN\" \\\n  --data-binary \"sensor,host=server01 temperature=72.4 $(date +%s)\"\n```\n\n### Query (InfluxQL over v1 `/query`)\n\n```bash\ncurl -sS --get \"$INFLUXDB_HOST/query\" \\\n  -H \"Authorization: Token $INFLUXDB_TOKEN\" \\\n  -H \"Accept: application/json\" \\\n  --data-urlencode \"db=$INFLUXDB_DATABASE\" \\\n  --data-urlencode \"q=SELECT temperature, humidity FROM sensor WHERE time > now() - 1h ORDER BY time DESC LIMIT 5\"\n```\n\n- `--data-urlencode` handles escaping for you. Still, don't paste untrusted user input into `q`, because this endpoint has no parameter binding.\n- Use `Accept: application/csv` if you want CSV instead of JSON.\n\n### Status codes\n\n| Code | Meaning | Retry? |\n|---|---|---|\n| 204 / 200 | Success | \u2013 |\n| 400 | Bad line protocol or query | No, fix the request |\n| 401 / 403 | Wrong token, or the token doesn't have access to this database | No |\n| 404 | Wrong host or database | No |\n| 429 / 5xx | Rate limited or server-side error | Yes, retry with exponential backoff |\n\nIf you need SQL later, you'll have to use a Flight client. That can be the official client libraries or any Arrow Flight SQL client, such as `pyarrow.flight` or the ADBC Flight SQL driver. The Cloud Dedicated docs have the details: https://docs.influxdata.com/influxdb3/cloud-dedicated/"
+       }
+      ]
+     },
+     {
+      "score": 1,
+      "passed": true,
+      "turns": 6,
+      "costUsd": 0.2122096,
+      "judgeCostUsd": 0.010098000000000003,
+      "durationSeconds": 32,
+      "startedAt": "2026-09-29T17:53:26.549Z",
+      "error": null,
+      "tracePath": "/private/tmp/e-38sEcw/out/trace.jsonl",
+      "skippedPaidGraders": false,
+      "graders": [
+       {
+        "name": "criteria",
+        "passed": true,
+        "weight": 1,
+        "explanation": "judge votes: PASS PASS PASS",
+        "withOnly": false,
+        "scored": true,
+        "judgeVotes": [
+         true,
+         true,
+         true
+        ],
+        "evidence": "Cloud Dedicated doesn't have the `/api/v3/*` endpoints that Core and Enterprise use, so the curl examples you'll find for those products won't work. Cloud Dedicated gives you plain HTTP for **writes** (`/api/v2/write` or v1 `/write`) and **InfluxQL queries** (v1 `/query`). **SQL queries only go over Arrow Flight (gRPC)**, so plain curl can't send them.\n\n### Setup\n\n```bash\nexport INFLUXDB_HOST=\"https://<cluster-id>.a.influxdb.io\"   # your cluster's hostname\nexport INFLUXDB_TOKEN=\"...\"      # a database token with read/write on the database (not a management token)\nexport INFLUXDB_DATABASE=\"sensor_data\"\n```\n\nCreate the database and database token in the Cloud Dedicated console or with `influxctl` before you write. Check the database name carefully.\n\n### Write (line protocol)\n\n```bash\ncurl -sS -w \"%{http_code}\\n\" -X POST \\\n  \"$INFLUXDB_HOST/api/v2/write?bucket=$INFLUXDB_DATABASE&precision=s\" \\\n  -H \"Authorization: Bearer $INFLUXDB_TOKEN\" \\\n  -H \"Content-Type: text/plain; charset=utf-8\" \\\n  --data-binary \"sensor,host=server01,region=us-west temperature=72.4,humidity=45.1 $(date +%s)\"\n```\n\n- **Success:** HTTP `204`.\n- **`bucket`:** set this to the database name. Cloud Dedicated ignores `org`, so you can leave it out.\n- **Precision:** `s`, `ms`, `us`, or `ns`. Use `s` unless one series gets more than one point per second. Points with the same table, tags and timestamp overwrite each other.\n- **Batching:** put one point per line in the body, around 1,000 lines per request. On this endpoint, one bad line rejects the whole batch.\n- **Retries:** retry `429` and `5xx` with backoff. Don't retry `400`, `401`, `403` or `404`; fix the request instead.\n\nTo send a file:\n\n```bash\ncurl -sS -X POST \"$INFLUXDB_HOST/api/v2/write?bucket=$INFLUXDB_DATABASE&precision=s\" \\\n  -H \"Authorization: Bearer $INFLUXDB_TOKEN\" \\\n  --data-binary @points.lp\n```\n\n### Query (InfluxQL over HTTP)\n\n```bash\ncurl -sS -G \"$INFLUXDB_HOST/query\" \\\n  -H \"Authorization: Bearer $INFLUXDB_TOKEN\" \\\n  -H \"Accept: application/json\" \\\n  --data-urlencode \"db=$INFLUXDB_DATABASE\" \\\n  --data-urlencode \"q=SELECT temperature, humidity FROM sensor WHERE time > now() - 1h ORDER BY time DESC LIMIT 5\"\n```\n\nUse `-H \"Accept: application/csv\"` if you want CSV instead of JSON.\n\nFor a quick check that the database exists and your token can read it:\n\n```bash\ncurl -sS -G \"$INFLUXDB_HOST/query\" \\\n  -H \"Authorization: Bearer $INFLUXDB_TOKEN\" \\\n  --data-urlencode \"db=$INFLUXDB_DATABASE\" \\\n  --data-urlencode \"q=SHOW MEASUREMENTS\"\n```\n\nIf any part of the query comes from user input, pass it as a bound parameter (`params={\"host\":\"server01\"}` with `$host` in the query) instead of pasting it into `q`. Check the docs to confirm Cloud Dedicated's v1 `/query` supports `params`.\n\n### If you need SQL\n\nCurl can't send it. Without a client library, your options are:\n- **`influxctl query`:** InfluxData's command-line tool, not a client library. It runs SQL through Flight for you.\n- **A generic Arrow Flight SQL client** in the language of your choice, which you point at your cluster host on port 443.\n\nThese examples come from the InfluxDB skill's reference notes, and I didn't run them against a cluster. Check the details against the Cloud Dedicated docs: https://docs.influxdata.com/influxdb3/cloud-dedicated/"
+       }
+      ]
+     }
+    ]
+   },
+   "aggregates": {
+    "score": 0.3333333333333333,
+    "passRate": 0.3333333333333333
+   }
+  },
+  {
+   "name": "write-precision",
+   "dir": "evals/claude-cases/write-precision",
+   "source": "prose",
+   "promptMarkdown": "I'm writing historical data going back 5 years. What write options should I set in Python?",
+   "runsPerCase": 3,
+   "timeoutSeconds": 300,
+   "maxTurns": 10,
+   "graders": [
+    {
+     "name": "criteria",
+     "type": "llm",
+     "weight": 1,
+     "graderMarkdown": "The response passes only if it meets every criterion:\n\n- explicit timestamp on every point\n- precision=second by default\n- sane batching",
+     "config": {
+      "criteria": "The response passes only if it meets every criterion:\n\n- explicit timestamp on every point\n- precision=second by default\n- sane batching",
+      "focus": "last_message"
+     }
+    }
+   ],
+   "arms": {
+    "with": [
+     {
+      "score": 1,
+      "passed": true,
+      "turns": 6,
+      "costUsd": 0.236728,
+      "judgeCostUsd": 0.009954000000000001,
+      "durationSeconds": 29,
+      "startedAt": "2026-09-29T17:53:59.065Z",
+      "error": null,
+      "tracePath": "/private/tmp/e-BKV1wc/out/trace.jsonl",
+      "skippedPaidGraders": false,
+      "graders": [
+       {
+        "name": "criteria",
+        "passed": true,
+        "weight": 1,
+        "explanation": "judge votes: PASS PASS PASS",
+        "withOnly": false,
+        "scored": true,
+        "judgeVotes": [
+         true,
+         true,
+         true
+        ],
+        "evidence": "For a five-year backfill, the settings that matter most are **explicit timestamps**, **second precision**, **batching** and **retries**. If you run InfluxDB 3 Core or Enterprise, also consider the V3 write endpoint.\n\n```python\nimport os\nfrom datetime import datetime, timezone\nfrom dotenv import load_dotenv\nfrom influxdb_client_3 import (\n    InfluxDBClient3, Point, WriteOptions, WritePrecision, write_client_options,\n)\n\nload_dotenv()\n\nfailed = []\n\nwrite_options = WriteOptions(\n    batch_size=5_000,        # bulk load: start in the 1,000\u201310,000 range\n    flush_interval=1_000,    # ms\n    max_retries=5,           # 429 / 5xx are retried\n    retry_interval=5_000,\n    max_retry_delay=30_000,\n    exponential_base=2,\n    # use_v2_api=False,      # Core/Enterprise only: allows partial writes (see below)\n)\n\nwco = write_client_options(\n    write_options=write_options,\n    error_callback=lambda conf, data, exc: failed.append((data, exc)),\n    retry_callback=lambda conf, data, exc: print(f\"retrying: {exc}\"),\n)\n\nwith InfluxDBClient3(\n    host=os.environ[\"INFLUXDB_HOST\"],\n    token=os.environ[\"INFLUXDB_TOKEN\"],\n    database=os.environ[\"INFLUXDB_DATABASE\"],\n    write_client_options=wco,\n) as client:\n    for row in historical_rows():  # your source\n        p = (\n            Point(\"sensor\")\n            .tag(\"host\", row.host)\n            .field(\"temperature\", row.temperature)\n            .time(int(row.ts.timestamp()), WritePrecision.S)  # always set the timestamp\n        )\n        client.write(record=p, write_precision=WritePrecision.S)\n\nif failed:\n    print(f\"{len(failed)} batches failed; first error: {failed[0][1]}\")\n```\n\n**Why these settings:**\n\n- **Explicit timestamps.** If you leave a timestamp out, the server uses the current time, so all five years of data would land \"now.\"\n- **Second precision.** It makes each line shorter, which adds up over five years of data. Use finer precision only if a series has more than one point per second. Points with the same table, tags and timestamp overwrite each other.\n- **Batching.** Don't write one point per request. With `WriteOptions`, the client batches in the background. Pass it through `write_client_options()`. If you pass `write_options=` straight to `InfluxDBClient3`, it's ignored and nothing gets batched.\n- **Errors go to `error_callback`.** In batching mode, a failed batch doesn't raise an exception from `write()`. Collect the failures and check them at the end. Otherwise a long backfill can drop batches without telling you.\n- **`use_v2_api=False` (Core/Enterprise only).** By default the client (0.20.0+) writes through `/api/v2/write`, where one bad line rejects the whole batch. The V3 endpoint (`/api/v3/write_lp`) instead keeps the valid lines and returns 400 with a list of the rejected ones, so you resend only those. For a messy historical source, that saves a lot of rework. Keep the default on Cloud Serverless, Cloud Dedicated or Clustered.\n\n**Check these before you start:**\n\n1. **The database exists.** InfluxDB 3 creates a database automatically on the first write. A typo in `INFLUXDB_DATABASE` would quietly send five years of data to a new, wrong database. Run `influxdb3 show databases --token <admin-token>` first.\n2. **The retention period covers five years.** If the database has a retention period shorter than your data, the older points fall outside it. Check with `influxdb3 show databases`. To clear the retention period, run `influxdb3 update database --database <name> --retention-period none` (this needs an admin token).\n3. **Field types are consistent across the whole history.** A field's type is fixed by its first write. For example, if `temperature` is first written as a float, later rows with a string there are rejected. Old data is more likely to have these type changes.\n4. **Use an app token for the writes,** not the admin token.\n\nIf you're on Core, also check its docs for any limits on the time range a query can cover. Otherwise you could load all five years and then find you can't query that far back. Which product and version are you running? That determines whether to turn on `use_v2_api=False`."
+       }
+      ]
+     },
+     {
+      "score": 1,
+      "passed": true,
+      "turns": 7,
+      "costUsd": 0.244017,
+      "judgeCostUsd": 0.008556000000000001,
+      "durationSeconds": 30,
+      "startedAt": "2026-09-29T17:54:27.899Z",
+      "error": null,
+      "tracePath": "/private/tmp/e-3dy7WK/out/trace.jsonl",
+      "skippedPaidGraders": false,
+      "graders": [
+       {
+        "name": "criteria",
+        "passed": true,
+        "weight": 1,
+        "explanation": "judge votes: PASS PASS PASS",
+        "withOnly": false,
+        "scored": true,
+        "judgeVotes": [
+         true,
+         true,
+         true
+        ],
+        "evidence": "If you're on InfluxDB 3 with the official `influxdb3-python` client, you need four things for a 5-year backfill: explicit timestamps, second precision, batching with retries, and an error callback. There's also one database setting to check before you start.\n\n```python\nimport os\nfrom influxdb_client_3 import (\n    InfluxDBClient3, Point, WriteOptions, WritePrecision, write_client_options,\n)\n\nwrite_options = WriteOptions(\n    batch_size=1_000,       # send when 1,000 points are queued\n    flush_interval=1_000,   # or after 1 s, whichever comes first\n    max_retries=5,          # retries 429 and 5xx responses\n    retry_interval=5_000,\n    max_retry_delay=30_000,\n    exponential_base=2,\n)\nwco = write_client_options(\n    write_options=write_options,\n    error_callback=lambda conf, data, exc: print(f\"write failed: {exc}\"),\n    retry_callback=lambda conf, data, exc: print(f\"retrying: {exc}\"),\n)\n\nwith InfluxDBClient3(\n    host=os.environ[\"INFLUXDB_HOST\"],\n    token=os.environ[\"INFLUXDB_TOKEN\"],\n    database=os.environ[\"INFLUXDB_DATABASE\"],\n    write_client_options=wco,\n) as client:\n    for row in historical_rows:  # your data source\n        client.write(\n            record=Point(\"sensor\")\n                .tag(\"host\", row.host)\n                .field(\"temperature\", row.temp)\n                .time(row.epoch_seconds, WritePrecision.S),  # always set the time for old data\n            write_precision=WritePrecision.S,\n        )\n```\n\n**What matters for historical data:**\n\n- **Always set the timestamp.** If a point has no timestamp, the server stamps it with the current time. Every one of your 5 years would land on today.\n- **Use second precision** unless a series has more than one point per second. The line protocol is smaller, and storage is the same either way. If you use precision that's too coarse, points with the same table, tags and timestamp overwrite each other without any error.\n- **Pass `WriteOptions` through `write_client_options()`.** If you pass `write_options=` straight to `InfluxDBClient3`, or put `batch_size` inside `write_client_options()`, the client ignores it and doesn't batch.\n- **Watch `error_callback`.** In batching mode, a failed batch doesn't raise an error from `write()`. It only reaches the callback. On a long backfill, log those failures somewhere you'll check.\n- **Optional, Core and Enterprise only:** add `write_use_v2_api=False` to the client. By default (client version 0.20.0 and later) it writes through `/api/v2/write`, where one bad line rejects the whole batch. The v3 endpoint accepts partial writes, so only the bad lines are rejected. It also supports `no_sync`. Don't set this on Cloud Serverless, Cloud Dedicated or Clustered.\n\n**Before you start:**\n\n1. **Check the database's retention period.** A database with a retention period shorter than 5 years won't keep your older data. Check it, or create the database with a longer or no retention period.\n2. **Make sure the database already exists.** By default, a write to a misspelled `INFLUXDB_DATABASE` succeeds and creates a new, empty database. Check with `influxdb3 show databases --token <admin-token>`.\n3. **Use an app token for the writes, not the admin token.** On Enterprise, that's a scoped token with `db:<name>:read,write`. On Core, it's a named admin token for this app.\n\nWhich product are you on (Core, Enterprise, or a Cloud product)? That decides whether `write_use_v2_api=False` applies and how you check the retention period."
+       }
+      ]
+     },
+     {
+      "score": 1,
+      "passed": true,
+      "turns": 6,
+      "costUsd": 0.20974339999999997,
+      "judgeCostUsd": 0.007986000000000004,
+      "durationSeconds": 33,
+      "startedAt": "2026-09-29T17:54:57.982Z",
+      "error": null,
+      "tracePath": "/private/tmp/e-svUPEu/out/trace.jsonl",
+      "skippedPaidGraders": false,
+      "graders": [
+       {
+        "name": "criteria",
+        "passed": true,
+        "weight": 1,
+        "explanation": "judge votes: PASS PASS PASS",
+        "withOnly": false,
+        "scored": true,
+        "judgeVotes": [
+         true,
+         true,
+         true
+        ],
+        "evidence": "For a 5-year backfill with `influxdb3-python`, set these:\n\n**1. Use second precision on every point**\n```python\nfrom influxdb_client_3 import Point, WritePrecision\n\nPoint(\"sensor\").tag(\"host\", \"server01\").field(\"temperature\", 72.4).time(ts, WritePrecision.S)\n```\n- **Always give each point a timestamp.** If a point has none, the server stamps it with the current time, and all 5 years of data land at \"now.\"\n- Second precision makes the line protocol smaller. Use a finer precision only if a series has more than one point per second. Points with the same table, tags and timestamp overwrite each other, so seconds would silently drop data.\n\n**2. Batch 1,000\u201310,000 points per write**\nFor a bulk load, build lists and write each one directly. This is better than the background batcher, because errors raise right where you can catch them. In batching mode, failures only go to `error_callback`, which makes it easy to miss gaps.\n```python\nclient.write(record=batch, write_precision=WritePrecision.S)\n```\nIf you'd rather use the background batcher, pass it through `write_client_options()`. If you pass `write_options=` straight to `InfluxDBClient3`, the client ignores it and doesn't batch.\n```python\nfrom influxdb_client_3 import InfluxDBClient3, WriteOptions, write_client_options\n\nwco = write_client_options(\n    write_options=WriteOptions(\n        batch_size=5_000,\n        flush_interval=1_000,\n        max_retries=5,\n        retry_interval=5_000,\n        max_retry_delay=30_000,\n        exponential_base=2,\n    ),\n    error_callback=lambda conf, data, exc: log_failed_batch(data, exc),  # keep failed batches so you can resend them\n)\nclient = InfluxDBClient3(host=..., token=..., database=..., write_client_options=wco)\n```\n\n**3. (Core or Enterprise only) Consider `write_use_v2_api=False`**\nSince client version 0.20.0, writes go to `/api/v2/write` by default. There, one bad line out of thousands rejects the whole batch. With `write_use_v2_api=False`, writes go to `/api/v3/write_lp`, which accepts partial writes. The valid lines are stored, you get a 400 listing the rejected lines, and you resend only those. That's much easier to recover from in a long backfill. On InfluxDB Cloud Serverless, Cloud Dedicated or Clustered, keep the default.\n\n**4. Retry only errors that can succeed later**\nRetry 429 and 5xx with backoff. Don't retry 400, 401, 403 or 404, because they need a fix first.\n\n**Check the database before you start:**\n- **Retention period.** If the database's retention is shorter than 5 years, the older data will expire. Check it, or create the database with no retention or at least `5y`.\n- **The database exists.** InfluxDB creates a database automatically on the first write. A typo in `INFLUXDB_DATABASE` would quietly send all 5 years into a new, wrong database, so list the databases at startup and stop if the target isn't there.\n- **Field types.** A field's type is fixed by its first write. If old records have a field as an integer and newer ones as a float (or a string), later writes to that field fail with 400. Normalize types before you write.\n\nWhich product are you on (InfluxDB 3 Core, Enterprise, or one of the Cloud products)? That decides step 3, and I can put these together into a full backfill script."
+       }
+      ]
+     }
+    ]
+   },
+   "aggregates": {
+    "score": 1,
+    "passRate": 1
+   }
+  }
+ ],
+ "aggregates": {
+  "casesTotal": 1,
+  "casesPassed": 1,
+  "overallScore": 1,
+  "overallPassRate": 1
+ }
+}

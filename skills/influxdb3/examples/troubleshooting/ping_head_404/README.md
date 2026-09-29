@@ -15,7 +15,7 @@ curl -sS -I -H "Authorization: Bearer $INFLUXDB_TOKEN" "$INFLUXDB_HOST/ping" --m
 curl -sS -i -H "Authorization: Bearer $INFLUXDB_TOKEN" "$INFLUXDB_HOST/ping" --max-time 5   # GET  — returns 200
 ```
 
-If the HEAD returns 404 and the GET returns 200, you've hit this quirk. (`/ping` is auth-gated on 3.10+, so include the token; without it the GET returns 401, not 200.)
+If the HEAD returns 404 and the GET returns 200, you've hit this quirk. (Include the token; without it the GET returns 401, not 200. See `references/quirks.md` entry 1.)
 
 ## Fix
 

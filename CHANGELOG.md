@@ -4,6 +4,19 @@ All notable changes to this skill will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.7.2] — 2026-09-29
+
+### Fixed
+- `installing.md` used Docker image names that don't exist. It now uses `influxdb:3-core` and `influxdb:3-enterprise`.
+- `installing.md` said Core has no last-value or distinct-value caches. Core has both.
+
+### Changed
+- `installing.md` follows the docs for license flags and environment variables (`INFLUXDB3_LICENSE_*` in v3.11+), the `--object-store` requirement, cloud store flags, and the unauthenticated first-token window.
+- `installing.md` names the other install methods (DEB/RPM packages, binaries, Docker Compose) and points to the docs and the identify-version pages.
+- Removed `live_verified_against` from both `SKILL.md` files. A pinned version goes stale with every server release. `live_verified` stays, and `docs/publishing.md` says when to set the field.
+- The Enterprise license instruction now says to give the full start command with placeholder email and type, and to ask for the real values before running it. It used to say to ask first, and some agents answered with a question and no command.
+- The `/ping` authentication rule, including the `--disable-authz` opt-out from 3.10, now lives in `quirks.md` entry 1. Other files point to it.
+
 ## [0.7.1] — 2026-09-28
 
 The first public release. The skills don't change.
