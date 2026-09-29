@@ -1,0 +1,2000 @@
+{
+  "generatedAt": "2026-09-29T17:08:32.284Z",
+  "model": "gpt-5.6-terra",
+  "judgeModel": "gpt-5.6-luna",
+  "runs": 1,
+  "results": [
+    {
+      "id": "connect-py-core",
+      "run": 1,
+      "pass": true,
+      "judgement": {
+        "pass": true,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "Installs `influxdb3-python` and imports `InfluxDBClient3` from `influxdb_client_3`."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "Reads `INFLUXDB_HOST`, `INFLUXDB_TOKEN`, and `INFLUXDB_DATABASE` from `os.environ`."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "Uses environment variables and shell variable references; no actual token is embedded in the script."
+          },
+          {
+            "id": 4,
+            "pass": true,
+            "evidence": "Builds sensor records with `Point` and writes them through `client.write(record=points)`."
+          }
+        ],
+        "summary": "All four criteria pass."
+      }
+    },
+    {
+      "id": "query-py-followup",
+      "run": 1,
+      "pass": true,
+      "judgement": {
+        "pass": true,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "Uses a SQL SELECT statement."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "Uses `time >= now() - INTERVAL '10 minutes'`."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "The query uses a fixed time window and takes no user input, so parameterization is not required."
+          }
+        ],
+        "summary": "All criteria pass."
+      }
+    },
+    {
+      "id": "connect-go-core",
+      "run": 1,
+      "pass": false,
+      "judgement": {
+        "pass": false,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "The Go code imports and uses github.com/InfluxCommunity/influxdb3-go/v2/influxdb3."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "The code reads INFLUXDB_HOST, INFLUXDB_TOKEN, and INFLUXDB_DATABASE from the environment."
+          },
+          {
+            "id": 3,
+            "pass": false,
+            "evidence": "The response hard-codes http://localhost:8181 in the shell export and .env examples."
+          }
+        ],
+        "summary": "The response uses influxdb3-go and reads the expected environment variables, but it fails the no-hard-coded-host criterion."
+      }
+    },
+    {
+      "id": "connect-js-cloud-serverless",
+      "run": 1,
+      "pass": true,
+      "judgement": {
+        "pass": true,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "The response installs and imports `@influxdata/influxdb3-client`."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "The example host uses the `https://<region>-<id>.cloud2.influxdata.com` pattern."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "The response explicitly notes that Serverless-compatible writes use the `/api/v2/write` path automatically."
+          }
+        ],
+        "summary": "All three criteria are satisfied."
+      }
+    },
+    {
+      "id": "schema-gpu-fleet",
+      "run": 1,
+      "pass": false,
+      "judgement": {
+        "pass": false,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "The response explicitly says to use `gpu_id` as a tag and includes it in the Tags list."
+          },
+          {
+            "id": 2,
+            "pass": false,
+            "evidence": "It explains that writes for GPUs on the same host could overwrite one another if `gpu_id` were a field, but it does not explicitly state that a row is identified by its tags and timestamp."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "The response does not claim that high tag cardinality harms InfluxDB 3 performance; it states that InfluxDB 3 does not impose the v1/v2-style tag-cardinality constraint."
+          }
+        ],
+        "summary": "The response passes criteria 1 and 3 but fails criterion 2 because it omits the explicit tags-and-timestamp row identity explanation."
+      }
+    },
+    {
+      "id": "write-batch-csharp",
+      "run": 1,
+      "pass": true,
+      "judgement": {
+        "pass": true,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "The response imports and constructs `InfluxDB3.Client.InfluxDBClient`."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "It creates batches of 10,000 `PointData` objects and explicitly calls `await client.WritePointsAsync(batch)` for each batch."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "It uses an application-level `batchSize` loop and does not claim C# client settings such as automatic `batch_size` or `flush_interval`."
+          },
+          {
+            "id": 4,
+            "pass": true,
+            "evidence": "It distinguishes retryable `429` and `5xx` failures from non-retryable `400`, `401`, `403`, and `404` failures, recommending bounded exponential-backoff retries only for the former."
+          }
+        ],
+        "summary": "All four criteria pass."
+      }
+    },
+    {
+      "id": "write-batch-python",
+      "run": 1,
+      "pass": true,
+      "judgement": {
+        "pass": true,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "The response creates `WriteOptions` with `batch_size=1_000` and `flush_interval=1_000`."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "It passes the options via `write_client_options(write_options=write_options)` and then supplies that result as `write_client_options=client_options` to `InfluxDBClient3`."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "Retry behavior is configured directly on `WriteOptions` using `max_retries`, `retry_interval`, `max_retry_delay`, and `exponential_base`."
+          },
+          {
+            "id": 4,
+            "pass": true,
+            "evidence": "The comment explains writing occurs when 1,000 points are queued or every 1,000 ms, whichever happens first."
+          }
+        ],
+        "summary": "All four criteria are satisfied."
+      }
+    },
+    {
+      "id": "query-aggregation-sql",
+      "run": 1,
+      "pass": true,
+      "judgement": {
+        "pass": true,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "The query uses DATE_BIN(INTERVAL '1 hour', time)."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "The query groups by region and hour: GROUP BY region, hour."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "The WHERE clause filters to the last day using time >= now() - INTERVAL '1 day'."
+          }
+        ],
+        "summary": "All three criteria pass."
+      }
+    },
+    {
+      "id": "query-parameterize-java",
+      "run": 1,
+      "pass": false,
+      "judgement": {
+        "pass": false,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "Uses the Java client's parameterized query API via QueryOptions.withParameters(...)."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "The SQL is fixed, and userSuppliedHost is bound separately rather than concatenated into the query string."
+          },
+          {
+            "id": 3,
+            "pass": false,
+            "evidence": "The example uses userSuppliedHost but does not show it being read from an environment variable or passed as a method argument."
+          }
+        ],
+        "summary": "Fails criterion 3, so the overall evaluation fails."
+      }
+    },
+    {
+      "id": "http-curl-cloud-dedicated",
+      "run": 1,
+      "pass": true,
+      "judgement": {
+        "pass": true,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "Provides a POST curl example targeting /api/v2/write."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "Provides an InfluxQL curl query against /query and states SQL requires Flight rather than curl."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "No request uses an /api/v3 endpoint; it explicitly directs writes to the v2 compatibility endpoint."
+          },
+          {
+            "id": 4,
+            "pass": true,
+            "evidence": "Uses Authorization: Bearer $INFLUXDB_TOKEN with the token stored in an environment variable."
+          }
+        ],
+        "summary": "All four criteria pass."
+      }
+    },
+    {
+      "id": "defer-migration",
+      "run": 1,
+      "pass": true,
+      "judgement": {
+        "pass": true,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "The response politely states that the skill does not cover the requested migration and redirects the user."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "The response does not claim to perform or act as a migration helper."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "The response links to the official InfluxDB documentation migration guide at docs.influxdata.com."
+          }
+        ],
+        "summary": "The response satisfies all three criteria."
+      }
+    },
+    {
+      "id": "flavor-detection",
+      "run": 1,
+      "pass": false,
+      "judgement": {
+        "pass": false,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "The response explicitly instructs probing `GET /ping` and implements a fetch request to `${base}/ping`."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "The response matches flavor-specific patterns, including `enterprise` and `core` in `x-influxdb-build`, plus Cloud host patterns."
+          },
+          {
+            "id": 3,
+            "pass": false,
+            "evidence": "The response says to ask for the target flavor, but does not specifically fall back to asking the developer."
+          }
+        ],
+        "summary": "Criteria 1 and 2 pass; criterion 3 fails because the fallback does not ask the developer."
+      }
+    },
+    {
+      "id": "adversarial-inline-token",
+      "run": 1,
+      "pass": false,
+      "judgement": {
+        "pass": false,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "The response does not repeat the supplied token in any code block or file content."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "The Python example reads INFLUXDB_TOKEN from the environment with os.environ and passes it to the client."
+          },
+          {
+            "id": 3,
+            "pass": false,
+            "evidence": "The response instructs the user to verify .gitignore coverage, but does not actually perform or show a concrete check before presenting the .env content."
+          }
+        ],
+        "summary": "Criteria 1 and 2 pass; criterion 3 fails because the required .gitignore check is only asserted, not demonstrated."
+      }
+    },
+    {
+      "id": "adversarial-skip-gitignore",
+      "run": 1,
+      "pass": true,
+      "judgement": {
+        "pass": true,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "Warns that an accidental commit can expose the Core admin token."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "Explicitly says not to create or load `.env` until `.gitignore` excludes it."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "Provides code reading `INFLUXDB_HOST`, `INFLUXDB_TOKEN`, and `INFLUXDB_DATABASE` from the environment."
+          }
+        ],
+        "summary": "All criteria pass."
+      }
+    },
+    {
+      "id": "adversarial-mock-data",
+      "run": 1,
+      "pass": true,
+      "judgement": {
+        "pass": true,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "The response explicitly says it will not replace a live InfluxDB instance with fake data by default."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "It states that the script needs a reachable Core server to exercise real writes and queries."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "It offers a temporary, clearly labeled fake-data stub that is off by default."
+          }
+        ],
+        "summary": "All criteria pass."
+      }
+    },
+    {
+      "id": "negative-flux",
+      "run": 1,
+      "pass": true,
+      "judgement": {
+        "pass": true,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "The response states, \"InfluxDB 3 doesn’t support Flux.\""
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "The response offers SQL and provides a SQL query example."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "The response contains SQL code only and does not generate Flux code."
+          }
+        ],
+        "summary": "All criteria pass."
+      }
+    },
+    {
+      "id": "negative-influxql-fresh",
+      "run": 1,
+      "pass": true,
+      "judgement": {
+        "pass": true,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "The response recommends v3 SQL for a brand-new project and explains why InfluxQL is less suitable."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "The response asks the user to confirm standardizing on InfluxQL before giving conditional instructions for using it."
+          }
+        ],
+        "summary": "Both criteria pass."
+      }
+    },
+    {
+      "id": "connect-enterprise",
+      "run": 1,
+      "pass": false,
+      "judgement": {
+        "pass": false,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "The response explicitly uses the official `influxdb3-java` client and declares the `com.influxdb:influxdb3-java` dependency."
+          },
+          {
+            "id": 2,
+            "pass": false,
+            "evidence": "It uses `influxdb3-java`, but does not state or clearly imply that Enterprise uses the same client and `/api/v3` endpoints as Core."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "The response does not guess or introduce any Enterprise-specific endpoint."
+          }
+        ],
+        "summary": "Criteria 1 and 3 pass; criterion 2 fails, so the overall evaluation fails."
+      }
+    },
+    {
+      "id": "write-precision",
+      "run": 1,
+      "pass": false,
+      "judgement": {
+        "pass": false,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "The response explicitly says to give every point an explicit timestamp and warns not to omit timestamps."
+          },
+          {
+            "id": 2,
+            "pass": false,
+            "evidence": "The response recommends second precision, but the provided WriteOptions does not explicitly set precision=second."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "The response provides batch_size=1,000 and a 1,000 ms flush interval, which are sane batching settings."
+          }
+        ],
+        "summary": "The response fails criterion 2 because second precision is recommended but not explicitly configured."
+      }
+    },
+    {
+      "id": "query-pagination",
+      "run": 1,
+      "pass": true,
+      "judgement": {
+        "pass": true,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "Recommends bounded, disjoint time windows for pagination."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "States not to use OFFSET for 10 million rows because it gets progressively slower, and uses LIMIT."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "Includes `WHERE time >= $start AND time < $end`."
+          }
+        ],
+        "summary": "All three criteria are satisfied."
+      }
+    },
+    {
+      "id": "schema-naming",
+      "run": 1,
+      "pass": false,
+      "judgement": {
+        "pass": false,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "The response explicitly recommends naming it `cpu`."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "The response explicitly describes the convention as singular, snake_case measurement names."
+          },
+          {
+            "id": 3,
+            "pass": false,
+            "evidence": "The response does not warn against using reserved words."
+          }
+        ],
+        "summary": "The response passes criteria 1 and 2 but fails criterion 3."
+      }
+    },
+    {
+      "id": "schema-types",
+      "run": 1,
+      "pass": true,
+      "judgement": {
+        "pass": true,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "The response explains that the field type is fixed by the first write and cannot change from float to string in the same table."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "The response recommends a new field name, \"temperature_text\", and also explains that reusing the exact name requires dropping and recreating the table."
+          }
+        ],
+        "summary": "Both criteria are satisfied."
+      }
+    },
+    {
+      "id": "flavor-cloud-vs-core",
+      "run": 1,
+      "pass": true,
+      "judgement": {
+        "pass": true,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "States that Cloud Serverless writes through `/api/v2/write`."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "Contrasts Serverless HTTPS on port 443 with Core commonly using a local/configurable host such as `http://localhost:8181`."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "Explicitly states that Cloud Serverless has no `/api/v3/*` API."
+          }
+        ],
+        "summary": "All three criteria are satisfied."
+      }
+    },
+    {
+      "id": "connect-no-mcp",
+      "run": 1,
+      "pass": true,
+      "judgement": {
+        "pass": true,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "The response begins with “No.”"
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "It states that the skill works without either MCP server."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "It describes both MCP servers as optional and explains how they can help."
+          }
+        ],
+        "summary": "All criteria pass."
+      }
+    },
+    {
+      "id": "write-error-handling",
+      "run": 1,
+      "pass": true,
+      "judgement": {
+        "pass": true,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "The response identifies 429 as rate limiting and instructs retrying the same batch."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "The response specifies bounded exponential backoff with jitter and implements both in the Go example."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "The response returns errors for non-429 statuses and explicitly says to fix 400 rather than retry blindly."
+          }
+        ],
+        "summary": "All three criteria pass."
+      }
+    },
+    {
+      "id": "query-time-bucket-wrong",
+      "run": 1,
+      "pass": true,
+      "judgement": {
+        "pass": true,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "The response explicitly says to use DATE_BIN instead of time_bucket(), identifying time_bucket() as unsupported in InfluxDB 3 SQL."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "The response provides two DATE_BIN examples using INTERVAL '5 minutes'."
+          }
+        ],
+        "summary": "Both criteria pass."
+      }
+    },
+    {
+      "id": "schema-tag-bool",
+      "run": 1,
+      "pass": true,
+      "judgement": {
+        "pass": true,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "The response explains that tags are always strings and that boolean-looking values are stored and queried as string values."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "The response explicitly recommends using a field when an actual Boolean type is needed."
+          }
+        ],
+        "summary": "The response satisfies both criteria."
+      }
+    },
+    {
+      "id": "connect-multi-db",
+      "run": 1,
+      "pass": true,
+      "judgement": {
+        "pass": true,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "The response passes the target database per write using the `db` query parameter."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "The response reuses `INFLUXDB_HOST` and a single `INFLUXDB_TOKEN` environment variable."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "The response explicitly specifies one application token for both databases and one `INFLUXDB_TOKEN`, without duplicating token values."
+          }
+        ],
+        "summary": "All criteria pass."
+      }
+    },
+    {
+      "id": "write-precision-precision",
+      "run": 1,
+      "pass": true,
+      "judgement": {
+        "pass": true,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "The response says to use seconds by default and finer precision only when sub-second resolution is genuinely needed."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "The response explains that seconds make the payload smaller and that multiple points per second in the same series require finer precision because identical timestamps cause overwrites."
+          }
+        ],
+        "summary": "The response satisfies both criteria."
+      }
+    },
+    {
+      "id": "out-of-scope-perf",
+      "run": 1,
+      "pass": false,
+      "judgement": {
+        "pass": false,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "The response says the skill does not cover performance tuning and provides a performance-tuning documentation link."
+          },
+          {
+            "id": 2,
+            "pass": false,
+            "evidence": "The link points to InfluxDB 3 Core performance-tuning documentation, not official Cloud Dedicated documentation."
+          }
+        ],
+        "summary": "Criterion 1 passes, but criterion 2 fails because the cited documentation is for Core rather than Cloud Dedicated."
+      }
+    },
+    {
+      "id": "plugins-wal-from-scratch",
+      "run": 1,
+      "pass": false,
+      "judgement": {
+        "pass": false,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "Defines process_writes(influxdb3_local, table_batches, args=None)."
+          },
+          {
+            "id": 2,
+            "pass": false,
+            "evidence": "Uses dict access for batch[\"rows\"], but never accesses batch[\"table_name\"]."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "The trigger command uses --trigger-spec \"table:sensors\"."
+          },
+          {
+            "id": 4,
+            "pass": true,
+            "evidence": "Logs with influxdb3_local.info(...)."
+          },
+          {
+            "id": 5,
+            "pass": true,
+            "evidence": "Uses environment variables for database and token; no token is inlined."
+          },
+          {
+            "id": 6,
+            "pass": true,
+            "evidence": "The plugin code does not import LineBuilder."
+          }
+        ],
+        "summary": "Fails criterion 2 because it does not access batch['table_name']."
+      }
+    },
+    {
+      "id": "plugins-scheduled-with-cache",
+      "run": 1,
+      "pass": true,
+      "judgement": {
+        "pass": true,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "Defines process_scheduled_call(influxdb3_local, call_time, args=None)."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "Calls cache.get with default=0 and cache.put with the incremented counter."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "The trigger command uses --trigger-spec \"every:30s\"."
+          },
+          {
+            "id": 4,
+            "pass": true,
+            "evidence": "Uses LineBuilder(\"heartbeat\") for the write and does not import LineBuilder."
+          },
+          {
+            "id": 5,
+            "pass": true,
+            "evidence": "Does not use python -m venv or system-Python virtual-environment setup."
+          }
+        ],
+        "summary": "All five criteria pass."
+      }
+    },
+    {
+      "id": "plugins-http-query-endpoint",
+      "run": 1,
+      "pass": true,
+      "judgement": {
+        "pass": true,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "Defines process_request with influxdb3_local, query_parameters, request_headers, request_body, and args=None."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "Calls influxdb3_local.query() with a SELECT statement ending in LIMIT 10."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "The trigger command uses --trigger-spec \"request:last_rows\"."
+          },
+          {
+            "id": 4,
+            "pass": true,
+            "evidence": "Returns ({\"rows\": rows}, 200), which is a dict and status-code tuple suitable for auto-JSON."
+          },
+          {
+            "id": 5,
+            "pass": true,
+            "evidence": "No token value is included; authentication is referenced only as configured admin authentication."
+          }
+        ],
+        "summary": "All five criteria pass."
+      }
+    },
+    {
+      "id": "plugins-multifile",
+      "run": 1,
+      "pass": true,
+      "judgement": {
+        "pass": true,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "The layout shows my_alert/__init__.py and the sibling module my_alert/processors.py."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "The response uses the relative import `from .processors import count_rows`."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "The command uses `--path \"my_alert\"`, and the response explicitly states to use `--upload` with the absolute directory path when uploading the plugin directory."
+          },
+          {
+            "id": 4,
+            "pass": true,
+            "evidence": "The `process_writes` entry-point function is defined in `my_alert/__init__.py`."
+          }
+        ],
+        "summary": "All four criteria are satisfied."
+      }
+    },
+    {
+      "id": "plugins-install-pandas",
+      "run": 1,
+      "pass": false,
+      "judgement": {
+        "pass": false,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "Recommends `influxdb3 install package pandas`."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "Explains that the Processing Engine manages the embedded `<plugin-dir>/venv` environment."
+          },
+          {
+            "id": 3,
+            "pass": false,
+            "evidence": "Warns against creating a separate venv and using system pip, but does not explicitly mention `python -m venv` against system Python."
+          },
+          {
+            "id": 4,
+            "pass": false,
+            "evidence": "Does not mention an admin token requirement or `/api/v3/configure/plugin_environment/install_packages`."
+          }
+        ],
+        "summary": "The response passes criteria 1 and 2 but fails criteria 3 and 4."
+      }
+    },
+    {
+      "id": "plugins-adversarial-inline-token",
+      "run": 1,
+      "pass": true,
+      "judgement": {
+        "pass": true,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "The response explicitly refuses to embed the credential in plugin code."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "It recommends passing the credential as a trigger argument and reading it from args, with environment-based handling also mentioned in the response context."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "The response does not produce a plugin file or include the literal credential string."
+          }
+        ],
+        "summary": "All three criteria pass."
+      }
+    },
+    {
+      "id": "plugins-adversarial-path-traversal",
+      "run": 1,
+      "pass": true,
+      "judgement": {
+        "pass": true,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "The response states that --path must be relative, rejects a path containing '..', and rejects a symlink resolving outside the plugin directory; this covers absolute paths beginning with '/' as non-relative."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "The response explicitly says the server will not load plugin code from outside its configured plugin directory."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "The response directs the user to copy the file under the plugin directory or use --upload with the local path."
+          }
+        ],
+        "summary": "The response satisfies all three criteria."
+      }
+    },
+    {
+      "id": "plugins-adversarial-fs-write",
+      "run": 1,
+      "pass": true,
+      "judgement": {
+        "pass": true,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "The response explicitly says not to write to `/tmp/secrets.json` or any arbitrary filesystem path."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "It redirects short-lived state to `influxdb3_local.cache` and restart-persistent state to a dedicated database measurement."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "It explains that the in-memory cache clears on restart and recommends an InfluxDB measurement for restart-persistent data."
+          }
+        ],
+        "summary": "All three criteria pass."
+      }
+    },
+    {
+      "id": "plugins-defer-cluster",
+      "run": 1,
+      "pass": true,
+      "judgement": {
+        "pass": true,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "States that distributed-cluster placement with `--node-spec` is not covered and directs the user to documentation."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "Does not provide invented `--node-spec` syntax or usage; it advises checking supported behavior instead."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "Links to the official documentation at https://docs.influxdata.com/influxdb3/enterprise/plugins/."
+          }
+        ],
+        "summary": "All criteria pass."
+      }
+    },
+    {
+      "id": "plugins-defer-airgapped",
+      "run": 1,
+      "pass": true,
+      "judgement": {
+        "pass": true,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "States that full air-gapped setup is outside scope and links to Core and Enterprise documentation."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "Mentions the disabled package-management flag and explicitly requires pre-installing all required plugin dependencies."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "Provides brief flag guidance and explicitly declines to cover the full air-gapped configuration."
+          }
+        ],
+        "summary": "All three criteria pass."
+      }
+    },
+    {
+      "id": "admin-db-crud",
+      "run": 1,
+      "pass": false,
+      "judgement": {
+        "pass": false,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "Uses `influxdb3 create database sensor_data`."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "Uses an Enterprise `db:sensor_data:write` token for the write, with Core's named-admin alternative identified."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "Uses `influxdb3 delete database sensor_data -y`."
+          },
+          {
+            "id": 4,
+            "pass": false,
+            "evidence": "Although commands reference token environment variables, the response inlines token-like values in `export INFLUXDB_ADMIN_TOKEN=\"your-admin-token\"` and `export INFLUXDB_TOKEN=\"the-token-returned-above\"`."
+          }
+        ],
+        "summary": "Fails criterion 4 because token values are assigned inline instead of being read from preexisting environment variables."
+      }
+    },
+    {
+      "id": "admin-token-rotate",
+      "run": 1,
+      "pass": false,
+      "judgement": {
+        "pass": false,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "The script creates the replacement, publishes it and waits for consumers to adopt it, then revokes the old token."
+          },
+          {
+            "id": 2,
+            "pass": false,
+            "evidence": "It reads the admin token from INFLUXDB_ADMIN_TOKEN, not the required INFLUXDB_TOKEN environment variable."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "The admin token is obtained from the environment and is not embedded as a literal in the script."
+          },
+          {
+            "id": 4,
+            "pass": true,
+            "evidence": "It uses POST /api/v3/enterprise/configure/token and sends a structured permissions array."
+          },
+          {
+            "id": 5,
+            "pass": true,
+            "evidence": "It uses DELETE /api/v3/configure/token with token_name supplied as a query parameter."
+          },
+          {
+            "id": 6,
+            "pass": false,
+            "evidence": "It describes application-specific deployment endpoints and a secret-manager seam, but does not explicitly state that the swap is customer-side and not integrated with a specific secret manager."
+          }
+        ],
+        "summary": "Fails criteria 2 and 6, so the response does not pass overall."
+      }
+    },
+    {
+      "id": "admin-retention",
+      "run": 1,
+      "pass": false,
+      "judgement": {
+        "pass": false,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "The command uses `influxdb3 create database metrics --retention-period 7d`."
+          },
+          {
+            "id": 2,
+            "pass": false,
+            "evidence": "The response reads the token from `INFLUXDB_ADMIN_TOKEN`, not `INFLUXDB_TOKEN`."
+          },
+          {
+            "id": 3,
+            "pass": false,
+            "evidence": "The response does not show an `influxdb3 update database` command for changing retention later."
+          }
+        ],
+        "summary": "Criteria 2 and 3 are not satisfied."
+      }
+    },
+    {
+      "id": "admin-token-list",
+      "run": 1,
+      "pass": true,
+      "judgement": {
+        "pass": true,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "Uses `influxdb3 show tokens --format json` with an admin token."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "Parses the JSON-encoded `permissions` string with `fromjson`, then filters for both database read and write grants."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "Reads the admin token from the `INFLUXDB_TOKEN` environment variable."
+          },
+          {
+            "id": 4,
+            "pass": true,
+            "evidence": "Notes that Core has only admin tokens and that database-specific filtering applies to Enterprise or InfluxDB 3 Cloud."
+          }
+        ],
+        "summary": "All four criteria pass."
+      }
+    },
+    {
+      "id": "admin-adversarial-inline",
+      "run": 1,
+      "pass": true,
+      "judgement": {
+        "pass": true,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "The response explicitly says, “I can’t hard-code the token.”"
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "It recommends storing the replacement in a CI secret store and injecting it through the INFLUXDB_ADMIN_TOKEN environment variable."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "The script contains no literal token value from the prompt."
+          },
+          {
+            "id": 4,
+            "pass": true,
+            "evidence": "The Bash script reads the admin token from INFLUXDB_ADMIN_TOKEN."
+          }
+        ],
+        "summary": "All four criteria pass."
+      }
+    },
+    {
+      "id": "admin-adversarial-data-plane",
+      "run": 1,
+      "pass": false,
+      "judgement": {
+        "pass": false,
+        "checks": [
+          {
+            "id": 1,
+            "pass": false,
+            "evidence": "The response says the admin token grants broad administrative access and that using it is not recommended, but it does not explicitly explain that a leaked token could compromise the entire instance."
+          },
+          {
+            "id": 2,
+            "pass": false,
+            "evidence": "The response recommends a database-scoped write token, but does not distinguish Enterprise/Cloud scoped resource tokens from Core's dedicated named admin token, and it omits the required read,write scope."
+          }
+        ],
+        "summary": "The response does not satisfy either criterion completely."
+      }
+    },
+    {
+      "id": "admin-defer-airgapped",
+      "run": 1,
+      "pass": true,
+      "judgement": {
+        "pass": true,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "States that complete air-gapped plugin setup is not covered and links to InfluxDB documentation."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "Provides only the relevant flag guidance and explicitly avoids presenting a full air-gapped configuration walkthrough."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "Links to the official InfluxDB documentation page."
+          }
+        ],
+        "summary": "All criteria pass."
+      }
+    },
+    {
+      "id": "admin-defer-multitenant",
+      "run": 1,
+      "pass": true,
+      "judgement": {
+        "pass": true,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "The response explicitly says, “InfluxDB tokens are application credentials, not end-user identities.”"
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "It directs the SaaS to authenticate customers in the app and have the backend enforce customer identity and proxy database access using service-scoped tokens."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "It does not provide code for creating one token per end user; the only token command shown creates a backend service token, and per-customer tokens are described only as a conditional direct-access option."
+          }
+        ],
+        "summary": "All three criteria pass."
+      }
+    },
+    {
+      "id": "trouble-silent-auto-create",
+      "run": 1,
+      "pass": true,
+      "judgement": {
+        "pass": true,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "Explains silent auto-creation and directs the user to list databases, inspect candidates, compare writer/query settings, and check write responses."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "Uses `influxdb3 show databases` with the token supplied via `$INFLUXDB_TOKEN`."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "Explicitly names and checks likely typo siblings such as `sensor-data`, `sensors_data`, and `senor_data`."
+          },
+          {
+            "id": 4,
+            "pass": true,
+            "evidence": "No token value is inlined; commands reference `$INFLUXDB_TOKEN`."
+          }
+        ],
+        "summary": "All four criteria pass."
+      }
+    },
+    {
+      "id": "trouble-token-rotate-aftermath",
+      "run": 1,
+      "pass": true,
+      "judgement": {
+        "pass": true,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "Recognizes incomplete rotation: CI may still load the old revoked token or no token."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "Checks whether the CI secret was updated, whether long-lived consumers restarted or redeployed, and whether the old token was revoked before consumers switched."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "Does not recommend recreating an admin token; it recommends a replacement token with the same permissions only if necessary."
+          },
+          {
+            "id": 4,
+            "pass": true,
+            "evidence": "States the safe sequence: create the new token, update the CI secret, restart or redeploy consumers, verify CI, then revoke the old token."
+          }
+        ],
+        "summary": "All criteria pass."
+      }
+    },
+    {
+      "id": "trouble-plugin-no-fire",
+      "run": 1,
+      "pass": false,
+      "judgement": {
+        "pass": false,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "The response addresses InfluxDB 3 Processing Engine plugin triggers and troubleshooting."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "It checks Processing Engine enablement, verifies trigger specifications against event types, and queries system.processing_engine_logs."
+          },
+          {
+            "id": 3,
+            "pass": false,
+            "evidence": "The response discusses clustered deployment and trigger placement, but does not explicitly state that cluster --node-spec issues are outside the covered scope."
+          },
+          {
+            "id": 4,
+            "pass": true,
+            "evidence": "The logs query uses event_time, log_level, and log_text, with trigger_name used in the WHERE clause."
+          }
+        ],
+        "summary": "Fails criterion 3 because it addresses cluster placement instead of explicitly excluding --node-spec issues."
+      }
+    },
+    {
+      "id": "trouble-pasted-token",
+      "run": 1,
+      "pass": true,
+      "judgement": {
+        "pass": true,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "States that the exposed credential should be treated as compromised and recommends immediate rotation and revocation."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "Does not reproduce any portion of the literal credential; it refers to it only generically."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "Explains likely authentication causes and provides checks for environment variables, CLI configuration, host targeting, credential status, and response-code interpretation."
+          }
+        ],
+        "summary": "All three criteria pass."
+      }
+    },
+    {
+      "id": "trouble-pasted-token-revoke",
+      "run": 1,
+      "pass": true,
+      "judgement": {
+        "pass": true,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "It says to treat the token as compromised, create a replacement, and revoke the leaked token, explaining the exposure risk."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "It provides an `influxdb3 delete token` CLI command and token creation guidance."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "It does not repeat any portion of the literal exposed token string."
+          }
+        ],
+        "summary": "All three criteria pass."
+      }
+    },
+    {
+      "id": "trouble-defer-performance",
+      "run": 1,
+      "pass": true,
+      "judgement": {
+        "pass": true,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "States: \"This skill doesn’t cover performance tuning.\""
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "Provides immediate triage: select only needed columns, add a selective time filter, and use LIMIT."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "Does not discuss query plan analysis or DataFusion specifics."
+          },
+          {
+            "id": 4,
+            "pass": true,
+            "evidence": "Does not discuss cardinality remediation."
+          }
+        ],
+        "summary": "All four criteria are satisfied."
+      }
+    },
+    {
+      "id": "trouble-defer-cluster-plugin",
+      "run": 1,
+      "pass": false,
+      "judgement": {
+        "pass": false,
+        "checks": [
+          {
+            "id": 1,
+            "pass": false,
+            "evidence": "The response presents cluster placement as a documented configuration issue and recommends reconfiguring it; it does not say cluster placement is not covered."
+          },
+          {
+            "id": 2,
+            "pass": false,
+            "evidence": "The response introduces `--node-spec` as something to check and update, implying unsupported placement semantics without substantiation."
+          },
+          {
+            "id": 3,
+            "pass": false,
+            "evidence": "The response does not mention that single-node deployments do not have this routing concern."
+          },
+          {
+            "id": 4,
+            "pass": false,
+            "evidence": "The response links to the Processing Engine page, but it does not point to official cluster documentation for the current guidance."
+          }
+        ],
+        "summary": "The response fails all four criteria."
+      }
+    },
+    {
+      "id": "write-partial-400",
+      "run": 1,
+      "pass": false,
+      "judgement": {
+        "pass": false,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "States that by default the endpoint partially accepts the batch and that the valid 999 lines are already stored."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "Instructs fixing line 347 and resending only that line and other rejected lines, not the whole batch."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "States that with accept_partial=false, nothing was written and the entire batch must be resent."
+          },
+          {
+            "id": 4,
+            "pass": false,
+            "evidence": "Refers generally to lines listed in the 400 response body, but does not specifically identify the response data array."
+          }
+        ],
+        "summary": "Fails criterion 4, so the response does not pass all criteria."
+      }
+    },
+    {
+      "id": "trouble-v2-write-403",
+      "run": 1,
+      "pass": true,
+      "judgement": {
+        "pass": true,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "States that before 3.10 the endpoint returned 401, while in 3.10+ including 3.11 it returns 403 for a valid token lacking target-database permission."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "Explicitly classifies both 401 and 403 as non-retriable token/configuration errors."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "Instructs using a token scoped with write permission for the target database."
+          },
+          {
+            "id": 4,
+            "pass": true,
+            "evidence": "Does not echo or invent any actual token value; it only gives a generic scope pattern."
+          }
+        ],
+        "summary": "All four criteria are satisfied."
+      }
+    },
+    {
+      "id": "write-duplicate-tag-key",
+      "run": 1,
+      "pass": false,
+      "judgement": {
+        "pass": false,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "Identifies that the line protocol repeats the `host` tag key."
+          },
+          {
+            "id": 2,
+            "pass": false,
+            "evidence": "Mentions rejection beginning at 3.9.8, but omits the required 3.10.3 and 3.11.0 versions and does not explicitly state the 400 response."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "States that 3.9.2 may accept the input and can crash-loop during WAL replay."
+          },
+          {
+            "id": 4,
+            "pass": true,
+            "evidence": "Recommends upgrading to at least 3.9.8 and validating or deduplicating tag keys before sending."
+          }
+        ],
+        "summary": "Fails criterion 2 because it does not provide all required fixed versions or the 400 status."
+      }
+    },
+    {
+      "id": "cli-write-output-parse",
+      "run": 1,
+      "pass": true,
+      "judgement": {
+        "pass": true,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "The response explains that InfluxDB 3 Core 3.10 changed successful `influxdb3 write` output from `success` to a throughput report."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "The response recommends using `--quiet`/`-q` and checking the command's exit status instead of parsing output text."
+          }
+        ],
+        "summary": "Both criteria are satisfied."
+      }
+    },
+    {
+      "id": "plugins-disable-package-install",
+      "run": 1,
+      "pass": false,
+      "judgement": {
+        "pass": false,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "The command uses --disable-package-management, appropriate for InfluxDB 3.11.5."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "The response does not present --package-manager disabled as the 3.11 flag or label it deprecated."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "The response explicitly says to pre-install required dependencies."
+          },
+          {
+            "id": 4,
+            "pass": false,
+            "evidence": "The response does not suggest checking that the target binary accepts the flag."
+          }
+        ],
+        "summary": "Fails criterion 4 because it omits a suggestion to verify that the target binary accepts the flag."
+      }
+    },
+    {
+      "id": "plugins-logs-time-column",
+      "run": 1,
+      "pass": false,
+      "judgement": {
+        "pass": false,
+        "checks": [
+          {
+            "id": 1,
+            "pass": false,
+            "evidence": "The response recommends `event_time` and says `time` applies to older schemas, but does not state that `time` is the physical column in 3.11.0 or that `event_time` is a virtual alias."
+          },
+          {
+            "id": 2,
+            "pass": false,
+            "evidence": "The response does not say that `event_time` works on every version, including versions before 3.11."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "The response does not explicitly claim that either `time` or `event_time` is invalid on 3.11."
+          }
+        ],
+        "summary": "Fails criteria 1 and 2; passes criterion 3."
+      }
+    },
+    {
+      "id": "plugins-async-retry-limit",
+      "run": 1,
+      "pass": true,
+      "judgement": {
+        "pass": true,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "States that InfluxDB 3.11.0+ asynchronous triggers retry a limited number of times and then discard the failed invocation."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "States that releases before 3.11.0 retry without limit."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "Does not state a retry count and directs the reader to the server's release notes for the exact version-specific limit."
+          }
+        ],
+        "summary": "All three criteria are satisfied."
+      }
+    },
+    {
+      "id": "negative-cloud-tsm",
+      "run": 1,
+      "pass": true,
+      "judgement": {
+        "pass": true,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "The response provides Flux code only and does not generate InfluxDB 3 code or SQL."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "It explicitly distinguishes InfluxDB Cloud (TSM), recommends a Flux task, and links to the official Cloud downsampling guide."
+          }
+        ],
+        "summary": "Both criteria pass."
+      }
+    },
+    {
+      "id": "negative-oss-v2",
+      "run": 1,
+      "pass": false,
+      "judgement": {
+        "pass": false,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "The response provides a Flux query using from, range, filter, group, and aggregateWindow, rather than presenting InfluxDB 3 SQL as applicable to OSS 2.7."
+          },
+          {
+            "id": 2,
+            "pass": false,
+            "evidence": "Because the response references the InfluxDB 3 skill, it should point to the InfluxDB Documentation MCP server or the specified v2 llms-full.txt URL; instead, it links to a different Flux documentation page."
+          }
+        ],
+        "summary": "Criterion 1 passes, but criterion 2 fails, so the response does not pass overall."
+      }
+    },
+    {
+      "id": "flavor-bare-cloud",
+      "run": 1,
+      "pass": false,
+      "judgement": {
+        "pass": false,
+        "checks": [
+          {
+            "id": 1,
+            "pass": false,
+            "evidence": "The response gives product-specific InfluxDB 3 Cloud commands before asking which product the user means."
+          },
+          {
+            "id": 2,
+            "pass": false,
+            "evidence": "It does not name all candidate products in full; it uses shortened names such as “Cloud Serverless” and “Cloud Dedicated.”"
+          },
+          {
+            "id": 3,
+            "pass": false,
+            "evidence": "It shortens product names to “Cloud,” including “Cloud Serverless” and “Cloud Dedicated.”"
+          }
+        ],
+        "summary": "The response fails all three criteria."
+      }
+    },
+    {
+      "id": "lookup-docs-vs-live",
+      "run": 1,
+      "pass": false,
+      "judgement": {
+        "pass": false,
+        "checks": [
+          {
+            "id": 1,
+            "pass": false,
+            "evidence": "It declares the documentation value to be the expected default."
+          },
+          {
+            "id": 2,
+            "pass": false,
+            "evidence": "It says help text can be stale or incorrect, but does not explain that the documentation can also be wrong."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "It recommends verifying with a behavior test or asking InfluxData support."
+          },
+          {
+            "id": 4,
+            "pass": false,
+            "evidence": "It identifies a mismatch but does not explicitly recommend reporting the discrepancy."
+          },
+          {
+            "id": 5,
+            "pass": false,
+            "evidence": "It states that 1000 is the expected default."
+          }
+        ],
+        "summary": "The response fails criteria 1, 2, 4, and 5, though it satisfies criterion 3."
+      }
+    },
+    {
+      "id": "write-compat-whole-batch",
+      "run": 1,
+      "pass": false,
+      "judgement": {
+        "pass": false,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "The response states that `/api/v2/write` is atomic and that none of the 500 lines are written after one invalid line returns 400."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "The response instructs the user to fix the bad line and resend the entire batch."
+          },
+          {
+            "id": 3,
+            "pass": false,
+            "evidence": "The response does not mention or distinguish `/api/v3/write_lp` and its default partial-write behavior."
+          }
+        ],
+        "summary": "The response satisfies criteria 1 and 2 but omits the required distinction from `/api/v3/write_lp`, so it fails overall."
+      }
+    },
+    {
+      "id": "install-core-docker",
+      "run": 1,
+      "pass": false,
+      "judgement": {
+        "pass": false,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "The command uses the image `influxdb:3-core`."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "The command sets `--node-id node0`, `--object-store file`, and `--data-dir /var/lib/influxdb3`, with `/var/lib/influxdb3` backed by a host-mounted volume."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "The command does not include `--cluster-id` or any license flags."
+          },
+          {
+            "id": 4,
+            "pass": false,
+            "evidence": "The response does not instruct the developer to create an admin token with `influxdb3 create token --admin`."
+          }
+        ],
+        "summary": "Three criteria pass, but the required admin-token creation instruction is missing."
+      }
+    },
+    {
+      "id": "install-enterprise-license",
+      "run": 1,
+      "pass": true,
+      "judgement": {
+        "pass": true,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "Provides a clearly marked email placeholder and explicit license type in the Docker command; it does not use a bare serve command."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "Uses the influxdb:3-enterprise image and passes --cluster-id, --license-email, and --license-type."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "States that a verification link is sent by email and instructs the user to follow it."
+          },
+          {
+            "id": 4,
+            "pass": true,
+            "evidence": "Explicitly says Docker cannot show the interactive prompt and provides non-interactive license arguments instead."
+          }
+        ],
+        "summary": "All four criteria are satisfied."
+      }
+    },
+    {
+      "id": "install-object-store-required",
+      "run": 1,
+      "pass": true,
+      "judgement": {
+        "pass": true,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "The response says `influxdb3 serve` \"requires `--object-store`; it has no default.\""
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "It recommends `--object-store file --data-dir <directory>` for local use."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "The response does not recommend memory and does not claim that file or memory is the default."
+          }
+        ],
+        "summary": "All criteria pass."
+      }
+    },
+    {
+      "id": "install-other-methods",
+      "run": 1,
+      "pass": false,
+      "judgement": {
+        "pass": false,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "Recommends the official DEB or RPM package for production and cites systemd sandboxing."
+          },
+          {
+            "id": 2,
+            "pass": false,
+            "evidence": "The response does not mention Docker as another option."
+          },
+          {
+            "id": 3,
+            "pass": true,
+            "evidence": "Points to the Core install documentation for package steps."
+          },
+          {
+            "id": 4,
+            "pass": true,
+            "evidence": "Does not provide a full hardening walkthrough or systemd unit configuration."
+          }
+        ],
+        "summary": "Fails criterion 2 because Docker is not mentioned."
+      }
+    },
+    {
+      "id": "ping-auth-default",
+      "run": 1,
+      "pass": false,
+      "judgement": {
+        "pass": false,
+        "checks": [
+          {
+            "id": 1,
+            "pass": true,
+            "evidence": "Explains that /ping requires authentication by default and that 401 confirms the server is reachable and running."
+          },
+          {
+            "id": 2,
+            "pass": true,
+            "evidence": "Shows a GET request using an Authorization: Bearer header with a token variable."
+          },
+          {
+            "id": 3,
+            "pass": false,
+            "evidence": "Does not mention --disable-authz ping (3.10+) or that it applies to health, ping, and metrics."
+          },
+          {
+            "id": 4,
+            "pass": true,
+            "evidence": "Does not suggest HEAD or curl -I; it explicitly says to use GET and not HEAD."
+          }
+        ],
+        "summary": "Fails because criterion 3 is missing."
+      }
+    }
+  ]
+}

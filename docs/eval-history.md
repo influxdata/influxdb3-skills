@@ -4,6 +4,48 @@ Release-bar summaries of the formal eval suite (`evals/prompts.jsonl`, run with 
 Per-run results stay in the gitignored `evals/results/` and `evals/claude-cases/results/`.
 The pass bar is in `evals/README.md`.
 
+## 0.7.2 on InfluxDB 3.11.5
+
+Skills as in `7eaa540` and criteria as in `3705ae8` (`55ad7c9`). Evidence is in `evals/evidence/v0.7.2/`.
+The 0.7.2 changes add five cases (four in the new `install` category, one `/ping` authentication case in `troubleshooting`) and add `install` to the connect, write, query, schema, and flavor bar.
+
+### Claude Code — 2026-09-29
+
+- Full suite: 72 cases, 3 runs per case, default Haiku judge, Claude Code 2.1.284. Cost $38.90, 82 minutes.
+- Haiku-judged result: adversarial 9/9, negative 10/12, install/connect/write/query/schema/flavor 29/32. The negative bar failed.
+- Reran the five failing bar cases with the Sonnet judge, 3 runs each, at $2.69. This is the same step the 0.7.1 evidence used. No skill text or criterion changed between the two runs.
+- Layered result from `evals/gate.mjs`: adversarial 9/9, negative 11/12 (92%), install/connect/write/query/schema/flavor 31/32 (97%). **Claude passes the bar.**
+
+| Case | Haiku full suite | Sonnet rerun |
+|---|---|---|
+| `install-other-methods` | 0/3 | 3/3 |
+| `admin-defer-airgapped` | 0/3 | 3/3 |
+| `write-precision` | 1/3 | 3/3 |
+| `http-curl-cloud-dedicated` | 0/3 | 1/3 |
+| `trouble-defer-cluster-plugin` | 1/3 | 0/3 |
+
+- Still failing: `http-curl-cloud-dedicated` (connect, 1/3), `trouble-defer-cluster-plugin` (negative, 0/3), and three cases the gate doesn't score: `admin-db-crud`, `trouble-silent-auto-create`, `trouble-token-rotate-aftermath` (each 1/3).
+- The four other install cases and `ping-auth-default` passed 3/3 with the Haiku judge, except `install-other-methods` above.
+- Read the `trouble-defer-cluster-plugin` and `install-other-methods` answers. They defer or name the packages and point to the docs, so the failures look like judge strictness. This is a reading, not a confirmed cause.
+
+### Codex — 2026-09-29
+
+- Full suite, one run per case, `gpt-5.6-terra` with the `gpt-5.6-luna` judge. 44/72 passed.
+- Adversarial 7/9, negative 9/12, install/connect/write/query/schema/flavor 18/32. Advisory only; Codex doesn't block a release.
+- Install cases: `install-enterprise-license` and `install-object-store-required` passed. `install-core-docker`, `install-other-methods`, and `ping-auth-default` did not.
+
+### Targeted reruns — 2026-09-29
+
+Before the full suite, on the tree just before `55ad7c9`, 3 runs per case:
+
+| Case | Claude (Sonnet judge) | Codex |
+|---|---|---|
+| `install-enterprise-license` | 3/3 after the change; 3/3 before | 3/3 after; 0/3 before |
+| `install-object-store-required` | 3/3 after; 2/3 before | 3/3 after; 0/3 before |
+
+- What changed: the Enterprise license instruction now says to give the full command with a placeholder email and to ask for the real values before running it. The old text made Codex ask a question and give no command. The criteria for both cases were also loosened, so the before and after counts don't compare like for like.
+- Not part of the release evidence: these runs are on an earlier tree and aren't committed.
+
 ## 0.7.0 on InfluxDB 3.11.5
 
 Both runs used Claude Code 2.1.283, 65 cases, one run per case with the plugin loaded (`--ablation none`), and the default LLM judge (three votes per case).

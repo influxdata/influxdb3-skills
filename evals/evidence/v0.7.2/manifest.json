@@ -1,0 +1,41 @@
+{
+  "release": "v0.7.2",
+  "skills_tree": "7eaa540",
+  "prompts_blob": "3705ae8",
+  "run_by": "jstirnaman",
+  "claude": [
+    {
+      "file": "claude-full-suite.json",
+      "date": "2026-09-29",
+      "cases": "all 72",
+      "runs": 3,
+      "judge": "haiku",
+      "claude_code": "2.1.284",
+      "skills_tree": "7eaa540",
+      "prompts_blob": "3705ae8"
+    },
+    {
+      "file": "claude-reruns.json",
+      "date": "2026-09-29",
+      "cases": "install-other-methods, admin-defer-airgapped, trouble-defer-cluster-plugin, http-curl-cloud-dedicated, write-precision",
+      "runs": 3,
+      "judge": "sonnet",
+      "claude_code": "2.1.284",
+      "skills_tree": "7eaa540",
+      "prompts_blob": "3705ae8"
+    }
+  ],
+  "codex": [
+    {
+      "file": "codex-full-suite.json",
+      "date": "2026-09-29",
+      "cases": "all 72",
+      "runs": 1,
+      "model": "gpt-5.6-terra",
+      "judge": "gpt-5.6-luna",
+      "skills_tree": "7eaa540",
+      "prompts_blob": "3705ae8"
+    }
+  ],
+  "note": "Full suite and reruns on the released skills/ and prompts.jsonl. The reruns cover the five Claude cases that failed the haiku-judged full suite and count the way the v0.7.1 reruns did."
+}
