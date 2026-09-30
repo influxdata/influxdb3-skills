@@ -14,6 +14,44 @@ All three trigger types share the same `influxdb3_local` runtime API (`reference
 
 ---
 
+## Repeated runs on InfluxDB 3 Enterprise
+
+These rules come from the InfluxDB 3 Enterprise 3.12 docs and release notes.
+
+- **WAL triggers.** Every process node (`--mode process` or `all`) follows the WAL of every ingest node through object storage, so a WAL trigger fires for writes sent to any ingest node. Before 3.12, it fired only on the node that received the write. With `--node-spec all` (the default) and more than one process node, each owning node runs the trigger, so one write can run the plugin more than once. A new process node starts from the present and doesn't fire on older WAL.
+- **`--node-spec` (3.12+)** selects which process nodes' schedulers own the trigger. An owning scheduler spreads runs across the running process nodes that set `--internode-bind-addr`. To run a WAL trigger once per write, pin it with `--node-spec nodes:<node-id>`.
+- **Plugin files.** A node that doesn't have the plugin file declines the run, and another node runs it. Keep `--plugin-dir` contents and installed packages the same on every process node.
+- **Restarts.** Each process node saves its scheduler state to object storage. After a restart it replays schedule ticks that came due while it was down, resumes the WAL where it stopped, and keeps pending retries. Replay is at-least-once. Triggers disabled or deleted while the node was down stay that way.
+
+So a plugin must produce the same result when it runs twice for the same batch or tick:
+
+```python
+from datetime import timedelta, timezone
+
+def process_scheduled_call(influxdb3_local, call_time, args=None):
+    # Idempotent rollup: recompute the window and write it at the tick's time.
+    # A replayed tick overwrites the same row instead of adding a second one.
+    end = call_time.replace(tzinfo=timezone.utc, microsecond=0)  # call_time is naive UTC
+    start = end - timedelta(minutes=1)
+    rows = influxdb3_local.query(
+        "SELECT count(*) AS n FROM sensors WHERE time >= $start AND time < $end",
+        args={"start": start.isoformat(), "end": end.isoformat()},
+    )
+    window_end = int(end.timestamp()) * 1_000_000_000
+    line = LineBuilder("sensors_rollup").tag("window", "1m")
+    line.int64_field("rows", rows[0]["n"] if rows else 0)
+    line.time_ns(window_end)
+    influxdb3_local.write_sync(line, no_sync=False)
+```
+
+- Derive the timestamp and tags of each written row from the input (the source row's `time`, or `call_time`), never from the wall clock at run time.
+- Recompute totals for a window instead of incrementing a counter per run.
+- Deduplicate external side effects (alerts, webhooks) on a key derived from the event. The cache is per node and cleared on restart, so it can't deduplicate across nodes or restarts.
+
+Request triggers don't replay. If a node restarts mid-request, the client sees the connection drop and can retry.
+
+---
+
 ## WAL / data-write trigger
 
 ```python

@@ -15,10 +15,10 @@ description: >-
   AttributeError, or cache surprises. For external apps that connect to
   InfluxDB 3, use influxdb3 instead.
 metadata:
-  version: "0.7.2"
-  docs_checked: "2026-09-23"
-  docs_checked_against: "influxdb3-core 3.11.5, influxdb3-enterprise 3.11.5"
-  live_verified: "2026-05-15"
+  version: "0.8.0"
+  docs_checked: "2026-09-30"
+  docs_checked_against: "influxdb3-core 3.12.0-0.rc.2, influxdb3-enterprise 3.12.0-0.rc.2"
+  live_verified: "2026-09-30"
 ---
 
 # InfluxDB 3 Processing Engine Plugins Skill
@@ -68,6 +68,22 @@ Every plugin gets `influxdb3_local` injected (no `import` needed). Five things t
 For WAL plugins specifically, `table_batches` items are **plain dicts**, not class instances. Access via key: `batch["table_name"]`, `batch["rows"]`. NOT attributes.
 
 Full surface: `references/runtime-api.md`.
+
+### Write plugins that tolerate a repeated run
+
+On InfluxDB 3 Enterprise 3.12+, a plugin can run more than once for the same event:
+
+- Every process node follows every ingest node's WAL, so with the default `--node-spec all` and more than one process node, a WAL trigger can fire once per process node for each write.
+- After a restart, a process node replays schedule ticks that came due while it was down and resumes the WAL where it stopped. Replay is at-least-once, so a run that finished just before a crash can run again.
+
+So write every plugin so that a repeated run is safe, even on a single node, where a later move to a cluster would otherwise break it:
+
+- Write derived rows with a deterministic timestamp and tag set, such as the source row's time or the schedule tick's time, not "now". A repeated write then overwrites the same row instead of adding one.
+- Don't count by incrementing a stored value per run. Recompute the value from the source data for a time window.
+- Guard external side effects, such as alerts or HTTP calls, with a key derived from the event (the cache is per node and cleared on restart, so it isn't enough across nodes).
+
+To run a WAL trigger once per write in a multi-process-node cluster, pin it to one node with `--node-spec nodes:<node-id>`. Keep `--plugin-dir` contents and installed packages the same on every process node: a node without the plugin file declines the run, and another node runs it.
+Details: `references/trigger-types.md` → "Repeated runs on InfluxDB 3 Enterprise".
 
 ## 5. Single-file vs multi-file plugins
 
@@ -163,6 +179,8 @@ When your plugin isn't behaving — trigger doesn't fire, errors in the logs, de
 | `'dict' object has no attribute 'rows'` | `influxdb3` skill → `references/quirks.md` entry 3 |
 | `Schema error: No field named plugin_name` (or similar) on `system.processing_engine_logs` | `influxdb3` skill → `references/quirks.md` entry 10 |
 | Cache values disappeared / counter reset | `references/troubleshooting.md` → "Cache lifecycle gotchas" |
+| Plugin ran twice for one write or tick (Enterprise) | `references/troubleshooting.md` → "Plugin runs more than once" |
+| Request trigger returns `503 trigger queue is full` | `references/troubleshooting.md` → "Request trigger returns 503" |
 | Plugin runs but writes don't show up | back to main skill: `references/troubleshooting.md` → "Silent auto-create misroute" |
 
 Full reference: `references/troubleshooting.md`.
@@ -171,13 +189,13 @@ Full reference: `references/troubleshooting.md`.
 
 If the developer asks about any of these, defer politely:
 
-- **Distributed cluster placement** (`--node-spec`, ingester vs query nodes, WAL fan-out, schedule-write-back patterns) → not covered; route to the docs.
+- **Distributed cluster placement** (choosing nodes for each trigger, ingester vs query vs process nodes, schedule-write-back patterns, retry and scheduler tuning) → not covered; route to the docs. The repeated-run rule in §4 and pinning a WAL trigger with `--node-spec nodes:<node-id>` are covered.
 - **Full air-gapped setup** (offline mirrors, custom plugin repos, offline `pip` installs) → lead with the deferral and the docs link in `references/dependencies.md` → "Air-gapped / locked-down environments". Then give only that section's version-specific flag and the pre-install rule; don't write offline install steps.
 - **Full Explorer-compatible plugin metadata schemas** → not covered; see `references/plugin-structure.md` → 'Plugin metadata docstring' for a pointer to the canonical schema."
 
 Sample deferral:
 
-> "Plugin distributed-cluster placement isn't covered by this skill. The official docs at https://docs.influxdata.com/influxdb3/enterprise/plugins/ cover the cluster patterns; in this skill I can help you with single-node plugin work."
+> "Plugin distributed-cluster placement isn't covered by this skill. The official docs at https://docs.influxdata.com/influxdb3/enterprise/plugins/ cover the cluster patterns. In this skill I can help you write the plugin so a repeated run is safe, which a cluster needs."
 
 ## When in doubt, fetch fresh docs
 
