@@ -39,6 +39,8 @@ Group related measurements that share tag schema into one measurement with a `me
 
 Adding new tags or fields to an existing measurement is safe — old rows just have NULLs in the new columns. Changing a field's **type** is not safe (see `references/writing.md` → "Type stickiness"). Removing a tag/field doesn't drop existing data; it just stops new writes from using it.
 
+In an InfluxDB 3 Enterprise database with explicit schema mode (3.12+), new tags and fields aren't added by writes. Declare them first with `influxdb3 update table` or `PATCH /api/v3/configure/table`. Declarations are add-only. See `references/writing.md` → "Databases with explicit schema mode".
+
 ## Where to fetch more
 
 `references/doc-urls.md` → product flavor docs for schema details specific to your deployment.

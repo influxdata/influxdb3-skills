@@ -47,6 +47,9 @@ reading it:
 | Connection refused / DNS failure | [Auth failures](#auth-failures) |
 | Write returns 200/204 but data isn't where I expect | [Silent auto-create misroute](#silent-auto-create-misroute) |
 | Write fails with 400 (line protocol parse) | [Write failures](#write-failures) |
+| Write fails with 400 `... which uses explicit schemas` | [Write failures](#400--table-or-column-not-defined-explicit-schema-mode) |
+| Write or query returns 429 | [Write failures](#429--too-many-requests) or [Query failures](#query-returns-429-405-or-resources-exhausted) |
+| Query returns 405 | [Query failures](#query-returns-429-405-or-resources-exhausted) |
 | Write succeeds but row count grows wrong | [Silent auto-create misroute](#silent-auto-create-misroute) |
 | Query returns 0 rows / wrong rows | [Query failures](#query-failures) |
 | Query schema mismatch (`No field named X`) | [Query failures](#query-failures) |
@@ -154,15 +157,35 @@ See `quirks.md` entry 11.
 
 **Fix:** correct the rejected lines and resend only those after a partial write. Resend the corrected batch if the request used `accept_partial=false` or a compatibility endpoint. Pre-validate client-side before sending in production.
 
+### 400 — table or column not defined (explicit schema mode)
+
+**What you'll see (InfluxDB 3 Enterprise 3.12+):**
+
+```
+table 'sensor' is not defined in database 'sensor_data', which uses explicit schemas; create the table with the /api/v3/configure/table API before writing to it
+column 'humidity' (iox::column_type::field::float) is not defined in table 'sensor' of database 'sensor_data', which uses explicit schemas; add the column with the /api/v3/configure/table API before writing to it
+```
+
+**Diagnose:** the database was created with explicit schema mode, so writes don't create tables or columns.
+A tag written as a field, or a field written as a tag, is also undeclared.
+Check the mode with `SELECT database_name, schema_mode FROM system.databases` against the `_internal` database.
+
+**Fix:** declare the table or column with an admin token (`influxdb3 create table`, `influxdb3 update table --tags ... --fields name:type`, or `POST`/`PATCH /api/v3/configure/table`), then resend the rejected lines.
+Don't retry unchanged, and don't give the app's write path an admin token to declare columns on the fly.
+The mode can't be changed; to go back to schema-on-write, create a new database. See `references/writing.md` → "Databases with explicit schema mode".
+In a cluster, a column declared on another node moments ago can be rejected until the writing node's catalog syncs (about 1 second by default). That rejection clears on retry.
+
 ### 413 — payload too large
 
 **Diagnose:** batch size exceeds the server's per-request limit. Limits differ by product; check the docs for the user's product.
 
 **Fix:** reduce batch size. Recommended: 1,000–10,000 points per write call (matches the batching rule in `references/writing.md`).
 
-### 429 — rate limited
+### 429 — too many requests
 
-**Diagnose:** Cloud Serverless rate-limits writes per organization. Self-hosted Core/Enterprise typically does not unless you've configured it.
+**Diagnose:** InfluxDB Cloud Serverless rate-limits writes per organization.
+Starting in 3.12, Core and Enterprise return 429 with `wal buffer is full; writes are temporarily rejected, retry shortly` when the server's WAL buffer is full. The request wasn't written.
+Earlier Core and Enterprise releases didn't return 429 for writes.
 
 **Fix:** retry with exponential backoff and jitter. Documented in `references/writing.md` → "Error handling".
 
@@ -204,6 +227,12 @@ SELECT column_name, data_type
 FROM information_schema.columns
 WHERE table_name = '<measurement>';
 ```
+
+### Query returns 429, 405, or resources exhausted
+
+- **405 (InfluxDB 3 Enterprise 3.12+):** the node doesn't run `query` mode, so it refuses data queries. Send queries to a query node. System table queries still work on any node.
+- **429, or a 5xx that says resources are exhausted (InfluxDB 3 Enterprise 3.12+):** the query node failed this query to stay inside its memory or file cache budget. Retry with backoff. If it repeats, narrow the time range, select fewer columns, or add a `LIMIT`. Sizing the cache is operator tuning, which this skill defers (§9 of `SKILL.md`).
+- **Slow to start, then succeeds:** starting in 3.12, queries over the `--max-concurrent-queries` limit wait for a slot. Set a client-side timeout.
 
 ## Admin failures
 

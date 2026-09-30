@@ -68,6 +68,22 @@ LIMIT 1000 OFFSET 5000
 
 `SELECT * FROM sensor` against a large measurement will return everything — slow and expensive. Always include a `WHERE time >= ...` filter or a `LIMIT`. The skill should add one even if the developer didn't, and call it out.
 
+## Query errors to handle
+
+| Status | Meaning | What to do |
+|---|---|---|
+| 400 | SQL or planning error, such as an unknown table or column | Fix the query. Don't retry. |
+| 401 / 403 | Token missing, invalid, or lacking `read` on the database | Fix the token. Don't retry. |
+| 405 | InfluxDB 3 Enterprise 3.12+: the node doesn't run `query` mode, so it refuses data queries (system table queries still work) | Send queries to a node that runs `query` mode. Don't retry on the same node. |
+| 429, or a 5xx whose message says resources are exhausted | InfluxDB 3 Enterprise 3.12+: the query node ran out of its memory or file cache budget and failed this query instead of the whole node running out of memory. The docs name the message `file access cache budget exhausted` and say HTTP returns `429` and Flight returns `RESOURCE_EXHAUSTED` | Retry after a delay with exponential backoff and jitter, and cap the retries. If it keeps failing, narrow the time range, select fewer columns, or add a `LIMIT`. |
+| Other 5xx | Server-side error | Retry with backoff. |
+
+Starting in 3.12, Core and Enterprise limit concurrent queries by default (`--max-concurrent-queries`).
+Queries over the limit wait for a slot instead of failing, so set a client-side timeout on each query.
+
+Starting in 3.12 (DataFusion 52.5), `pow()` and `power()` with integer arguments return a float.
+`system.nodes` and `system.tables` gained columns before their existing ones, so select system table columns by name, not with `SELECT *` and positional parsing.
+
 ## InfluxQL — only when forced
 
 If the developer asks for InfluxQL on a fresh project, push back: "v3 SQL is the recommended query language. InfluxQL is supported for v1/v2 compatibility but lacks some v3 features. Are you sure?" If they confirm, use the `/api/v3/query_influxql` endpoint or the client's InfluxQL mode.
