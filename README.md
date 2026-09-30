@@ -95,8 +95,8 @@ Generated code covers Python, JavaScript and TypeScript, Go, Java, C#, and raw H
 - **Connect and authenticate:** reads the host, token, and database from environment variables, never inlines a token, and checks that `.gitignore` covers `.env`.
 - **Detect Core or Enterprise:** probes `/ping` and reads the `x-influxdb-build` and `x-influxdb-version` response headers.
   If the result is ambiguous, the agent asks you.
-- **Write data:** line protocol, batching, retriable and non-retriable errors, and which write endpoints accept partial writes.
-- **Query data:** InfluxDB 3 SQL by default, parameterized user input, pagination, and time-bucket queries.
+- **Write data:** line protocol, batching, retriable and non-retriable errors (including `429` retries), which write endpoints accept partial writes, and databases with explicit schema mode on InfluxDB 3 Enterprise.
+- **Query data:** InfluxDB 3 SQL by default, parameterized user input, pagination, time-bucket queries, and query errors to retry.
 - **Design schemas:** tags or fields, naming conventions, and stable column types.
 - **Provision databases:** create, list, update the retention period, and delete, with the CLI or the HTTP API.
 - **Manage tokens:** admin tokens and scoped resource tokens (`db:<name>:read,write`), listing with `system.tokens`, and safe rotation.
@@ -118,6 +118,7 @@ Generated code covers Python, JavaScript and TypeScript, Go, Java, C#, and raw H
 - **Manage plugin dependencies:** `influxdb3 install package` installs into the server's embedded virtual environment.
   The skill doesn't suggest `python -m venv` against the system Python.
 - **Keep state across runs:** trigger-local and global cache namespaces with TTLs.
+- **Tolerate repeated runs:** plugins that are safe when an InfluxDB 3 Enterprise cluster replays a schedule tick or runs a WAL trigger on more than one process node.
 - **Diagnose plugin problems:** triggers that don't fire, dependency `ImportError`s, `table_batches` mistakes, and cache lifecycle issues.
 
 Both skills cover all three trigger types on single-node deployments.
@@ -129,7 +130,7 @@ For these topics, the skills point to the official docs instead of guessing:
 - **Performance tuning:** slow queries, slow writes, cardinality remediation, and workload-specific batch-size tuning.
 - **Migration from InfluxDB v1 or v2 to InfluxDB 3.**
 - **App-pattern templates:** IoT pipelines, dashboards, alerts, and downsampling.
-- **Multi-node plugin deployments:** cluster placement and multi-node patterns.
+- **Multi-node plugin deployments:** cluster placement and multi-node patterns, beyond pinning a WAL trigger to one node.
 - **Air-gapped setup:** offline mirrors, custom plugin repos, and offline package installs.
 - **Product-specific admin for InfluxDB Cloud Serverless, InfluxDB Cloud Dedicated, and InfluxDB Clustered:**
   these products use different APIs to manage tokens and databases.

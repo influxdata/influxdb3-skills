@@ -4,6 +4,24 @@ All notable changes to this skill will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.8.0] — 2026-09-30
+
+Updated for InfluxDB 3 Core and Enterprise 3.12, checked against the 3.12 draft docs and 3.12.0-0.rc.2.
+
+### Added
+- Explicit schema mode (InfluxDB 3 Enterprise 3.12+): create a database with `--schema-mode explicit` or `"schema_mode": "explicit"`, declare tables and columns with `influxdb3 create table` and `influxdb3 update table` or `POST` and `PATCH /api/v3/configure/table`, and handle the 400 for an undeclared table or column. Core rejects explicit mode. Live-verified on Enterprise and Core 3.12.0-0.rc.2.
+- Write retries for `429`: starting in 3.12, Core and Enterprise return `429` (`wal buffer is full; ... retry shortly`) when the WAL buffer is full. Documented and read from the 3.12.0-0.rc.2 source; not reproduced live.
+- Query error handling: `405` from Enterprise nodes that don't run `query` mode, resource-exhausted failures to retry with backoff, and queued queries that need a client-side timeout. The docs say resource-exhausted queries return `429`; the 3.12.0-0.rc.2 source maps them to `500`, so the skill tells clients to retry either.
+- Processing Engine plugins on Enterprise 3.12 clusters: WAL triggers run on process nodes for writes to any ingest node, schedule ticks replay after a restart, and with `--node-spec all` a WAL trigger can run once per process node. Plugins must tolerate a repeated run. The skill has an idempotent scheduled rollup, live-run on Enterprise 3.12.0-0.rc.2. Cluster placement beyond pinning a WAL trigger to one node stays deferred.
+- Request triggers that return `503 trigger queue is full` (Enterprise 3.12+).
+- The create-trigger API no longer needs `trigger_settings` or `disabled` (3.12+). Live-verified on Enterprise 3.12.0-0.rc.2.
+- `pow()` and `power()` with integer arguments return a float (3.12), and system table columns should be selected by name.
+- Write timestamp bounds (`--write-timestamp-max-past` and `--write-timestamp-max-future`, Enterprise 3.12+) as a cause of rejected backfills.
+
+### Fixed
+- The HTTP plugin upload used `PUT /api/v3/plugins/files?path=` with an `application/octet-stream` body, which returns `415`. It now uses `POST /api/v3/plugins/files` with a JSON body of `plugin_name` and `content`. `PUT` takes the same body and replaces an existing trigger's file.
+- Package installs: a failed install returns an error on Enterprise 3.12, but Core 3.12.0-0.rc.2 still returned `200` for a package that doesn't exist. The skill says to confirm the import on Core.
+
 ## [0.7.2] — 2026-09-29
 
 ### Fixed
