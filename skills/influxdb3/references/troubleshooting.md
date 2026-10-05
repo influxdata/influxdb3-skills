@@ -50,6 +50,7 @@ reading it:
 | Write fails with 400 `... which uses explicit schemas` | [Write failures](#400--table-or-column-not-defined-explicit-schema-mode) |
 | Write or query returns 429 | [Write failures](#429--too-many-requests) or [Query failures](#query-returns-429-405-or-resources-exhausted) |
 | Query returns 405 | [Query failures](#query-returns-429-405-or-resources-exhausted) |
+| <!-- known-issue: no-field-tables-500 -->Query returns 500 `field_family_projections is required`<!-- /known-issue --> | [Query failures](#500--field_family_projections-is-required) |
 | Write succeeds but row count grows wrong | [Silent auto-create misroute](#silent-auto-create-misroute) |
 | Query returns 0 rows / wrong rows | [Query failures](#query-failures) |
 | Query schema mismatch (`No field named X`) | [Query failures](#query-failures) |
@@ -231,8 +232,26 @@ WHERE table_name = '<measurement>';
 ### Query returns 429, 405, or resources exhausted
 
 - **405 (InfluxDB 3 Enterprise 3.12+):** the node doesn't run `query` mode, so it refuses data queries. Send queries to a query node. System table queries still work on any node.
-- **429, or a 5xx that says resources are exhausted (InfluxDB 3 Enterprise 3.12+):** the query node failed this query to stay inside its memory or file cache budget. Retry with backoff. If it repeats, narrow the time range, select fewer columns, or add a `LIMIT`. Sizing the cache is operator tuning, which this skill defers (§9 of `SKILL.md`).
+- **429 (InfluxDB 3 Enterprise 3.12+):** the query node failed this query to stay inside its memory or file cache budget. Retry with backoff. If it repeats, narrow the time range, select fewer columns, or add a `LIMIT`. Sizing the cache is operator tuning, which this skill defers (§9 of `SKILL.md`). <!-- known-issue: core-resources-exhausted-500 -->On InfluxDB 3 Core 3.12, the same failure returns `500` with a message that says resources are exhausted; handle it like a 429.<!-- /known-issue -->
 - **Slow to start, then succeeds:** starting in 3.12, queries over the `--max-concurrent-queries` limit wait for a slot. Set a client-side timeout.
+
+<!-- known-issue: no-field-tables-500 -->
+### 500 — `field_family_projections is required`
+
+**What you'll see (InfluxDB 3 Enterprise 3.12, upgraded storage engine):**
+
+```
+Internal error: WindowExecBuilder: field_family_projections is required. This issue was likely caused by a bug in DataFusion's code.
+```
+
+**Diagnose:** the table has tags but no fields.
+Queries on it fail this way, including `SELECT *` and `SELECT count(*)`.
+The message blames DataFusion, but this is an InfluxDB 3.12 bug.
+Don't report it as a DataFusion bug.
+
+**Fix:** add a field with `influxdb3 update table --fields name:type` or `PATCH /api/v3/configure/table`.
+Don't retry the query unchanged.
+<!-- /known-issue -->
 
 ## Admin failures
 

@@ -41,6 +41,12 @@ Adding new tags or fields to an existing measurement is safe — old rows just h
 
 In an InfluxDB 3 Enterprise database with explicit schema mode (3.12+), new tags and fields aren't added by writes. Declare them first with `influxdb3 update table` or `PATCH /api/v3/configure/table`. Declarations are add-only. See `references/writing.md` → "Databases with explicit schema mode".
 
+<!-- known-issue: no-field-tables-500 -->
+On InfluxDB 3 Enterprise 3.12 with the upgraded storage engine, a query on a table that has tags but no fields returns `500` (`field_family_projections is required`).
+Declare at least one field in every table you create.
+See `references/troubleshooting.md` → "500 — `field_family_projections is required`".
+<!-- /known-issue -->
+
 ## Where to fetch more
 
 `references/doc-urls.md` → product flavor docs for schema details specific to your deployment.

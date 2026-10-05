@@ -168,7 +168,7 @@ Details: `references/writing.md`. Batch-write code for each language: the table 
 - InfluxQL is for v1 and v2 compatibility only. If the developer asks for it, push back gently and suggest SQL.
 - InfluxDB 3 doesn't run Flux. Don't write Flux, even as a before-and-after comparison. Give the SQL.
 - Parameterize user input. Never concatenate it into a query string.
-- Handle query errors: retry 429 (or a 5xx that says resources are exhausted) with backoff, and narrow the time range if it repeats. On InfluxDB 3 Enterprise 3.12+, a 405 means the node doesn't run `query` mode. Set a client-side timeout, because queries over the concurrency limit wait for a slot.
+- Handle query errors: retry 429 with backoff, and narrow the time range if it repeats. <!-- known-issue: core-resources-exhausted-500 -->On InfluxDB 3 Core 3.12, the same failure returns 500 with a message that says resources are exhausted; handle it like a 429.<!-- /known-issue --> On InfluxDB 3 Enterprise 3.12+, a 405 means the node doesn't run `query` mode. Set a client-side timeout, because queries over the concurrency limit wait for a slot.
 
 Time idioms with `DATE_BIN`, pagination, parameterization for each language, and query error handling: `references/querying.md`.
 

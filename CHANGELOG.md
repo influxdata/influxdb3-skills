@@ -4,6 +4,15 @@ All notable changes to this skill will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+- Known-issue tracking: workarounds for product bugs in a specific release are marked in place with `<!-- known-issue: <id> -->` and listed in `known-issues.toml`. `scripts/check-known-issues.py` runs in CI and the pre-commit hook. It fails when a marker and an entry don't match, or when a skill's `docs_checked_against` release is newer than the release the issue was verified on. See `TESTING.md` → "Check known issues".
+- Known issue: on InfluxDB 3 Enterprise 3.12 with the upgraded storage engine, queries on a table with no fields return `500` with `field_family_projections is required`. Declare at least one field. Live-verified on Enterprise 3.12.0-0.rc.2 on an empty table.
+
+### Changed
+- The Core package-install and Core resource-exhausted caveats are now marked known issues. The retry guidance for resource-exhausted queries names `429` as the Enterprise 3.12+ behavior and Core 3.12's `500` as the known issue.
+
 ## [0.8.0] — 2026-09-30
 
 Updated for InfluxDB 3 Core and Enterprise 3.12, checked against the 3.12 draft docs and 3.12.0-0.rc.2.
