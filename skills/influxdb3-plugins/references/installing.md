@@ -45,14 +45,18 @@ influxdb3 create trigger \
   alert_trigger
 ```
 
-Equivalent HTTP API for raw file upload (without creating a trigger):
+Equivalent HTTP API to create a plugin file without creating a trigger. The body is JSON with the file name and its source as a string; an `application/octet-stream` body returns `415` (observed on Enterprise 3.12.0-0.rc.2):
 
 ```bash
-curl -X PUT "$INFLUXDB_HOST/api/v3/plugins/files?path=my_plugin.py" \
-  --header "Authorization: Bearer $INFLUXDB_TOKEN" \
-  --header "Content-Type: application/octet-stream" \
-  --data-binary "@/absolute/local/path/my_plugin.py"
+jq -n --arg name my_plugin.py --rawfile content /absolute/local/path/my_plugin.py \
+  '{plugin_name: $name, content: $content}' |
+curl -X POST "$INFLUXDB_HOST/api/v3/plugins/files" \
+  --header "Authorization: Bearer $INFLUXDB_ADMIN_TOKEN" \
+  --header "Content-Type: application/json" \
+  --data-binary @-
 ```
+
+`PUT /api/v3/plugins/files` takes the same JSON body and replaces the file of an existing trigger. Both need an admin token.
 
 ### 2. Server-side placement (preferred for production)
 

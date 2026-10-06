@@ -19,7 +19,7 @@ Create a new trigger that connects a plugin to a database event. Positional argu
 | `--run-asynchronous` | no | Allow multiple instances of this trigger to run concurrently. Default is synchronous. |
 | `--error-behavior <log\|retry\|disable>` | no | What happens when the plugin raises. Default `log`. |
 | `--disabled` | no | Create the trigger in disabled state. |
-| `--node-spec <spec>` | no | Cluster placement (default `all`). This skill doesn't cover multi-node placement. |
+| `--node-spec <spec>` | no | Enterprise: which process nodes own the trigger (default `all`). In 3.12+, with more than one process node, `all` can run a WAL trigger once per process node for each write; use `nodes:<node-id>` to run it once. See `references/trigger-types.md` → "Repeated runs on InfluxDB 3 Enterprise". Other placement isn't covered. |
 | `--token <admin-token>` | yes | Admin token (or `INFLUXDB3_AUTH_TOKEN` env). |
 
 Example:
@@ -119,11 +119,18 @@ This does not delete the plugin file from `--plugin-dir`. To remove the file, us
 | Action | Method + endpoint |
 |---|---|
 | Create trigger | `POST /api/v3/configure/processing_engine_trigger` |
-| Upload plugin file | `PUT /api/v3/plugins/files?path=<relative>` |
+| Create a plugin file | `POST /api/v3/plugins/files` with JSON `{"plugin_name": "<file>.py", "content": "<source>"}` |
+| Replace a trigger's plugin file | `PUT /api/v3/plugins/files` with the same JSON body |
 | Install Python package | `POST /api/v3/configure/plugin_environment/install_packages` |
 | Custom HTTP-trigger endpoint | `GET` or `POST /api/v3/engine/<request_path>` |
 
 All admin-required operations need `Authorization: Bearer <admin-token>`. See `references/installing.md` for full request shapes.
+
+Minimal create-trigger body (3.12+): `trigger_settings` and `disabled` are optional and default to `run_async=false`, `error_behavior=log`, and `disabled=false`. Before 3.12, omitting either returned 400, so include them when you target older servers.
+
+```json
+{"db": "my_database", "plugin_filename": "my_plugin.py", "trigger_name": "my_trigger", "trigger_specification": "request:my_endpoint"}
+```
 
 ## Where to fetch more
 

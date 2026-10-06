@@ -17,10 +17,10 @@ description: >-
   INFLUXDB_DATABASE. For Processing Engine plugin code, use
   influxdb3-plugins.
 metadata:
-  version: "0.7.2"
-  docs_checked: "2026-09-29"
-  docs_checked_against: "influxdb3-core 3.11.5, influxdb3-enterprise 3.11.5"
-  live_verified: "2026-09-29"
+  version: "0.8.0"
+  docs_checked: "2026-09-30"
+  docs_checked_against: "influxdb3-core 3.12.0-0.rc.2, influxdb3-enterprise 3.12.0-0.rc.2"
+  live_verified: "2026-09-30"
   clients_verified_against: "influxdb3-python 0.21, influxdb3-js 2.4, influxdb3-go 2.17, influxdb3-java 1.11, influxdb3-csharp 1.10"
 ---
 
@@ -156,6 +156,8 @@ Auth details and `.env` loaders for each language: `references/connecting.md`.
 - **Batch writes:** 1,000 points or more, or a 1-second flush, whichever comes first.
 - **Use second precision unless you need finer.** Coarser timestamps make line protocol smaller. Use a finer precision when a series gets more than one point per second: points with the same table, tags, and timestamp overwrite each other.
 - **Sort errors into retriable (5xx, 429) and non-retriable (400, 401, 403, 404).** One exception: a 400 from `/api/v3/write_lp` can be a partial write. The valid lines are already stored, so resend only the rejected lines.
+- **Retry 429 with backoff.** Starting in 3.12, Core and Enterprise return 429 when the WAL buffer is full (`wal buffer is full; ... retry shortly`). Nothing from that request was written, so resend the whole batch after a delay, with exponential backoff and jitter and a retry cap.
+- **Explicit schema mode (InfluxDB 3 Enterprise 3.12+).** A database created with `--schema-mode explicit` rejects lines that name an undeclared table or column with 400. Declare them first with `influxdb3 create table` or `update table` (admin token), not from the app's write path. Core rejects explicit mode.
 - **Recent official clients write through `/api/v2/write` by default.** There, one invalid line rejects the whole batch.
 
 Details: `references/writing.md`. Batch-write code for each language: the table in §4. Auto-create and the database check: `references/connecting.md` → "The silent auto-create footgun".
@@ -166,8 +168,9 @@ Details: `references/writing.md`. Batch-write code for each language: the table 
 - InfluxQL is for v1 and v2 compatibility only. If the developer asks for it, push back gently and suggest SQL.
 - InfluxDB 3 doesn't run Flux. Don't write Flux, even as a before-and-after comparison. Give the SQL.
 - Parameterize user input. Never concatenate it into a query string.
+- Handle query errors: retry 429 with backoff, and narrow the time range if it repeats. <!-- known-issue: core-resources-exhausted-500 -->On InfluxDB 3 Core 3.12, the same failure returns 500 with a message that says resources are exhausted; handle it like a 429.<!-- /known-issue --> On InfluxDB 3 Enterprise 3.12+, a 405 means the node doesn't run `query` mode. Set a client-side timeout, because queries over the concurrency limit wait for a slot.
 
-Time idioms with `DATE_BIN`, pagination, and parameterization for each language: `references/querying.md`.
+Time idioms with `DATE_BIN`, pagination, parameterization for each language, and query error handling: `references/querying.md`.
 
 ## 7. Schema design
 
@@ -225,6 +228,7 @@ Example reply:
 |---|---|
 | Create a database, write to it, and drop it, with the right token for each step | `references/databases.md` → "Create, write, and drop: which token does what" |
 | Create, list, delete, or update databases with the CLI | `references/databases.md` → CLI section |
+| Create an Enterprise database that rejects undeclared tables and columns, and declare them | `references/databases.md` → "Create with explicit schema mode (Enterprise 3.12+)" |
 | Automate from a script (any of the six client paths) | `references/admin-http-api.md` and `examples/admin-<lang>/` |
 | Recover from misspelled, auto-created database | `references/databases.md` → "Recovering from the silent auto-create footgun" |
 
@@ -258,6 +262,8 @@ Use this section when something stopped working: connection errors, writes that 
 |---|---|
 | 401 or 403 from any operation | `references/troubleshooting.md` → "Auth failures" |
 | Write succeeded, but data isn't where expected | `references/troubleshooting.md` → "Silent auto-create misroute" |
+| Write fails with 400 that says `which uses explicit schemas` | `references/troubleshooting.md` → "400 — table or column not defined (explicit schema mode)" |
+| Write or query returns 429, or a query returns 405 | `references/troubleshooting.md` → "429 — too many requests" and "Query returns 429, 405, or resources exhausted" |
 | Write fails with 400 | `references/troubleshooting.md` → "Write failures". On `/api/v3/write_lp` with default `accept_partial=true`, valid lines were written. Compatibility endpoints reject the whole batch. |
 | Query returns 0 rows or wrong rows | `references/troubleshooting.md` → "Query failures" |
 | Token rotation broke CI | `references/troubleshooting.md` → "Admin failures" |

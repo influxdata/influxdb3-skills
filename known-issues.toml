@@ -1,0 +1,34 @@
+# Release-specific product bugs that the skills work around.
+#
+# Each entry matches one or more marked caveats in skills/**/*.md:
+#   <!-- known-issue: <id> -->caveat text<!-- /known-issue -->
+# Caveat text names the product and release ("Core 3.12"), never "currently" or "still".
+#
+# scripts/check-known-issues.py fails when:
+# - a marker and an entry don't match, or
+# - a skill's docs_checked_against is newer than verified_on: rerun the evidence probe,
+#   then update verified_on or remove the caveat, or
+# - docs_checked_against has reached fixed_in: remove the caveat and the entry.
+#
+# Versions are semver, matching docs_checked_against in each SKILL.md.
+
+[[issue]]
+id = "no-field-tables-500"
+summary = "A query on a table with tags and no fields returns 500 (upgraded storage engine)"
+affects = { influxdb3-enterprise = "3.12" }
+verified_on = { influxdb3-enterprise = "3.12.0-0.rc.2" }
+evidence = "docs-tooling claim-20260930-0413 (live, empty table)"
+
+[[issue]]
+id = "core-package-install-200"
+summary = "A failed Python package install returns 200 on Core"
+affects = { influxdb3-core = "3.12" }
+verified_on = { influxdb3-core = "3.12.0-0.rc.2" }
+evidence = "docs-tooling claim-20260930-0213 (live)"
+
+[[issue]]
+id = "core-resources-exhausted-500"
+summary = "A query that exhausts the memory pool returns 500, not 429, on Core"
+affects = { influxdb3-core = "3.12" }
+verified_on = { influxdb3-core = "3.12.0" }
+evidence = "Core source at v3.12.0 maps ResourcesExhausted to 500; not reproduced live"
