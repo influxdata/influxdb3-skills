@@ -9,7 +9,7 @@ threshold = 75
 # Optional label included in log output
 label = "demo-trigger"
 
-# Nested table — comes through as a Python dict in args["severity_levels"]
+# The plugin's TOML parser returns this nested table as config["severity_levels"].
 [severity_levels]
 warn = 70
 alert = 90
