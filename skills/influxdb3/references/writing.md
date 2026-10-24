@@ -56,7 +56,7 @@ Resend only the corrected rejected lines, not the whole batch.
 With `accept_partial=false`, one invalid line rejects the whole batch.
 
 The `/api/v2/write` and `/write` compatibility endpoints behave differently.
-On Core and Enterprise 3.11.5, one invalid line in the batch returns 400, and none of the lines are written.
+On Core and Enterprise 3.11.5 and 3.12.1, one invalid line in the batch returns 400, and none of the lines are written.
 Fix the invalid line and resend the whole batch.
 The v1 compatibility route is `/write`, not `/api/v1/write`.
 
@@ -102,6 +102,18 @@ For symptom-by-symptom diagnosis, see `references/troubleshooting.md` → "Write
 Once a field is a float, you cannot write a string to that same field name later — the schema infers types per-field on first write. To recover, either pick a different field name (`temperature_f` instead of `temperature`) or drop and recreate the table.
 
 Tags are always strings; mixing types into a tag silently coerces to string.
+
+In an existing Enterprise explicit-schema database, undeclared tables and columns are rejected rather than inferred from writes.
+Check the schema before retrying a schema-related 400.
+Route declaration or schema-mode administration to the [Enterprise database docs](https://docs.influxdata.com/influxdb3/enterprise/admin/databases/) instead of creating declarations in the application's write path or disabling enforcement.
+
+## Maximum timestamp on 3.12.1
+
+The [3.12.1 notes](https://docs.influxdata.com/influxdb3/enterprise/release-notes/#v3121) document rejection after `2262-04-11T23:39:59.999999999Z`.
+The exact-boundary probe accepted that timestamp and rejected the next nanosecond with 400 on Core 3.12.1.
+The tested Enterprise 3.12.1 node accepted the later timestamp instead, contrary to that general release-note statement.
+The cause and conditions of the difference are unresolved; don't promise a universal Enterprise 400 at that boundary.
+Validate timestamps in application input and verify the exact target behavior when depending on this limit.
 
 ## Backfilling vs. live writes
 

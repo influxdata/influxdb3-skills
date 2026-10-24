@@ -19,7 +19,7 @@ Two subcommands (HTTP request plugins are tested via real triggers):
 influxdb3 test wal_plugin [OPTIONS] --database <DATABASE> <FILENAME>
 ```
 
-The `<FILENAME>` is the plugin's filename **as it lives on the server** under `<plugin-dir>/<filename>` — the test command does NOT have `--upload`. The plugin file must already be in the server's plugin-dir (or uploaded via `PUT /api/v3/plugins/files`). For local development, deploy first via a real `influxdb3 create trigger ... --upload`, or use the HTTP API to upload the file alone.
+The `<FILENAME>` is the plugin's filename **as it lives on the server** under `<plugin-dir>/<filename>` — the test command does NOT have `--upload`. The plugin file must already be in the server's plugin-dir (or created through `POST /api/v3/plugins/files` with JSON filename and source text). For local development, deploy first via a real `influxdb3 create trigger ... --upload`, or use the HTTP API to create the file alone.
 
 Common flags:
 

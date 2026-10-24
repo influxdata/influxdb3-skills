@@ -50,10 +50,21 @@ run() { # label dir command...
 }
 
 # shellcheck disable=SC2329 # invoked by trap
-cleanup() { printf '%-22s HTTP %s\n' "delete $DB" "$(database delete || true)"; }
+cleanup() {
+	local rc=$? status
+	status=$(database delete) || status=connection-error
+	printf '%-22s HTTP %s\n' "delete $DB" "$status"
+	case "$status" in 200|204|404) ;; *) rc=1 ;; esac
+	exit "$rc"
+}
 trap cleanup EXIT
 
-printf '%-22s HTTP %s\n' "create $DB" "$(database create)"
+status=$(database create)
+printf '%-22s HTTP %s\n' "create $DB" "$status"
+if [[ "$status" != 200 ]]; then
+	echo 'Database setup failed; examples were not run.' >&2
+	exit 1
+fi
 
 run http http bash hello.sh
 run python python uv run --quiet --with influxdb3-python --with python-dotenv --with pandas python hello.py

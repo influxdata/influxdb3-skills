@@ -24,7 +24,9 @@ Most code is portable across flavors when host and token are env-driven; this re
 Single-node, open source. Admin tokens only: no resource tokens and no RBAC (`references/tokens.md` → "InfluxDB 3 Core: admin tokens only"). `--object-store` is required with no default (3.2.1+); `--object-store=memory` is fine for testing only.
 
 ### Enterprise
-Multi-node cluster with replication. Adds resource tokens with per-database and system permissions. User authentication and RBAC are a preview (3.10.0+), off by default. Otherwise the same v3 HTTP API as Core; the other differences are operational (cluster, observability) rather than client-facing.
+Multi-node cluster with replication. Adds resource tokens with per-database and system permissions.
+The 3.12.0 release notes make user authentication and RBAC generally available; they remain opt-in, and custom role authoring remains disabled by default.
+Existing token workflows remain supported. User and role administration beyond the existing token guidance belongs in the Enterprise docs.
 
 ### Cloud Serverless
 No `/api/v3` endpoints. Write through `/api/v2/write`.

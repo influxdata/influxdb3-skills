@@ -112,18 +112,22 @@ influxdb3 delete trigger \
 
 > **Don't pass `--trigger-name`** — that flag doesn't exist on `delete trigger`. Use the positional argument instead.
 
-This does not delete the plugin file from `--plugin-dir`. To remove the file, use the HTTP plugin-files API or remove it server-side.
+This does not delete the plugin file from `--plugin-dir`.
+Remove the unused file server-side through deployment tooling after deleting the trigger; don't invent an HTTP delete operation.
 
 ## HTTP API equivalents
 
 | Action | Method + endpoint |
 |---|---|
 | Create trigger | `POST /api/v3/configure/processing_engine_trigger` |
-| Upload plugin file | `PUT /api/v3/plugins/files?path=<relative>` |
+| Create plugin file | `POST /api/v3/plugins/files` with JSON filename and source text |
 | Install Python package | `POST /api/v3/configure/plugin_environment/install_packages` |
 | Custom HTTP-trigger endpoint | `GET` or `POST /api/v3/engine/<request_path>` |
 
-All admin-required operations need `Authorization: Bearer <admin-token>`. See `references/installing.md` for full request shapes.
+All admin-required operations need `Authorization: Bearer <admin-token>`.
+Core and Enterprise 3.12.1 accept trigger creation with `trigger_settings` and `disabled` omitted.
+The defaults are synchronous execution, error behavior `log`, and an enabled trigger; HTTP error-behavior values are lowercase `log`, `retry`, and `disable`.
+Use `references/installing.md` for the upload example and the [API reference](https://docs.influxdata.com/influxdb3/enterprise/api/v3/) for complete contracts.
 
 ## Where to fetch more
 

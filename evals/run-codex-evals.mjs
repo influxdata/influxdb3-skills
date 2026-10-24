@@ -80,7 +80,7 @@ function runCodex({ prompt, tracePath, outputPath, model, schemaPath }) {
 function evaluatorPrompt(testCase, response) {
   const numberedCriteria = testCase.criteria.map((criterion, index) => `${index + 1}. ${criterion}`).join('\n');
   return `You are a strict evaluator. Grade the assistant response to the user prompt against every criterion below.\n\n` +
-    `User prompt:\n${testCase.prompt}\n\nCriteria:\n${numberedCriteria}\n\nAssistant response:\n${response}\n\n` +
+    `User prompt:\n${promptFor(testCase, byId)}\n\nCriteria:\n${numberedCriteria}\n\nAssistant response:\n${response}\n\n` +
     `Return JSON only. Include exactly one check for each criterion, using consecutive ids starting at 1. ` +
     `Set pass to true only when every criterion passes. Evidence must cite the response without exposing any secret-like value.`;
 }
@@ -124,7 +124,7 @@ for (const testCase of cases) {
   for (let runNumber = 1; runNumber <= options.runs; runNumber += 1) {
     const execution = runCodex({
       prompt: skillPrompt(testCase) +
-        `Do not edit files or run external commands. Answer the following request directly:\n\n${promptFor(testCase, byId)}`,
+        `Do not edit files or contact a live service. You may read local skill and reference files. Answer the following request directly:\n\n${promptFor(testCase, byId)}`,
       tracePath: join(resultDir, `${testCase.id}.run-${runNumber}.trace.jsonl`),
       outputPath: join(resultDir, `${testCase.id}.run-${runNumber}.answer.txt`),
       model: options.model,

@@ -18,6 +18,10 @@ A catalogue of behaviors that aren't in the official docs but customers will hit
 
 By default `/ping` (like `/health`) requires authentication, so an unauthenticated `GET` returns `401`. Send `Authorization: Bearer <token>` to get `200`. A `401` still proves the host and port are right and the server is up.
 
+On Enterprise 3.12.1, a scoped resource token or Member JWT can receive 403 with an empty body from `/ping` and `/health` while permitted data queries succeed.
+Use an admin token for the build/version probe, or check a known permitted query with the application credential.
+A health-route 403 alone does not mean the token is invalid or the server is down.
+
 Since 3.10 you can opt out of authorization for these routes with `--disable-authz` (env `INFLUXDB3_DISABLE_AUTHZ`). It takes a comma-separated list of `health`, `ping` and `metrics`. On such a server the token is optional. Source: the InfluxDB 3 API spec (`GetPing`) and the config options reference. The default 401 was observed on a 3.10 instance; the opt-out flag has not been run against a live server.
 
 ---
@@ -182,6 +186,18 @@ Documented in `references/writing.md` → "Error handling".
 ```
 
 ---
+
+## 13. Rewriting a point is not an unconditional deduplication guarantee
+
+Core 3.12.1 testbench queries returned two identical rows after the same table, tags, timestamp, and value were written again.
+One observation followed a fresh 3.12.1 initialization, so the evidence is not limited to upgraded databases.
+Persistence timing and query plans were not captured; the cause and full conditions remain unresolved.
+Enterprise 3.12.1 retained the expected counts in a separate repeated-seed observation, which does not establish a universal guarantee either.
+
+The [3.12.1 notes](https://docs.influxdata.com/influxdb3/enterprise/release-notes/#v3121) document specific overwrite fixes on the Parquet and upgraded storage engines.
+Those fixes and the narrower duplicate-row observations are separate evidence.
+Do not promise that resending the same point is always safe or that a deterministic timestamp alone makes a plugin idempotent.
+Keep tag-based source identity, resend only rejected lines after a partial write, and verify retry or repeated-run behavior on the target edition and version.
 
 ## Where to fetch more
 

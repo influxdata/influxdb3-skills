@@ -4,6 +4,32 @@ All notable changes to this skill will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.7.3] — Unreleased
+
+### Packaging and verification
+
+- Both existing skills remain one package. Every skill-changing main merge requires a new shared version and final-content evidence.
+- Release verification runs for unlabeled skill and prompt changes. Changed-behavior eval cases pass individually alongside aggregate bars, including plugin, admin, and troubleshooting cases.
+- Release review reads current docs-v2 master and production release notes, covering 3.12.1 and the intervening 3.12.0 release.
+- Codex follow-up cases supply the same conversation context to the judge and answer model; local skill-file reads are explicitly allowed during evaluations.
+- The example runner fails on database setup or cleanup errors, and the HTTP example checks database visibility and fails on HTTP errors.
+
+### Documentation-grounded corrections
+
+- Preserve existing capability boundaries. Explicit-schema administration and distributed plugin placement remain separate work.
+- Explain query timeouts and named system-table column access. Enterprise authentication is generally available and remains opt-in.
+- Link to the API reference for complete contracts instead of duplicating it.
+
+### Live-verified behavior corrections
+
+- Reconcile query error bodies and Core/Enterprise resource-exhaustion statuses with exact 3.12.1 claims. Scoped-token health-route denials do not imply an unreachable server, and hidden databases cannot be distinguished from absent ones by an empty 403 alone.
+- Qualify point overwrite and plugin retry-safety guidance with the observed Core 3.12.1 duplicate rows; retain the unresolved conditions and cause.
+- Correct plugin-file creation to JSON POST, optional trigger settings, package-failure status differences, and handling of existing explicit schemas.
+- Preserve the timestamp discrepancy: the tested Core boundary returned 400 after the published maximum, while the tested Enterprise node returned 204 and made the later point query-visible.
+- The diagnostic toolkit verifies permitted read access after a health-route 403 and reports limited read-side health.
+
+Release remains pending final-text formal evals and the complete verification record.
+
 ## [0.7.2] — 2026-09-29
 
 ### Fixed
