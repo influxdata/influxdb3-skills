@@ -91,17 +91,20 @@ Our hello-world examples in `examples/` do **not** ship full metadata docstrings
 
 ## Plugin configuration via TOML
 
-InfluxDB 3 loads TOML config files for you. Pass `config_file_path=<filename>` as one of the `--trigger-arguments` when creating the trigger, and the engine reads the TOML and merges its keys into the `args` dict your entry-point function receives. **Do not import `tomllib` in your plugin** — the parsing happens before your code runs.
+The tested Core and Enterprise 3.12.1 runtime passes trigger arguments as strings.
+It does not automatically load a TOML file named by `config_file_path` or merge its contents into `args`.
+A library plugin can implement its own configuration loader; that behavior belongs to that plugin, not the engine.
 
 ### File location
 
-The TOML file must live under the directory your InfluxDB 3 host has configured as `PLUGIN_DIR` (the same directory holding your `.py` file). The value passed to `config_file_path` is resolved relative to `PLUGIN_DIR`:
+For the runnable example, keep TOML on the deployment machine and pass its unpadded URL-safe base64 encoding in a single trigger argument:
 
 ```bash
---trigger-arguments config_file_path=my_plugin_config_scheduler.toml
+--trigger-arguments "config_toml_b64=$CONFIG_TOML_B64"
 ```
 
-Absolute paths and paths outside `PLUGIN_DIR` are not supported.
+The plugin explicitly decodes the value and parses it with Python's standard-library `tomllib`.
+It does not read server files.
 
 ### Naming convention (recommended)
 
@@ -116,17 +119,23 @@ Examples (from `influxdata/influxdb3_plugins/influxdata/basic_transformation/`):
 - `basic_transformation_config_scheduler.toml`
 - `basic_transformation_config_data_writes.toml`
 
-Different file per trigger type because different entry points (`process_scheduled_call` vs `process_writes`) typically want different schemas. The engine doesn't enforce this naming — `config_file_path` accepts any filename — but following the convention makes plugins easier for downstream developers to recognize.
+Different trigger types can use different configuration files on the deployment machine.
+This naming convention does not imply engine-managed loading.
 
 ### Worked example
 
 A scheduled plugin reading a threshold from TOML:
 
 ```python
-# my_plugin.py
+import base64
+import tomllib
+
 def process_scheduled_call(influxdb3_local, call_time, args=None):
-    threshold = args["threshold"]        # int, not str
-    label = args.get("label", "default")
+    encoded = (args or {})["config_toml_b64"]
+    raw = base64.b64decode(encoded + "=" * (-len(encoded) % 4), altchars=b"-_", validate=True)
+    config = tomllib.loads(raw.decode("utf-8"))
+    threshold = config["threshold"]
+    label = config.get("label", "default")
     influxdb3_local.info(f"[{label}] threshold={threshold}")
 ```
 
@@ -136,30 +145,35 @@ threshold = 75
 label = "demo"
 ```
 
-Create the trigger with:
+Encode the TOML on the deployment machine, then create the trigger:
 
 ```bash
+CONFIG_TOML_B64=$(python3 -c 'import base64,pathlib; print(base64.urlsafe_b64encode(pathlib.Path("my_plugin_config_scheduler.toml").read_bytes()).decode().rstrip("="))')
+
 influxdb3 create trigger \
   --database mydb \
   --path my_plugin.py \
   --trigger-spec "every:1m" \
-  --trigger-arguments config_file_path=my_plugin_config_scheduler.toml \
+  --trigger-arguments "config_toml_b64=$CONFIG_TOML_B64" \
   --token "$INFLUXDB_TOKEN" \
   my_plugin_trigger
 ```
 
-Note `--path my_plugin.py` is the bare filename (no `--upload`) — for TOML-config plugins, both the `.py` and the `.toml` must already live in `PLUGIN_DIR` before you create the trigger, because `--upload` only transfers the single Python file. `--path` resolves the .py from `PLUGIN_DIR`; the engine separately resolves `config_file_path` from the same directory. See `examples/toml_config/README.md` for the file-staging steps.
+Here `my_plugin.py` must already be in the server's plugin directory.
+The TOML is sent as an argument; the engine does not resolve a companion file.
+See `examples/toml_config/README.md` for the staging and verification steps.
 
-### Native types are preserved
+### Parsing produces native types
 
-This is the practical reason to prefer TOML over inline `--trigger-arguments key=val`:
+The argument remains a string until the plugin parses it:
 
-| Source | Value of `args["threshold"]` | Type |
+| Source | Result | Type |
 |---|---|---|
-| TOML: `threshold = 75` | `75` | `int` |
+| Parsed TOML: `threshold = 75` | `75` | `int` |
 | Inline: `--trigger-arguments threshold=75` | `"75"` | `str` |
 
-TOML tables become Python `dict`s, arrays become `list`s, booleans become `bool`. No casting required in the plugin — `int(args["threshold"])` is unnecessary (and counterproductive) when the value comes from TOML.
+Python's TOML parser produces dictionaries, lists, and booleans from the corresponding TOML values.
+Inline numeric arguments still require explicit conversion in plugin code.
 
 ### Runnable example (external)
 

@@ -1,10 +1,9 @@
 # Example TOML config consumed by example_toml_config.py.
 #
-# The InfluxDB 3 Processing Engine loads this file when the trigger is
-# created with --trigger-arguments config_file_path=example_toml_config_scheduler.toml
-# and merges its keys into the args dict passed to process_scheduled_call.
+# Deployment encodes this file in config_toml_b64. The plugin explicitly
+# decodes it and parses TOML; the engine passes the argument as a string.
 
-# Threshold for alerting (int, not a string — the engine preserves TOML types)
+# Threshold for alerting (the TOML parser returns an int)
 threshold = 75
 
 # Optional label included in log output
