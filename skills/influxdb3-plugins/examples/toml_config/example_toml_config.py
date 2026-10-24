@@ -6,20 +6,25 @@ Activate with:
     --database mydb \\
     --path example_toml_config.py \\
     --trigger-spec "every:10s" \\
-    --trigger-arguments config_file_path=example_toml_config_scheduler.toml \\
+    --trigger-arguments "config_toml_b64=$CONFIG_TOML_B64" \\
     --token "$INFLUXDB_TOKEN" \\
     toml_demo
 
-The engine reads the TOML alongside this file and merges its keys into args.
-No tomllib import here — the engine handled the parsing before this function
-was called.
+The deployment command encodes TOML into one trigger argument. The plugin
+explicitly decodes and parses it; the engine does not load a config file.
 """
+
+import base64
+import tomllib
 
 
 def process_scheduled_call(influxdb3_local, call_time, args=None):
-    threshold = args["threshold"]              # int, not str — TOML preserved the type
-    severity_levels = args["severity_levels"]  # dict from a [severity_levels] table
-    label = args.get("label", "demo")
+    encoded = (args or {})["config_toml_b64"]
+    raw = base64.b64decode(encoded + "=" * (-len(encoded) % 4), altchars=b"-_", validate=True)
+    config = tomllib.loads(raw.decode("utf-8"))
+    threshold = config["threshold"]
+    severity_levels = config["severity_levels"]
+    label = config.get("label", "demo")
 
     influxdb3_local.info(
         f"[{label}] threshold={threshold} ({type(threshold).__name__}); "

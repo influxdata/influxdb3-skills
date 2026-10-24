@@ -25,6 +25,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Reconcile query error bodies and Core/Enterprise resource-exhaustion statuses with exact 3.12.1 claims. Scoped-token health-route denials do not imply an unreachable server, and hidden databases cannot be distinguished from absent ones by an empty 403 alone.
 - Qualify point overwrite and plugin retry-safety guidance with the observed Core 3.12.1 duplicate rows; retain the unresolved conditions and cause.
 - Correct plugin-file creation to JSON POST, optional trigger settings, package-failure status differences, and handling of existing explicit schemas.
+- Correct the TOML example and configuration guidance: parsing belongs to plugin code, and `config_file_path` does not make the engine merge native TOML values into trigger arguments.
 - Preserve the timestamp discrepancy: the tested Core boundary returned 400 after the published maximum, while the tested Enterprise node returned 204 and made the later point query-visible.
 - The diagnostic toolkit verifies permitted read access after a health-route 403 and reports limited read-side health.
 

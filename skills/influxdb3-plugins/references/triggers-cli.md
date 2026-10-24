@@ -15,7 +15,7 @@ Create a new trigger that connects a plugin to a database event. Positional argu
 | `--trigger-spec <spec>` | yes | When to fire: `table:<name>`, `all_tables`, `every:<duration>`, `cron:<expr>` (6-field with seconds), or `request:<path>`. |
 | `--path <path>` | yes | Plugin filename (relative to `--plugin-dir`), absolute path with `--upload`, or `gh:` prefix for upstream plugins. |
 | `--upload` | no | Upload the local file/dir to the server. Required when `--path` is absolute. |
-| `--trigger-arguments k=v,k2=v2` | no | Comma-separated key=value pairs passed to the plugin as `args`. All values arrive as strings. **For typed values from a TOML file**, pass `config_file_path=<filename.toml>` — see `references/plugin-structure.md` → "Plugin configuration via TOML". |
+| `--trigger-arguments k=v,k2=v2` | no | Comma-separated key=value pairs passed to the plugin as `args`. All values arrive as strings. Parse structured configuration explicitly in plugin code; see `references/plugin-structure.md` → "Plugin configuration via TOML". |
 | `--run-asynchronous` | no | Allow multiple instances of this trigger to run concurrently. Default is synchronous. |
 | `--error-behavior <log\|retry\|disable>` | no | What happens when the plugin raises. Default `log`. |
 | `--disabled` | no | Create the trigger in disabled state. |
@@ -126,7 +126,8 @@ Remove the unused file server-side through deployment tooling after deleting the
 
 All admin-required operations need `Authorization: Bearer <admin-token>`.
 Core and Enterprise 3.12.1 accept trigger creation with `trigger_settings` and `disabled` omitted.
-The defaults are synchronous execution, error behavior `log`, and an enabled trigger; HTTP error-behavior values are lowercase `log`, `retry`, and `disable`.
+The omitted-settings probe observed an enabled trigger and error behavior `log`.
+It did not behavior-test concurrency defaults; consult the API reference for complete settings and allowed values.
 Use `references/installing.md` for the upload example and the [API reference](https://docs.influxdata.com/influxdb3/enterprise/api/v3/) for complete contracts.
 
 ## Where to fetch more
