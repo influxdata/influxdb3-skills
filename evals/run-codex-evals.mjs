@@ -116,7 +116,7 @@ const cases = options.caseIds
   ? options.caseIds.map((id) => byId.get(id) ?? usage(`unknown case '${id}'`))
   : allCases;
 const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-const resultDir = join(evalsDir, 'results', `codex-${timestamp}`);
+const resultDir = join(evalsDir, 'results', `codex-${timestamp}-${process.pid}`);
 mkdirSync(resultDir, { recursive: true });
 const results = [];
 

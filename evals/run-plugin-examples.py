@@ -8,6 +8,7 @@ The JSON transcript records actual responses, assertions, and cleanup outcomes.
 """
 
 import argparse
+import base64
 import datetime as dt
 import hashlib
 import json
@@ -38,7 +39,7 @@ def now():
 
 
 class Runner:
-    def __init__(self, product, output, cadence, timeout, include_toml=False):
+    def __init__(self, product, output, cadence, timeout, examples):
         self.product = product
         self.url, self.container = PRODUCTS[product]
         token_file = pathlib.Path.home() / f".influxdb3-{product}-admin-token.json"
@@ -47,7 +48,8 @@ class Runner:
         self.prefix = "skills_plugin_" + uuid.uuid4().hex[:12]
         self.output = output / f"{self.prefix}-{product}.json"
         self.cadence, self.timeout = cadence, timeout
-        self.cases = CASES if include_toml else CASES[:-1]
+        self.cases = examples
+        self.toml_config_bytes = None
         self.databases, self.triggers = [], []
         self.staged = False
         self.data = {
@@ -60,7 +62,7 @@ class Runner:
                 "Fixture source is unchanged; stage only .py and .toml files in a unique plugin folder.",
                 f"Scheduled triggers use every:{cadence}s for bounded verification; cadence is trigger configuration, not a source edit.",
                 "Request trigger uses a unique route instead of the README's shared echo route.",
-                "Multifile and TOML files are staged with docker cp; this does not test CLI directory upload or the README's HTTP staging commands.",
+                "Multifile fixtures are staged with docker cp; this does not test CLI directory upload.",
                 "Enterprise is reached through node0 on the running cluster; this is not a distributed-execution or replay certification.",
             ],
         }
@@ -166,8 +168,18 @@ class Runner:
                         continue
                     destination = fixture / case / source.name
                     destination.parent.mkdir(parents=True, exist_ok=True)
+                    if case == "toml_config" and source.suffix == ".toml":
+                        self.toml_config_bytes = source.read_bytes()
+                        self.data["fixture_sha256"][source.relative_to(ROOT).as_posix()] = hashlib.sha256(self.toml_config_bytes).hexdigest()
+                        continue
                     shutil.copyfile(source, destination)
                     self.data["fixture_sha256"][source.relative_to(ROOT).as_posix()] = hashlib.sha256(destination.read_bytes()).hexdigest()
+            if "toml_config" in self.cases:
+                observer = ('def process_scheduled_call(influxdb3_local, call_time, args=None):\n'
+                            '    value = (args or {}).get("config_file_path")\n'
+                            '    influxdb3_local.info("config_file_path_type=" + type(value).__name__ + ";argument_keys=" + ",".join(sorted((args or {}).keys())))\n')
+                (fixture / "args_observer.py").write_text(observer)
+                self.data["diagnostic_source_sha256"] = hashlib.sha256(observer.encode()).hexdigest()
             # No target directory can be reused from another invocation.
             exists = subprocess.run(["docker", "exec", self.container, "test", "-e", "/plugins/" + self.prefix], capture_output=True)
             self.check("staging namespace absent", exists.returncode == 1, {"exit_code": exists.returncode})
@@ -227,36 +239,50 @@ class Runner:
 
     def toml_config(self):
         db = self.database("toml_config")
+        observer = self.trigger(db, "args_observer", "args_observer.py", f"every:{self.cadence}s",
+                                {"config_file_path": self.prefix + "_not_present.toml"})
+        self.log_contains(db, observer, "config_file_path_type=str;argument_keys=config_file_path")
+        encoded = base64.urlsafe_b64encode(self.toml_config_bytes).decode().rstrip("=")
+        self.data["adaptations"].append("Optional TOML configuration is encoded at deployment into config_toml_b64; the unchanged plugin explicitly decodes and parses it. No TOML file is staged server-side.")
         trigger = self.trigger(db, "toml_config", "toml_config/example_toml_config.py", f"every:{self.cadence}s",
-                               {"config_file_path": self.prefix + "/toml_config/example_toml_config_scheduler.toml"})
+                               {"config_toml_b64": encoded})
         self.log_contains(db, trigger, "[demo-trigger] threshold=75 (int); warn_above=70, alert_above=90")
 
     def cleanup_cases(self):
         for database, trigger in reversed(self.triggers):
             path = "/api/v3/configure/processing_engine_trigger?" + urllib.parse.urlencode({"db": database, "trigger_name": trigger, "force": "true"})
-            result = self.http("DELETE", path, cleanup=True)
-            result["passed"] = result["status"] == 200
-            if result["passed"]:
+            if self.delete_resource(path):
                 self.triggers.remove((database, trigger))
         for database in reversed(self.databases):
             path = "/api/v3/configure/database?" + urllib.parse.urlencode({"db": database, "hard_delete_at": "now"})
-            result = self.http("DELETE", path, cleanup=True)
-            result["passed"] = result["status"] == 200
-            if result["passed"]:
+            if self.delete_resource(path):
                 self.databases.remove(database)
         self.save()
+
+    def delete_resource(self, path):
+        try:
+            result = self.http("DELETE", path, cleanup=True)
+            result["passed"] = result["status"] == 200
+        except Exception as error:
+            result = {"path": path, "passed": False, "error": str(error), "at": now()}
+            self.data["cleanup"].append(result)
+        return result["passed"]
 
     def cleanup(self):
         self.cleanup_cases()
         if self.staged:
             if not re.fullmatch(r"skills_plugin_[a-f0-9]{12}", self.prefix):
                 raise RuntimeError("refusing cleanup outside this run's staging folder")
-            removed = subprocess.run(["docker", "exec", self.container, "rm", "-rf", "--", "/plugins/" + self.prefix], capture_output=True, text=True)
-            absent = subprocess.run(["docker", "exec", self.container, "test", "!", "-e", "/plugins/" + self.prefix], capture_output=True, text=True)
-            self.data["cleanup"].append({"label": "remove-only-created-plugin-folder", "exit_code": removed.returncode,
-                                         "absence_check_exit_code": absent.returncode, "stderr": removed.stderr,
-                                         "passed": removed.returncode == 0 and absent.returncode == 0})
+            try:
+                removed = subprocess.run(["docker", "exec", self.container, "rm", "-rf", "--", "/plugins/" + self.prefix], capture_output=True, text=True, timeout=20)
+                absent = subprocess.run(["docker", "exec", self.container, "test", "!", "-e", "/plugins/" + self.prefix], capture_output=True, text=True, timeout=20)
+                self.data["cleanup"].append({"label": "remove-only-created-plugin-folder", "exit_code": removed.returncode,
+                                             "absence_check_exit_code": absent.returncode, "stderr": removed.stderr,
+                                             "passed": removed.returncode == 0 and absent.returncode == 0})
+            except Exception as error:
+                self.data["cleanup"].append({"label": "remove-only-created-plugin-folder", "passed": False, "error": str(error)})
         self.data["finished_at"] = now()
+        self.data["passed"] = not any(row.get("passed") is False for row in self.data["assertions"] + self.data["cleanup"])
         self.save()
 
     def run(self):
@@ -287,7 +313,8 @@ class Runner:
         failed = [r for r in self.data["assertions"] + self.data["cleanup"] if r.get("passed") is False]
         self.data["passed"] = not failed
         self.save()
-        print(f"{self.product}: {len(failed)} failed assertions/cleanup; transcript: {self.output.relative_to(ROOT)}", flush=True)
+        location = self.output.relative_to(ROOT) if self.output.is_relative_to(ROOT) else self.output.name
+        print(f"{self.product}: {len(failed)} failed assertions/cleanup; transcript: {location}", flush=True)
         return bool(failed)
 
 
@@ -298,10 +325,12 @@ def main():
     parser.add_argument("--cadence", type=int, default=5)
     parser.add_argument("--timeout", type=float, default=45)
     parser.add_argument("--include-toml", action="store_true", help="also run the optional TOML configuration example")
+    parser.add_argument("--examples", nargs="+", choices=CASES, default=list(CASES[:-1]))
     args = parser.parse_args()
     if args.cadence < 1 or args.timeout < 2 * args.cadence:
         parser.error("timeout must cover at least two positive scheduled cadences")
-    return int(any([Runner(product, args.out.resolve(), args.cadence, args.timeout, args.include_toml).run() for product in args.products]))
+    examples = list(dict.fromkeys(args.examples + (["toml_config"] if args.include_toml else [])))
+    return int(any([Runner(product, args.out.resolve(), args.cadence, args.timeout, examples).run() for product in args.products]))
 
 
 if __name__ == "__main__":
