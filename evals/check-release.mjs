@@ -13,7 +13,15 @@ function git(...args) {
 function changesSince(base) {
   if (!base) return [];
   git('rev-parse', '--verify', `${base}^{commit}`);
-  return git('diff', '--name-only', `${base}...HEAD`).split('\n').filter(Boolean);
+  return git('diff', '--no-renames', '--name-only', `${base}...HEAD`).split('\n').filter(Boolean);
+}
+
+function immutableEvidence(base, changed) {
+  if (!base) return;
+  const dirs = new Set(changed.map((p) => p.match(/^evals\/evidence\/[^/]+\//)?.[0]).filter(Boolean));
+  for (const dir of dirs) {
+    if (git('ls-tree', '-r', '--name-only', base, '--', dir)) throw new Error(`released evidence is immutable: ${dir}`);
+  }
 }
 
 function verify(base, changed) {
@@ -27,8 +35,6 @@ function verify(base, changed) {
     const oldVersion = JSON.parse(git('show', `${base}:plugin.json`)).version;
     const skillChange = changed.some((p) => p.startsWith('skills/') || p === 'evals/prompts.jsonl');
     if (skillChange && oldVersion === version) throw new Error('skill-changing merges require a new shared package version');
-    const oldFiles = git('ls-tree', '-r', '--name-only', base, '--', dir);
-    if (oldFiles && changed.some((p) => p.startsWith(`${dir}/`))) throw new Error(`released evidence is immutable: ${dir}`);
   }
   const manifest = JSON.parse(readFileSync(`${dir}/manifest.json`, 'utf8'));
   if (manifest.release !== `v${version}`) throw new Error('manifest release does not match package version');
@@ -68,7 +74,7 @@ function verify(base, changed) {
         throw new Error(`${entry.file}: record model, judge, CLI version, and three runs per case`);
       }
       const result = JSON.parse(readFileSync(file, 'utf8'));
-      return agent === 'claude' ? runsFromClaude(result) : runsFromCodex(result);
+      return agent === 'claude' ? runsFromClaude(result, { validateRuns: true }) : runsFromCodex(result, { validateRuns: true });
     });
     const scored = score(prompts, mergeRuns(maps), { requiredCases: manifest.required_cases, minRuns: 3 });
     passed &&= agent === 'claude' ? scored.pass : scored.incomplete.length === 0;
@@ -90,6 +96,7 @@ try {
     else throw new Error(`unknown or incomplete argument: ${args[i]}`);
   }
   const changed = changesSince(base);
+  immutableEvidence(base, changed);
   const skillChange = changed.some((p) => p.startsWith('skills/') || p === 'evals/prompts.jsonl');
   if (mode === 'verify') {
     verify(base, changed);

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync, renameSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
@@ -62,6 +62,7 @@ test('release verification checks version, exact evidence hashes, required cases
       model: 'fixed-answer-model', judge: 'fixed-judge', cli_version: '1.0' }];
   }
   const save = () => {
+    for (const c of claude.cases) c.arms.with.forEach((r, i) => { r.startedAt ??= new Date(1700000000000 + i * 1000).toISOString(); });
     f.write('evals/evidence/v0.7.3/manifest.json', JSON.stringify(manifest));
     f.write('evals/evidence/v0.7.3/claude.json', JSON.stringify(claude));
     f.write('evals/evidence/v0.7.3/codex.json', JSON.stringify(codex));
@@ -112,4 +113,27 @@ test('a prompt-only change triggers verification and must be individually requir
   assert.equal(plan.status, 0, plan.stderr);
   assert.equal(JSON.parse(plan.stdout).run, true);
   assert.equal(f.run('plan', '--base', 'missing-ref').status, 1, 'invalid diff bases fail closed');
+});
+
+test('moving a skill reference out of skills still triggers verification', (t) => {
+  const f = fixture(t);
+  f.write('skills/influxdb3/references/example.md', 'Guidance\n');
+  f.commit();
+  const base = f.git('rev-parse', 'HEAD');
+  mkdirSync(join(f.dir, 'docs'));
+  renameSync(join(f.dir, 'skills/influxdb3/references/example.md'), join(f.dir, 'docs/example.md'));
+  f.commit();
+  assert.equal(JSON.parse(f.run('plan', '--base', base).stdout).run, true);
+});
+
+test('an evidence-only PR cannot rewrite any released version', (t) => {
+  const f = fixture(t);
+  f.write('evals/evidence/v0.7.0/claude.json', '{"original":true}');
+  f.commit();
+  const base = f.git('rev-parse', 'HEAD');
+  f.write('evals/evidence/v0.7.0/claude.json', '{"edited":true}');
+  f.commit();
+  const r = f.run('plan', '--base', base);
+  assert.equal(r.status, 1);
+  assert.match(r.stderr, /immutable/);
 });

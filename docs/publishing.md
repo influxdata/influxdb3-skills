@@ -89,6 +89,8 @@ Internal commits and process-only repository changes do not each require a versi
    - Nonempty `claude` and `codex` result lists. Each entry records `file`, matching full hashes, `runs: 3`, `model`, `judge`, and `cli_version`.
 
    Every case must have at least three actual samples in each agent's merged results, regardless of the entry's declared run count.
+   Codex samples need distinct positive `run` numbers within each case; Claude samples need distinct `startedAt` session timestamps.
+   Copying the same sample does not count as a new run.
    An unknown required case, missing evidence, a stale hash, or rewriting an existing release's evidence blocks verification.
    Run `node evals/check-release.mjs verify --base <target-commit>` on the committed candidate.
 
