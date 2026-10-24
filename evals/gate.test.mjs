@@ -1,5 +1,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { spawnSync } from 'node:child_process';
+import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { mergeRuns, runsFromClaude, runsFromCodex, score, scoreCase } from './gate.mjs';
 
 const runs = (...passed) => passed.map((p) => ({ passed: p, error: null }));
@@ -80,4 +84,39 @@ test('later results replace earlier runs of the same case', () => {
   const merged = mergeRuns([full, rerun]);
   assert.deepEqual(merged.get('a'), [{ passed: true, error: null }, { passed: true, error: null }]);
   assert.deepEqual(merged.get('b'), [{ passed: true, error: null }]);
+});
+
+test('the CLI blocks a required plugin case despite passing aggregate bars', (t) => {
+  const dir = mkdtempSync(join(tmpdir(), 'skills-gate-'));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  const prompts = ['adversarial', 'negative', 'connect', 'plugins'].map((category) => ({ id: category, category }));
+  const result = (pluginPass) => ({ cases: prompts.map(({ id }) => ({
+    name: id, arms: { with: runs(true, id !== 'plugins' || pluginPass, id !== 'plugins' || pluginPass) },
+  })) });
+  writeFileSync(join(dir, 'prompts.jsonl'), prompts.map((p) => JSON.stringify(p)).join('\n'));
+  const invoke = (pluginPass) => {
+    writeFileSync(join(dir, 'claude.json'), JSON.stringify(result(pluginPass)));
+    return spawnSync(process.execPath, ['evals/gate.mjs', '--prompts', join(dir, 'prompts.jsonl'),
+      '--claude', join(dir, 'claude.json'), '--require-case', 'plugins', '--min-runs', '3'], { encoding: 'utf8' });
+  };
+  const failed = invoke(false);
+  assert.equal(failed.status, 1, failed.stderr);
+  assert.match(failed.stdout, /Required cases/);
+  assert.match(failed.stdout, /plugins/);
+  assert.equal(invoke(true).status, 0);
+});
+
+test('required admin and troubleshooting cases retain majority rules and require complete evidence', () => {
+  const prompts = ['adversarial', 'negative', 'connect', 'admin', 'troubleshooting'].map((category) => ({ id: category, category }));
+  const evidence = new Map(prompts.map(({ id }) => [id, runs(true, true, true)]));
+  const options = { requiredCases: ['admin', 'troubleshooting'], minRuns: 3 };
+  evidence.set('admin', runs(true, true, false));
+  assert.equal(score(prompts, evidence, options).pass, true);
+  evidence.set('admin', runs(true, false, false));
+  assert.equal(score(prompts, evidence, options).pass, false);
+  evidence.set('admin', runs(true));
+  assert.equal(score(prompts, evidence, options).pass, false);
+  evidence.delete('admin');
+  assert.equal(score(prompts, evidence, options).pass, false);
+  assert.throws(() => score(prompts, evidence, { requiredCases: ['typo'] }), /unknown required case/);
 });

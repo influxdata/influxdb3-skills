@@ -3,10 +3,15 @@
 ## When to release
 
 The release notes for InfluxDB 3 Core and Enterprise are the cue to review the skills.
+Read the target release sections on current docs-v2 `master` and the production documentation site.
+PR descriptions and a stale local checkout do not establish what the published release notes say.
 Use the published InfluxDB 3 release notes, or pre-release notes when they're available before publication.
 Scope each update by what changed, not by the database version: a patch release can change behavior.
 
 All skills share the plugin version ([ADR-0001](decisions/0001-single-package-versioning.md)).
+Every skill-changing merge to `main` is a package release with a new shared version and matching immutable evidence ([ADR-0003](decisions/0003-main-is-a-production-consumption-boundary.md)).
+Include release preparation in that PR; a later tag cannot supply verification missing at merge time.
+Internal commits and process-only repository changes do not each require a version bump.
 
 - **Patch:** corrections that don't change skill boundaries or expected agent behavior.
 - **Minor:** changes to boundaries, routing, or triggers, or a new capability.
@@ -22,7 +27,12 @@ All skills share the plugin version ([ADR-0001](decisions/0001-single-package-ve
 
 ## Update for an InfluxDB release
 
-1. Read the release notes and list the changes that touch the skills. Also compare `docs_checked_against` with the new version, so earlier gaps surface.
+1. Read the target release notes on current docs-v2 `master` and the production Core and Enterprise release-note pages.
+   Compare `docs_checked_against` with the target version and review intervening releases so earlier gaps surface.
+   Record the source commit, production URLs and access date, and release sections reviewed.
+   For each cue that touches existing guidance, record the needed correction, confirm that the guidance already handles it, or explain why it belongs to separate work.
+   If source and production differ, record the discrepancy.
+   Release notes supply additional cues; they do not replace the API spec or required live evidence.
 2. For each change, read the reference and how-to pages in docs-v2 (`content/`), including their version annotations.
 3. Match each change against the claims ledger: confirmed, refuted, unknown, or stale.
 4. Probe a live server only where the docs are silent or conflict, and record the result as a claim.
@@ -65,7 +75,22 @@ All skills share the plugin version ([ADR-0001](decisions/0001-single-package-ve
    - Negative, or install, connect, write, query, schema, and flavor combined, below 90% blocks the release.
    - Codex results are recorded but don't block.
 
+   Changed-behavior cases also pass individually under the same three-run rules, including plugin, admin, and troubleshooting cases outside the aggregate bars.
+   Codex verdicts stay advisory, but demonstrated product or skill defects must be resolved.
+
    A code owner of `evals/evidence/` approves the release PR, and the release-gate workflow checks the evidence.
+   The workflow runs for every skill or prompt change, as well as release-labeled PRs, tags, and manual dispatches.
+   Its manifest requires:
+
+   - `release`: the shared package version with a `v` prefix.
+   - Full `skills_tree` and `prompts_blob` hashes matching the committed final contents.
+   - `required_cases`: unique IDs of changed-behavior eval cases. Every added or modified prompt must be included. Review coverage of unchanged prompts whose supported behavior changed too.
+   - `required_cases_reason` if the list is empty, explaining why the skill edit changes no behavior.
+   - Nonempty `claude` and `codex` result lists. Each entry records `file`, matching full hashes, `runs: 3`, `model`, `judge`, and `cli_version`.
+
+   Every case must have at least three actual samples in each agent's merged results, regardless of the entry's declared run count.
+   An unknown required case, missing evidence, a stale hash, or rewriting an existing release's evidence blocks verification.
+   Run `node evals/check-release.mjs verify --base <target-commit>` on the committed candidate.
 
 6. **Update `CHANGELOG.md`.** Separate packaging changes, documentation-grounded changes, and live-verified behavior changes.
 

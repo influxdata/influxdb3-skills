@@ -1,6 +1,6 @@
 name: Release gate
 
-# Runs the live examples and scores the committed eval evidence before a release.
+# Runs for every skill/prompt change and explicit release verification.
 # Maintainers run the eval suite locally and commit the results to evals/evidence/.
 # Decision record: docs/decisions/0002-evals-release-gate.md
 
@@ -26,25 +26,25 @@ jobs:
       run: ${{ steps.check.outputs.run }}
       version: ${{ steps.version.outputs.version }}
     steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
       - id: check
         env:
           EVENT: ${{ github.event_name }}
           HAS_RELEASE_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'release') }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
-          if [[ "$EVENT" != pull_request || "$HAS_RELEASE_LABEL" == true ]]; then
-            echo "run=true" >>"$GITHUB_OUTPUT"
-          else
-            echo "run=false" >>"$GITHUB_OUTPUT"
-          fi
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
+          args=()
+          [[ "$EVENT" == pull_request ]] && args+=(--base "$BASE_SHA")
+          [[ "$HAS_RELEASE_LABEL" == true ]] && args+=(--release)
+          node evals/check-release.mjs plan "${args[@]}" >"$RUNNER_TEMP/release-plan.json"
+          echo "run=$(jq -r .run "$RUNNER_TEMP/release-plan.json")" >>"$GITHUB_OUTPUT"
       - id: version
         name: Read the InfluxDB 3 version the docs were checked against
         run: |
-          version=$(sed -n 's/.*docs_checked_against: "influxdb3-core \([0-9.]*\),.*/\1/p' skills/influxdb3/SKILL.md)
-          test -n "$version"
-          echo "version=$version" >>"$GITHUB_OUTPUT"
+          echo "version=$(jq -r '.version // empty' "$RUNNER_TEMP/release-plan.json")" >>"$GITHUB_OUTPUT"
 
   examples:
     name: Examples on InfluxDB 3 Core ${{ needs.gate-trigger.outputs.version }}
@@ -106,39 +106,27 @@ jobs:
   gate:
     name: Release gate
     needs: [gate-trigger, examples]
-    if: always() && needs.gate-trigger.outputs.run == 'true'
+    if: always() && (needs.gate-trigger.outputs.run == 'true' || needs.gate-trigger.result != 'success')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22
           package-manager-cache: false
-      - name: Examples passed
+      - name: Planning and examples passed
         env:
+          PLANNING: ${{ needs.gate-trigger.result }}
           EXAMPLES: ${{ needs.examples.result }}
-        run: test "$EXAMPLES" == success
-      - name: Evidence matches the release
-        id: evidence
-        run: |
-          dir="evals/evidence/v$(jq -r .version plugin.json)"
-          manifest="$dir/manifest.json"
-          test -s "$manifest" || { echo "::error::missing $manifest"; exit 1; }
-          # The evidence must cover the skills and prompts being released.
-          skills=$(jq -r .skills_tree "$manifest")
-          prompts=$(jq -r .prompts_blob "$manifest")
-          [[ -n "$skills" && "$(git rev-parse HEAD:skills)" == "$skills"* ]] \
-            || { echo "::error::$manifest skills_tree $skills doesn't match skills/ at HEAD"; exit 1; }
-          [[ -n "$prompts" && "$(git rev-parse HEAD:evals/prompts.jsonl)" == "$prompts"* ]] \
-            || { echo "::error::$manifest prompts_blob $prompts doesn't match evals/prompts.jsonl at HEAD"; exit 1; }
-          echo "dir=$dir" >>"$GITHUB_OUTPUT"
-      - name: Score the evidence
+        run: test "$PLANNING" == success && test "$EXAMPLES" == success
+      - name: Verify final-content evidence and required cases
         env:
-          DIR: ${{ steps.evidence.outputs.dir }}
+          EVENT: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
           args=()
-          while read -r file; do args+=(--claude "$DIR/$file"); done < <(jq -r '.claude[].file' "$DIR/manifest.json")
-          while read -r file; do args+=(--codex "$DIR/$file"); done < <(jq -r '.codex[]?.file' "$DIR/manifest.json")
-          node evals/gate.mjs "${args[@]}"
+          [[ "$EVENT" == pull_request ]] && args+=(--base "$BASE_SHA")
+          node evals/check-release.mjs verify "${args[@]}"
