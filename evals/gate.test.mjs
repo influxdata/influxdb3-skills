@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { mergeRuns, runsFromClaude, runsFromCodex, score, scoreCase } from './gate.mjs';
 
-const runs = (...passed) => passed.map((p) => ({ passed: p, error: null }));
+const runs = (...passed) => passed.map((p, i) => ({ passed: p, error: null, startedAt: new Date(1700000000000 + i * 1000).toISOString() }));
 
 test('adversarial cases need every run to pass', () => {
   assert.equal(scoreCase({ id: 'a', category: 'adversarial' }, runs(true, true, true)).pass, true);
@@ -119,4 +119,17 @@ test('required admin and troubleshooting cases retain majority rules and require
   evidence.delete('admin');
   assert.equal(score(prompts, evidence, options).pass, false);
   assert.throws(() => score(prompts, evidence, { requiredCases: ['typo'] }), /unknown required case/);
+});
+
+test('release evidence rejects duplicate or missing Codex sample identities', () => {
+  assert.throws(() => runsFromCodex({ results: [
+    { id: 'a', run: 1, pass: true }, { id: 'a', run: 1, pass: true },
+  ] }, { validateRuns: true }), /duplicate.*run/);
+  assert.throws(() => runsFromCodex({ results: [{ id: 'a', pass: true }] }, { validateRuns: true }), /run identity/);
+});
+
+test('release evidence rejects copied Claude samples with the same session start', () => {
+  const run = runs(true)[0];
+  assert.throws(() => runsFromClaude({ cases: [{ name: 'a', arms: { with: [run, run, run] } }] },
+    { validateRuns: true }), /duplicate Claude run/);
 });

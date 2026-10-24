@@ -35,16 +35,33 @@ export function readPrompts(text) {
 }
 
 // Normalize each harness's output to Map<caseId, [{ passed, error }]>.
-export function runsFromClaude(result) {
+export function runsFromClaude(result, { validateRuns = false } = {}) {
+  if (validateRuns) {
+    for (const c of result.cases ?? []) {
+      const starts = new Set();
+      for (const run of c.arms?.with ?? []) {
+        if (!run.startedAt || !Number.isFinite(Date.parse(run.startedAt))) throw new Error(`${c.name}: missing Claude run identity (startedAt)`);
+        if (starts.has(run.startedAt)) throw new Error(`${c.name}: duplicate Claude run identity`);
+        starts.add(run.startedAt);
+      }
+    }
+  }
   return new Map((result.cases ?? []).map((c) => [
     c.name,
     (c.arms?.with ?? []).map((run) => ({ passed: run.passed === true, error: run.error ?? null })),
   ]));
 }
 
-export function runsFromCodex(summary) {
+export function runsFromCodex(summary, { validateRuns = false } = {}) {
   const runs = new Map();
+  const identities = new Set();
   for (const r of summary.results ?? []) {
+    if (validateRuns) {
+      if (!Number.isInteger(r.run) || r.run < 1) throw new Error(`${r.id}: missing Codex run identity`);
+      const key = `${r.id}:${r.run}`;
+      if (identities.has(key)) throw new Error(`${r.id}: duplicate Codex run identity ${r.run}`);
+      identities.add(key);
+    }
     if (!runs.has(r.id)) runs.set(r.id, []);
     const harnessError = typeof r.reason === 'string' && /^(agent|judge) failed/.test(r.reason) ? r.reason : null;
     runs.get(r.id).push({ passed: r.pass === true, error: harnessError });
@@ -139,7 +156,7 @@ function main(argv) {
   const read = (file) => JSON.parse(readFileSync(file, 'utf8'));
   if (opts.claude.length) {
     const results = opts.claude.map(read);
-    const scored = score(prompts, mergeRuns(results.map(runsFromClaude)), opts);
+    const scored = score(prompts, mergeRuns(results.map((r) => runsFromClaude(r, { validateRuns: opts.minRuns > 1 }))), opts);
     pass &&= scored.pass;
     const cost = results.reduce((sum, r) => sum + (r.costUsd ?? 0), 0);
     const versions = [...new Set(results.map((r) => r.claudeVersion ?? '?'))].join(', ');
@@ -147,7 +164,7 @@ function main(argv) {
   }
   if (opts.codex.length) {
     const summaries = opts.codex.map(read);
-    const scored = score(prompts, mergeRuns(summaries.map(runsFromCodex)), opts);
+    const scored = score(prompts, mergeRuns(summaries.map((r) => runsFromCodex(r, { validateRuns: opts.minRuns > 1 }))), opts);
     // Advisory verdicts do not waive the full-suite evidence requirement.
     pass &&= scored.incomplete.length === 0;
     const models = [...new Set(summaries.map((s) => s.model ?? '?'))].join(', ');
