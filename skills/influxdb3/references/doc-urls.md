@@ -10,6 +10,10 @@ When the skill content does not cover a developer's question — or when the ans
 |---|---|---|
 | Core | https://docs.influxdata.com/influxdb3/core/ | Default for self-hosted single-node setups; Core-specific config and admin |
 | Enterprise | https://docs.influxdata.com/influxdb3/enterprise/ | Multi-node, replication, resource tokens |
+| Core release notes | https://docs.influxdata.com/influxdb3/core/release-notes/ | Target and intervening releases; preserve edition and version qualifiers |
+| Enterprise release notes | https://docs.influxdata.com/influxdb3/enterprise/release-notes/ | Enterprise-specific changes plus inherited Core updates |
+| Enterprise databases | https://docs.influxdata.com/influxdb3/enterprise/admin/databases/ | Existing explicit schemas and separately scoped declaration work |
+| Enterprise users | https://docs.influxdata.com/influxdb3/enterprise/admin/security/manage-users/ | User authentication and role administration beyond token workflows |
 | Cloud Serverless | https://docs.influxdata.com/influxdb3/cloud-serverless/ | Cloud-Serverless–specific endpoints, auth, write path quirks |
 | Cloud Dedicated | https://docs.influxdata.com/influxdb3/cloud-dedicated/ | Dedicated cluster setup, custom hosts |
 

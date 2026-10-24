@@ -5,7 +5,9 @@
 ## What it does
 
 1. `HEAD /ping` — expecting 404 (a known quirk; only GET works on `/ping`). Verifies network reachability.
-2. `GET /ping` — expecting 200. Reports flavor (Core, Enterprise, or another InfluxDB 3 product) and version.
+2. `GET /ping` expects 200 with an admin token and reports the build/version headers.
+   An Enterprise scoped token can return 403 while permitted queries work.
+   In that case, the diagnostic checks a visible database with `SHOW TABLES` and reports limited read-side health instead of declaring the server down.
 3. List databases visible to the token. Reports count + first 5 names.
 4. (Admin-scope only) Create a throwaway `diagnose_<ts>` database, write a smoke point, query it back, delete the database. Confirms the write subsystem and full round-trip work.
 

@@ -26,6 +26,10 @@ Every Processing Engine plugin gets the `influxdb3_local` object passed in as th
 
 Both modes still go through the same write path; the only difference is whether the call blocks until WAL sync.
 
+WAL synchronization and logical deduplication are different properties.
+A durable write does not establish exactly-once processing of a retried event.
+Core 3.12.1 has returned duplicate rows after same-point rewrites; see the application skill's `references/quirks.md` entry 13 before promising that a deterministic timestamp makes retries safe.
+
 ### Quick examples
 
 ```python

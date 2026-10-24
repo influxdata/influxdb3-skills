@@ -38,6 +38,11 @@ curl -X POST "$INFLUXDB_HOST/api/v3/configure/plugin_environment/install_package
 
 The HTTP variant requires an admin token.
 
+Do not treat a successful HTTP status alone as proof that a package installed.
+On Core 3.12.1, a tested missing-package installation returned 200; Enterprise 3.12.1 returned 500 for the same failure.
+Check the installation output and verify that the plugin can import the dependency.
+This observation does not justify ignoring errors or repeatedly installing unknown package names.
+
 > **`install package` is a supply-chain trust boundary.** Package names go to `pip` against public PyPI with **no typosquat protection** — a misspelled or look-alike name (`reqeusts`, `panndas`) installs and then becomes importable by unsandboxed plugin code (`references/plugin-code-safety.md`). Extra arguments are passed to `pip` verbatim, so a stray `--index-url http://attacker/…` or `--extra-index-url` redirects where packages come from. Install only names you've verified, pin versions (`pandas==2.2.2`), and prefer a vetted internal index; in locked-down deployments use `--package-manager disabled` (below) to turn this surface off entirely.
 
 ## When the plugin imports a package

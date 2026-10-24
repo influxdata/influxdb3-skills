@@ -15,10 +15,10 @@ description: >-
   AttributeError, or cache surprises. For external apps that connect to
   InfluxDB 3, use influxdb3 instead.
 metadata:
-  version: "0.7.2"
-  docs_checked: "2026-09-23"
-  docs_checked_against: "influxdb3-core 3.11.5, influxdb3-enterprise 3.11.5"
-  live_verified: "2026-05-15"
+  version: "0.7.3"
+  docs_checked: "2026-10-24"
+  docs_checked_against: "influxdb3-core 3.12.1, influxdb3-enterprise 3.12.1"
+  live_verified: "2026-10-24"
 ---
 
 # InfluxDB 3 Processing Engine Plugins Skill
@@ -68,6 +68,15 @@ Every plugin gets `influxdb3_local` injected (no `import` needed). Five things t
 For WAL plugins specifically, `table_batches` items are **plain dicts**, not class instances. Access via key: `batch["table_name"]`, `batch["rows"]`. NOT attributes.
 
 Full surface: `references/runtime-api.md`.
+
+### Repeated runs and retries
+
+Write plugin code so repeating an event or scheduled tick does not repeat an external side effect or increment a stored total twice.
+The Enterprise 3.12.0 release notes describe replay after restart and cluster-wide trigger execution; cluster placement procedures remain outside this skill.
+Deriving row tags and timestamps from the source event is useful, but it does not by itself prove idempotency.
+Core 3.12.1 has returned duplicate rows after rewriting the same point; verify behavior on the target edition and version before promising retry safety.
+See `influxdb3` → `references/quirks.md` entry 13 and the [Enterprise release notes](https://docs.influxdata.com/influxdb3/enterprise/release-notes/#v3120).
+The cache is per node and cleared on restart, so it cannot deduplicate side effects across nodes or restarts.
 
 ## 5. Single-file vs multi-file plugins
 

@@ -18,17 +18,17 @@ Both the `.py` and the `.toml` need to live in your `PLUGIN_DIR` on the InfluxDB
 
 ### Stage the files
 
-If you have local filesystem access to the host, copy both files into `PLUGIN_DIR`. Otherwise, upload each file via the HTTP API:
+Copy both files into `PLUGIN_DIR` on the server.
+For a Docker deployment, from this example directory:
 
 ```bash
-curl -X POST "$INFLUXDB_HOST/api/v3/plugins/files/example_toml_config.py" \
-  -H "Authorization: Bearer $INFLUXDB_TOKEN" \
-  --data-binary @example_toml_config.py
-
-curl -X POST "$INFLUXDB_HOST/api/v3/plugins/files/example_toml_config_scheduler.toml" \
-  -H "Authorization: Bearer $INFLUXDB_TOKEN" \
-  --data-binary @example_toml_config_scheduler.toml
+docker cp example_toml_config.py <container-name>:/plugins/example_toml_config.py
+docker cp example_toml_config_scheduler.toml <container-name>:/plugins/example_toml_config_scheduler.toml
 ```
+
+The HTTP plugin-file collection endpoint accepts JSON containing filename and source text, not raw file bodies at a filename URL.
+See `references/installing.md` for the Python-file example and the API reference for supported file operations.
+Do not assume Python-file upload also stages the companion TOML file.
 
 ### Create the trigger
 

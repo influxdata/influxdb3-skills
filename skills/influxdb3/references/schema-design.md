@@ -9,7 +9,9 @@ Fields aren't part of that identity.
 - **Fields** hold measured values: temperature, utilization, latency.
 - Tag values are always strings. Field values can be integers, unsigned integers, floats, strings, or booleans.
 
-Two points with the same table, tag set, and timestamp are the same row, and the later write overwrites the earlier one.
+Two points with the same table, tag set, and timestamp share a logical identity.
+Core 3.12.1 has returned duplicate rows after rewriting the same point; see `references/quirks.md` entry 13.
+Do not use the logical identity alone as a guarantee of overwrite or retry safety.
 So a value that tells two data sources apart must be a tag, even when it's unique per device.
 
 ## Cardinality
@@ -22,7 +24,7 @@ Don't move identifiers into fields to reduce cardinality. That advice applies to
 
 For "how do I track GPU utilization across 50,000 GPUs?", make `gpu_id` a tag, along with `host` and `region`.
 Several GPUs on one host report at the same timestamp.
-If `gpu_id` were a field, their points would share a tag set and timestamp, and each write would overwrite the last.
+If `gpu_id` were a field, their points would share a logical identity rather than identify separate GPUs.
 
 ## Naming conventions
 
@@ -38,6 +40,11 @@ Group related measurements that share tag schema into one measurement with a `me
 ## Schema evolution
 
 Adding new tags or fields to an existing measurement is safe — old rows just have NULLs in the new columns. Changing a field's **type** is not safe (see `references/writing.md` → "Type stickiness"). Removing a tag/field doesn't drop existing data; it just stops new writes from using it.
+
+Schema-on-write applies to implicit-schema databases.
+An Enterprise database in explicit-schema mode rejects undeclared tables and columns.
+If the developer encounters that error, check the existing schema and route declaration work to the [Enterprise schema guide](https://docs.influxdata.com/influxdb3/enterprise/admin/databases/).
+Don't tell an application to create columns by writing them or turn off enforcement.
 
 ## Where to fetch more
 
