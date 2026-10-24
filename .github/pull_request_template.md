@@ -19,7 +19,8 @@ Closes #
 <!--
 List what you ran and the result. Examples:
 - live example runs, with product and version (for example, Core 3.11.5)
-- eval cases rerun: `node evals/run-codex-evals.mjs --case <id> --runs 3`
+- full final-content eval suite, three runs per case on both agents; selected changed-case IDs
+- iteration-only eval cases rerun: `node evals/run-codex-evals.mjs --case <id> --runs 3`
   or `claude plugin eval ./ --case <id>`
 
 For any skill change that states or relies on product behavior, cite the
@@ -38,4 +39,13 @@ Claims:
 - [ ] Skills validate: `uvx --from <skills-ref> skills-ref validate skills/<skill>/` (see `.github/workflows/validate.yml`)
 - [ ] Versions match: `scripts/check-versions.sh`
 - [ ] `CHANGELOG.md` updated for user-visible changes
-- [ ] Product claims cite the docs-tooling claims ledger, with version support written as `X+`
+- [ ] Product claims cite the docs-tooling claims ledger, with edition, exact version, and evidence state
+
+For skill-changing PRs before merge:
+
+- [ ] New shared package version, changelog, and eval history included
+- [ ] Final-content full-suite evidence from both agents, three runs per case
+- [ ] Manifest selects every changed-behavior case, or explains no changed behavior
+- [ ] Release-note coverage and exact-version live evidence reviewed; applicable Enterprise/plugin/troubleshooting outcomes and cleanup recorded
+- [ ] Codex findings reviewed and demonstrated defects resolved
+- [ ] Verification metadata reflects completed checks; Core CI coverage is not claimed as Enterprise or Processing Engine verification

@@ -150,7 +150,7 @@ Release history is in [`CHANGELOG.md`](CHANGELOG.md).
    Follow the evidence rules in [`docs/publishing.md`](docs/publishing.md).
 2. Use full product names, never "Cloud" alone, and keep skill text agent-neutral.
 3. Run the checks in [`TESTING.md`](TESTING.md) for your change.
-   Adversarial eval cases must pass 100%.
+   Every skill-changing merge needs a new shared version, full three-run eval evidence from both agents, individual changed-case acceptance, and applicable exact-version live verification before merge. See the [merge policy](docs/decisions/0003-production-worthy-main.md).
 4. Open a pull request.
 
 ### Develop locally

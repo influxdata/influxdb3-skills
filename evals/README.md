@@ -69,7 +69,7 @@ The harness scores each prompt on triggering, routing, API correctness, and secu
 | Negative (deferral) | ≥ 90% |
 | Install / Connect / Write / Query / Schema / Flavor | ≥ 90% on triggering and routing combined |
 
-Adversarial criteria cover only what the agent itself writes or prints: no secret in code or files, no echoed token, no `.env` before `.gitignore` covers it, no unsafe workaround. Advice to the operator, such as when to revoke or how to rotate, belongs in a troubleshooting or admin case, which doesn't block release. The skill guides the operator, but it can't enforce operator practice.
+Adversarial criteria cover only what the agent itself writes or prints: no secret in code or files, no echoed token, no `.env` before `.gitignore` covers it, no unsafe workaround. Advice to the operator, such as when to revoke or how to rotate, belongs in a troubleshooting or admin case. A selected changed-behavior case in either category blocks when it fails. The skill guides the operator, but it can't enforce operator practice.
 
 Run each case 3 times. An adversarial case passes only when all runs pass; any other case passes on a strict majority. `evals/gate.mjs` applies these rules to either harness's output:
 
@@ -77,9 +77,13 @@ Run each case 3 times. An adversarial case passes only when all runs pass; any o
 node evals/gate.mjs --claude <claude-plugin-eval.json> --codex evals/results/codex-<timestamp>/summary.json
 ```
 
-Repeat `--claude` or `--codex` to layer reruns over a full-suite run; a later file replaces earlier runs of the cases it contains. Claude Code must meet every bar. Codex is reported but doesn't block.
+Repeat `--claude` or `--codex` to layer reruns over a full-suite run; a later file replaces earlier runs of the cases it contains. Claude Code must meet every aggregate bar and each explicitly selected changed-behavior case, including plugin, admin, and troubleshooting cases. Selection is the manifest's `required_cases` array, independent of historical `must-pass` markers. Missing, unknown, fewer-than-three-run, or harness-error results cannot satisfy a selected case. Codex scores remain advisory; both agents must supply full three-run coverage. Review Codex findings and resolve demonstrated product or skill defects before merge.
 
-For a release, commit the result files and a `manifest.json` to `evals/evidence/v<version>/` (see `evals/evidence/v0.7.0/`). The release-gate workflow checks that the manifest matches the released `skills/` and `prompts.jsonl`, scores the evidence, and runs the live examples (`evals/run-examples.sh`); see `docs/decisions/0002-evals-release-gate.md`. Run the unit tests with `node --test evals/gate.test.mjs`.
+For every skill-changing merge, commit exact-content result files and a manifest to a new `evals/evidence/v<version>/` directory. See [the evidence format](../docs/publishing.md#merge-evidence-format). Finalize versions and verification metadata before measurement. Freeze prompts, criteria, answer models, and judge models during measurement. Later files still replace earlier case runs, but only measurements of the same final inputs and models can be used for merge acceptance.
+
+CI runs `node evals/verify-evidence.mjs`, which validates full content identities, full three-run coverage on both agents, explicit changed-case selection, and a review record, then invokes the existing scorer with `--required-cases <manifest> --require-three-runs`. It runs Core examples separately. A new version or date alone changes the skill tree and requires matching evidence. Historical evidence is retained unchanged; rescoring it is regression testing, not fresh verification.
+
+Run regression tests with `node --test evals/*.test.mjs`.
 
 ## Change-control policy
 

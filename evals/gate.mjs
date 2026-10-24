@@ -69,7 +69,7 @@ export function scoreCase(testCase, runs) {
   return { id: testCase.id, category: testCase.category, passed, total, errors, pass: total > 0 && passed >= needed };
 }
 
-export function score(prompts, runsById) {
+export function score(prompts, runsById, requiredCases = [], requireThreeRuns = false) {
   const cases = prompts.map((p) => scoreCase(p, runsById.get(p.id) ?? []));
   const bars = BARS.map((bar) => {
     const inBar = cases.filter((c) => bar.categories.includes(c.category));
@@ -77,10 +77,15 @@ export function score(prompts, runsById) {
     const rate = inBar.length ? passed / inBar.length : 0;
     return { ...bar, passed, total: inBar.length, rate, pass: inBar.length > 0 && rate >= bar.min };
   });
-  return { cases, bars, pass: bars.every((bar) => bar.pass) };
+  const required = requiredCases.map((id) => {
+    const c = cases.find((c) => c.id === id);
+    return { id, pass: Boolean(c?.pass && c.total === 3 && c.errors === 0) };
+  });
+  const complete = cases.length > 0 && cases.every((c) => c.total === 3);
+  return { cases, bars, required, complete, pass: (!requireThreeRuns || complete) && bars.every((bar) => bar.pass) && required.every((c) => c.pass) };
 }
 
-export function report(agent, { cases, bars, pass }, note) {
+export function report(agent, { cases, bars, required, complete, pass }, note) {
   const pct = (x) => `${Math.round(x * 100)}%`;
   const runsPerCase = Math.max(0, ...cases.map((c) => c.total));
   const lines = [
@@ -92,6 +97,11 @@ export function report(agent, { cases, bars, pass }, note) {
     '|---|---|---|---|',
     ...bars.map((b) => `| ${b.name} | ${pct(b.min)} | ${b.passed}/${b.total} (${pct(b.rate)}) | ${b.pass ? 'pass' : '**fail**'} |`),
   ];
+  lines.push('', `Three-run coverage: ${complete ? 'pass' : '**fail**'}.`);
+  if (required.length) {
+    lines.push('', '| Required changed case | Result |', '|---|---|',
+      ...required.map((c) => `| ${c.id} | ${c.pass ? 'pass' : '**fail**'} |`));
+  }
   const failed = cases.filter((c) => !c.pass);
   if (failed.length) {
     lines.push('', '| Failed case | Category | Runs passed | Harness errors |', '|---|---|---|---|');
@@ -100,13 +110,15 @@ export function report(agent, { cases, bars, pass }, note) {
   return lines.join('\n');
 }
 
-const USAGE = 'Usage: node evals/gate.mjs [--claude <result.json>]... [--codex <summary.json>]... [--prompts <file>]';
+const USAGE = 'Usage: node evals/gate.mjs [--claude <result.json>]... [--codex <summary.json>]... [--prompts <file>] [--required-cases <manifest.json>] [--require-three-runs]';
 
 function main(argv) {
-  const opts = { claude: [], codex: [], prompts: new URL('./prompts.jsonl', import.meta.url) };
+  const opts = { claude: [], codex: [], prompts: new URL('./prompts.jsonl', import.meta.url), requiredCases: [], requireThreeRuns: false };
   for (let i = 0; i < argv.length; i += 1) {
     if (argv[i] === '--claude') opts.claude.push(argv[++i]);
     else if (argv[i] === '--codex') opts.codex.push(argv[++i]);
+    else if (argv[i] === '--required-cases') opts.requiredCases = JSON.parse(readFileSync(argv[++i], 'utf8')).required_cases;
+    else if (argv[i] === '--require-three-runs') opts.requireThreeRuns = true;
     else if (argv[i] === '--prompts') opts.prompts = argv[++i];
     else {
       console.error(`unknown argument '${argv[i]}'\n${USAGE}`);
@@ -118,12 +130,13 @@ function main(argv) {
     return 2;
   }
   const prompts = readPrompts(readFileSync(opts.prompts, 'utf8'));
+  if (!Array.isArray(opts.requiredCases) || opts.requiredCases.some((id) => !prompts.some((p) => p.id === id))) throw new Error('Unknown or missing required_cases');
   const sections = [];
   let pass = true;
   const read = (file) => JSON.parse(readFileSync(file, 'utf8'));
   if (opts.claude.length) {
     const results = opts.claude.map(read);
-    const scored = score(prompts, mergeRuns(results.map(runsFromClaude)));
+    const scored = score(prompts, mergeRuns(results.map(runsFromClaude)), opts.requiredCases, opts.requireThreeRuns);
     pass &&= scored.pass;
     const cost = results.reduce((sum, r) => sum + (r.costUsd ?? 0), 0);
     const versions = [...new Set(results.map((r) => r.claudeVersion ?? '?'))].join(', ');
@@ -131,7 +144,8 @@ function main(argv) {
   }
   if (opts.codex.length) {
     const summaries = opts.codex.map(read);
-    const scored = score(prompts, mergeRuns(summaries.map(runsFromCodex)));
+    const scored = score(prompts, mergeRuns(summaries.map(runsFromCodex)), opts.requiredCases, opts.requireThreeRuns);
+    pass &&= !opts.requireThreeRuns || scored.complete; // Missing Codex measurements block; Codex scores remain advisory.
     const models = [...new Set(summaries.map((s) => s.model ?? '?'))].join(', ');
     sections.push(report('Codex (advisory, does not block)', scored, `Model: ${models}.`));
   }

@@ -1,13 +1,13 @@
 # Testing
 
 How to check a change to the skills before you open a pull request.
-CI runs the validation checks on every pull request. The evals and runnable examples need a model API key or a live InfluxDB 3 instance, so run the ones your change affects locally.
+CI runs the validation checks on every pull request. Every skill-changing PR must include full formal eval evidence from both agents before merging. Maintainers run models outside CI. CI validates and scores committed evidence and runs Core examples. See [the merge policy](docs/decisions/0003-production-worthy-main.md).
 
 ## Before you open a pull request
 
 | Change | Run |
 |---|---|
-| Any skill text | [Validate the skills](#validate-the-skills), [check links](#check-links), and the [evals](#run-the-evals) for the cases your change affects |
+| Any skill text | [Validate the skills](#validate-the-skills), [check links](#check-links), and the full [evals](#run-the-evals) on both agents, three runs per case |
 | A version or `metadata:` field | [Check versions](#check-versions) |
 | Example code | [Run the examples](#run-the-examples) |
 | A workflow in `.github/workflows/` | [Lint workflows](#lint-workflows) |
@@ -63,7 +63,7 @@ zizmor .github/workflows/
 ## Unit tests
 
 ```sh
-node --test evals/gate.test.mjs
+node --test evals/*.test.mjs
 ```
 
 ## Run the examples
@@ -83,7 +83,7 @@ PRODUCT=core evals/run-examples.sh
 docker rm -f influxdb3-test
 ```
 
-Set `PRODUCT=enterprise` against an InfluxDB 3 Enterprise instance to also run the admin lifecycle examples, which need resource tokens.
+Set `PRODUCT=enterprise` against the named exact Enterprise version to also run admin lifecycles, which need resource tokens. The runner does not exercise Processing Engine round trips or the broken/fixed troubleshooting demonstrations. Run applicable checks from `docs/publishing.md` separately and record outcomes and cleanup. Automated Core results establish only Core example coverage. The manifest's `core_version` selects the CI image independently of documentation-check metadata.
 
 ## Run the evals
 
@@ -106,7 +106,7 @@ Results go to the gitignored `evals/results/` and `evals/claude-cases/` director
 
 `evals/smoke-prompts.md` lists prompts to try by hand in a fresh agent session against a live instance.
 
-For a release, maintainers run the full suite and commit the results to `evals/evidence/v<version>/`. See `docs/publishing.md`.
+For every skill-changing merge, maintainers run the full suite and commit the results to `evals/evidence/v<version>/`. See `docs/publishing.md`.
 
 ## Test your working copy in an agent
 

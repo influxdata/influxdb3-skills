@@ -1,7 +1,7 @@
 # ADR-0002: Gate releases on live examples and committed eval evidence
 
 ## Status
-Proposed
+Amended by [ADR-0003](0003-production-worthy-main.md). Its merge boundary, evidence requirements, and changed-case policy supersede conflicting statements below. The original rationale remains for history.
 
 ## Date
 2026-09-28
