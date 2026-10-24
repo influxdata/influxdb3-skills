@@ -38,4 +38,6 @@ Claims:
 - [ ] Skills validate: `uvx --from <skills-ref> skills-ref validate skills/<skill>/` (see `.github/workflows/validate.yml`)
 - [ ] Versions match: `scripts/check-versions.sh`
 - [ ] `CHANGELOG.md` updated for user-visible changes
-- [ ] Product claims cite the docs-tooling claims ledger, with version support written as `X+`
+- [ ] Product claims cite the docs-tooling claims ledger with exact edition/version and evidence state
+- [ ] Skill changes include a new shared package version, final-content full-suite evidence, and explicit `required_cases` for changed behavior
+- [ ] Release review checks target and intervening release notes on current docs-v2 `master` and production, with source commit, URLs, access date, and dispositions recorded
