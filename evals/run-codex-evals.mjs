@@ -4,7 +4,7 @@
 //
 // Examples:
 //   node evals/run-codex-evals.mjs --case admin-db-crud --runs 1
-//   node evals/run-codex-evals.mjs --runs 3 --model gpt-5.3-codex
+//   node evals/run-codex-evals.mjs --runs 3 --model gpt-6-luna --judge-model gpt-6-luna
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -21,7 +21,7 @@ function usage(message) {
 }
 
 function args(argv) {
-  const options = { caseIds: null, runs: 1, model: null, judgeModel: null };
+  const options = { caseIds: null, runs: 1, model: 'gpt-6-luna', judgeModel: 'gpt-6-luna' };
   for (let i = 0; i < argv.length; i += 1) {
     const value = argv[i];
     if (value === '--case') options.caseIds = (argv[++i] ?? '').split(',').filter(Boolean);

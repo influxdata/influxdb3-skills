@@ -103,7 +103,7 @@ node evals/build-claude-cases.mjs
 claude plugin eval ./ --eval-dir evals/claude-cases --case <id> --runs 3 --ablation none --trust-plugin --judge-model sonnet
 
 # Codex
-node evals/run-codex-evals.mjs --case <id> --runs 3 --model gpt-5.6-terra --judge-model gpt-5.6-luna
+node evals/run-codex-evals.mjs --case <id> --runs 3 --model gpt-6-luna --judge-model gpt-6-luna
 ```
 
 A single run is noisy. Run a case 3 times before you change the skill or its criteria.
