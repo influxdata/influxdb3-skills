@@ -62,7 +62,10 @@ test('release verification checks version, exact evidence hashes, required cases
       model: 'fixed-answer-model', judge: 'fixed-judge', cli_version: '1.0' }];
   }
   const save = () => {
-    for (const c of claude.cases) c.arms.with.forEach((r, i) => { r.startedAt ??= new Date(1700000000000 + i * 1000).toISOString(); });
+    for (const c of claude.cases) c.arms.with.forEach((r, i) => {
+      r.startedAt ??= new Date(1700000000000 + i * 1000).toISOString();
+      r.tracePath ??= `/tmp/${c.name}/session-${i}/trace.jsonl`;
+    });
     f.write('evals/evidence/v0.7.3/manifest.json', JSON.stringify(manifest));
     f.write('evals/evidence/v0.7.3/claude.json', JSON.stringify(claude));
     f.write('evals/evidence/v0.7.3/codex.json', JSON.stringify(codex));

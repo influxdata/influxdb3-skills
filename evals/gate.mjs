@@ -38,11 +38,12 @@ export function readPrompts(text) {
 export function runsFromClaude(result, { validateRuns = false } = {}) {
   if (validateRuns) {
     for (const c of result.cases ?? []) {
-      const starts = new Set();
+      const traces = new Set();
       for (const run of c.arms?.with ?? []) {
         if (!run.startedAt || !Number.isFinite(Date.parse(run.startedAt))) throw new Error(`${c.name}: missing Claude run identity (startedAt)`);
-        if (starts.has(run.startedAt)) throw new Error(`${c.name}: duplicate Claude run identity`);
-        starts.add(run.startedAt);
+        if (typeof run.tracePath !== 'string' || !run.tracePath.trim()) throw new Error(`${c.name}: missing Claude run identity (tracePath)`);
+        if (traces.has(run.tracePath)) throw new Error(`${c.name}: duplicate Claude run identity`);
+        traces.add(run.tracePath);
       }
     }
   }
