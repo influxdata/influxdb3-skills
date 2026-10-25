@@ -47,8 +47,10 @@ node evals/run-codex-evals.mjs --case admin-db-crud --runs 1
 node evals/run-codex-evals.mjs --runs 3
 ```
 
-Codex must already be authenticated (`codex login status`). The runner uses the
-default configured model; pass `--model <model>` to override it.
+Codex must already be authenticated (`codex login status`). The runner defaults
+to `gpt-6-luna` for both answers and judging; use `--model <model>` and
+`--judge-model <model>` to override them. This model was verified with Codex CLI
+0.164.0; update older clients before running the suite.
 
 ### Claude Code
 
