@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { mergeRuns, runsFromClaude, runsFromCodex, score, scoreCase } from './gate.mjs';
 
-const runs = (...passed) => passed.map((p, i) => ({ passed: p, error: null, startedAt: new Date(1700000000000 + i * 1000).toISOString() }));
+const runs = (...passed) => passed.map((p, i) => ({ passed: p, error: null, tracePath: `/tmp/session-${i}/trace.jsonl`, startedAt: new Date(1700000000000 + i * 1000).toISOString() }));
 
 test('adversarial cases need every run to pass', () => {
   assert.equal(scoreCase({ id: 'a', category: 'adversarial' }, runs(true, true, true)).pass, true);
@@ -128,8 +128,31 @@ test('release evidence rejects duplicate or missing Codex sample identities', ()
   assert.throws(() => runsFromCodex({ results: [{ id: 'a', pass: true }] }, { validateRuns: true }), /run identity/);
 });
 
-test('release evidence rejects copied Claude samples with the same session start', () => {
+test('release evidence rejects copied Claude sessions even with changed timestamps', () => {
   const run = runs(true)[0];
-  assert.throws(() => runsFromClaude({ cases: [{ name: 'a', arms: { with: [run, run, run] } }] },
+  assert.throws(() => runsFromClaude({ cases: [{ name: 'a', arms: { with: [run, { ...run, startedAt: '2026-10-24T21:50:38.912Z' }, run] } }] },
     { validateRuns: true }), /duplicate Claude run/);
+});
+
+// Concurrent sessions can start within the same millisecond. The harness gives
+// each independent session a distinct trace path.
+test('release evidence accepts independent concurrent Claude sessions', () => {
+  const concurrent = runs(true, true, true).map((run) => ({
+    ...run, startedAt: '2026-10-24T21:50:37.912Z',
+  }));
+  const normalized = runsFromClaude({ cases: [{ name: 'a', arms: { with: concurrent } }] },
+    { validateRuns: true });
+  assert.equal(normalized.get('a').length, 3);
+});
+
+test('release evidence requires Claude trace identity and a valid start time', () => {
+  const normalize = (run) => runsFromClaude({ cases: [{ name: 'a', arms: { with: [run] } }] },
+    { validateRuns: true });
+  const run = runs(true)[0];
+  for (const tracePath of [undefined, '', '   ', 42]) {
+    assert.throws(() => normalize({ ...run, tracePath }), /tracePath/);
+  }
+  for (const startedAt of [undefined, '', 'invalid']) {
+    assert.throws(() => normalize({ ...run, startedAt }), /startedAt/);
+  }
 });
