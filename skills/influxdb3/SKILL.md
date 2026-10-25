@@ -235,7 +235,7 @@ Example reply:
 - The admin (operator) token comes from server bootstrap on Core and Enterprise. For other products, it comes from the process in that product's docs. Application code never reads it directly.
 - On InfluxDB 3 Enterprise and InfluxDB 3 Cloud, application code uses **scoped resource tokens** with permissions like `db:<dbname>:read,write`. Create them with the admin token, and rotate them.
 - **InfluxDB 3 Core has admin tokens only**, with no resource tokens and no RBAC. Don't generate `--permission` or resource-token API calls for Core. Give each Core application its own named admin token. Details: `references/tokens.md` → "InfluxDB 3 Core: admin tokens only."
-- Rotate in this order: **create the new token, swap the secret or env var, then revoke the old token.** The reverse order causes downtime or worse.
+- Rotate in this order: **create the new token with the same permissions, swap the secret or env var, confirm every consumer uses the replacement, then revoke the old token.** A fixed grace period alone does not establish that consumers switched. Generated scripts must require positive confirmation before revocation.
 - The create response shows a new token's secret **once**. Capture it right away; the server can't return it later.
 
 | Goal | Read |

@@ -42,6 +42,11 @@ For real-time streams, prefer the client's built-in batch-and-flush helper. For 
 | 5xx | Server side | **Yes** — backoff with jitter |
 | No response (connection reset or refused) | The node is stopped or unreachable | **Yes** — back off, or send to another node |
 
+Retriable means a bounded retry may help, not that repeating a write is safe.
+If a response does not establish what was committed, retries can repeat accepted
+work. Qualify retry safety with the target edition/version behavior; see
+`references/quirks.md` entry 13 for the Core 3.12.1 duplicate-row observation.
+
 Before Core and Enterprise 3.10.0, `/api/v2/write` returned 401, not 403, for a valid token that lacks permission.
 Handle both codes as "fix the token."
 
@@ -49,7 +54,7 @@ Handle both codes as "fix the token."
 
 `/api/v3/write_lp` accepts partial writes by default (`accept_partial=true`).
 InfluxDB writes the valid lines, rejects the invalid ones, and returns 400.
-The response body lists each rejected line with its line number.
+The response body's `data` array lists rejected lines with `line_number` values.
 After a partial write, the valid lines are already stored.
 Resend only the corrected rejected lines, not the whole batch.
 
