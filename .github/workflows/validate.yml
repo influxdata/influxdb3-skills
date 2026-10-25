@@ -21,6 +21,7 @@ jobs:
           node-version: 22
           package-manager-cache: false
       - run: node --test evals/gate.test.mjs evals/check-release.test.mjs
+      - run: python3 evals/run-plugin-examples.test.py
 
   skills:
     name: Agent Skills spec

@@ -77,6 +77,13 @@ Deriving row tags and timestamps from the source event is useful, but it does no
 Core 3.12.1 has returned duplicate rows after rewriting the same point; verify behavior on the target edition and version before promising retry safety.
 See `influxdb3` → `references/quirks.md` entry 13 and the [Enterprise release notes](https://docs.influxdata.com/influxdb3/enterprise/release-notes/#v3120).
 The cache is per node and cleared on restart, so it cannot deduplicate side effects across nodes or restarts.
+For external side effects, use the receiving system's durable idempotency mechanism
+when available, and test repeated execution. A measurement marker followed by an
+effect is not an atomic operation: concurrent runs or a crash between those steps
+can still duplicate or lose the effect. Neither `write_sync` nor an unverified
+query-time deduplication recipe proves exactly-once updates. Do not promise an
+at-least-once delivery contract from these observations either. Refer distributed
+placement and delivery guarantees to the maintained Enterprise documentation.
 
 ## 5. Single-file vs multi-file plugins
 
