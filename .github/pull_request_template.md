@@ -23,10 +23,10 @@ List what you ran and the result. Examples:
   or `claude plugin eval ./ --case <id>`
 
 For any skill change that states or relies on product behavior, cite the
-claim IDs from the docs-tooling verification claims ledger
-(`research/claims/<run-id>/claims.yml`), for example `claim-20260925-0188`.
-If no claim covers the behavior, record one there first, and add the skill
-lines to the claim's `cites`.
+claim IDs from the docs-tooling verification claims ledger, for example
+`claim-20260925-0188`. If no claim covers the behavior, record one there first,
+and add the skill lines to the claim's `cites`. Cite IDs here and in
+`CHANGELOG.md`, never in `skills/`.
 -->
 
 Claims:

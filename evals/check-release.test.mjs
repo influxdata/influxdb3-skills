@@ -4,6 +4,7 @@ import { spawnSync } from 'node:child_process';
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync, renameSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { uncitedLiveVerified } from './changelog-claims.mjs';
 
 const command = resolve('evals/check-release.mjs');
 
@@ -24,6 +25,7 @@ function fixture(t) {
   git('init', '-q');
   write('skills/influxdb3/SKILL.md', '---\nmetadata:\n  docs_checked_against: "influxdb3-core 3.12.1, influxdb3-enterprise 3.12.1"\n---\nOriginal guidance\n');
   write('plugin.json', '{"version":"0.7.2"}');
+  write('CHANGELOG.md', '# Changelog\n\n## [0.7.3] — Unreleased\n\n### Live-verified behavior corrections\n\n- Fixture correction. Claim claim-20261015-0107.\n');
   write('evals/prompts.jsonl', ['adversarial', 'negative', 'connect', 'plugins'].map((category) => JSON.stringify({ id: category, category, prompt: 'Original' })).join('\n'));
   commit();
   return { dir, git, write, commit, run, base: git('rev-parse', 'HEAD') };
@@ -139,4 +141,26 @@ test('an evidence-only PR cannot rewrite any released version', (t) => {
   const r = f.run('plan', '--base', base);
   assert.equal(r.status, 1);
   assert.match(r.stderr, /immutable/);
+});
+
+test('release verification rejects Live-verified changelog lines without a claim ID', (t) => {
+  const f = fixture(t);
+  f.write('plugin.json', '{"version":"0.7.3"}');
+  f.write('CHANGELOG.md', '## [0.7.3] — Unreleased\n\n### Live-verified behavior corrections\n\n- Cited. claim-20261015-0107\n- Uncited correction.\n');
+  f.commit();
+  const r = f.run('verify', '--base', f.base);
+  assert.equal(r.status, 1);
+  assert.match(r.stderr, /must cite a claim ID/);
+  assert.match(r.stderr, /Uncited correction/);
+  assert.doesNotMatch(r.stderr, /Cited\. claim/);
+});
+
+test('changelog claim check reads only the release section\'s Live-verified bullets, including wrapped lines', () => {
+  const log = [
+    '## [0.7.3] — Unreleased', '', '### Fixed', '- No claim needed here.', '',
+    '### Live-verified behavior corrections', '- Wrapped line starts here', '  and cites claim-20261023-0001.', '- Bare.', '',
+    '## [0.7.2] — 2026-09-29', '', '### Live-verified', '- Older uncited line.', '',
+  ].join('\n');
+  assert.deepEqual(uncitedLiveVerified(log, '0.7.3'), ['- Bare.']);
+  assert.throws(() => uncitedLiveVerified(log, '0.9.9'), /no section for 0\.9\.9/);
 });

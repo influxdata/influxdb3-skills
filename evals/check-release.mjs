@@ -4,6 +4,7 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync, realpathSync, appendFileSync } from 'node:fs';
 import { basename, resolve, sep } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
+import { uncitedLiveVerified } from './changelog-claims.mjs';
 import { readPrompts, mergeRuns, runsFromClaude, runsFromCodex, score, report } from './gate.mjs';
 
 function git(...args) {
@@ -36,6 +37,8 @@ function verify(base, changed) {
     const skillChange = changed.some((p) => p.startsWith('skills/') || p === 'evals/prompts.jsonl');
     if (skillChange && oldVersion === version) throw new Error('skill-changing merges require a new shared package version');
   }
+  const uncited = uncitedLiveVerified(readFileSync('CHANGELOG.md', 'utf8'), version);
+  if (uncited.length) throw new Error(`Live-verified changelog lines must cite a claim ID:\n${uncited.join('\n')}`);
   const manifest = JSON.parse(readFileSync(`${dir}/manifest.json`, 'utf8'));
   if (manifest.release !== `v${version}`) throw new Error('manifest release does not match package version');
   for (const [key, path] of [['skills_tree', 'skills'], ['prompts_blob', 'evals/prompts.jsonl']]) {

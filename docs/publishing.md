@@ -23,6 +23,7 @@ Internal commits and process-only repository changes do not each require a versi
 - Use release notes to find changes, not as the only source for stable guidance.
 - When a discrepancy is confirmed, fix the docs, the skill, and the InfluxDB 3 MCP server, not only the skill.
 - Record each changed product claim in the claims ledger with edition, version, source, and evidence state (Documented, Live-verified, Derived, Unknown).
+- Runtime text (`skills/**`) states the fact with its edition and version, and never carries a claim ID or ledger path. Maintainer records (`CHANGELOG.md`, `docs/`, eval evidence, PRs) cite claim IDs. `scripts/check-claim-policy.mjs` enforces the first rule in CI, and `evals/check-release.mjs verify` requires every Live-verified changelog bullet in the release section to cite a claim ID.
 - Don't write support ranges such as `>=3.8`. Record the exact versions checked, and note the version where behavior changed.
 
 ## Update for an InfluxDB release

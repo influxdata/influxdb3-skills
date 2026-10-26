@@ -48,22 +48,22 @@ Release notes identify changes; they do not replace the API spec, required live 
 
 ## Evidence limits
 
-At the initial docs-tooling snapshot, `research/claims/` contained no 3.12.1-scoped claims.
+At the initial docs-tooling snapshot, the claims ledger contained no 3.12.1-scoped claims.
 That gap is partly closed by the subsequently merged ledger entries described below.
 The older feature ledger runs cover `3.12.0-0.rc.2` and a 3.12.0 GA rollback investigation.
 Confirmed RC behavior does not establish exact-version 3.12.1 verification for claims the new runs do not cover.
 
-The following paths are relative to docs-tooling at the recorded commit:
+The ledger is internal to InfluxData and isn't publicly resolvable. Each row names a ledger run by date and topic, and cites claims by ID.
 
-| Evidence | Relevant findings | Limits |
+| Ledger run | Relevant findings | Limits |
 |---|---|---|
-| `research/claims/2026-09-30-influxdb3-skills-3.12-rc2/claims.yml` | Claims 0201–0213 cover schema and plugin API behavior. Claims 0214–0217 leave retry and distributed execution questions unknown. | RC-2, with edition and topology limits per claim. |
-| `research/claims/2026-09-30-influxdb3-3.12-rc2-explicit-schema/claims.yml` | Claims 0324–0328 distinguish V3 partial writes from legacy endpoint rejection. Claims 0329–0332 address propagation and plugin writes. | Observed propagation delays are not guaranteed bounds. |
-| `research/claims/2026-09-30-influxdb3-3.12-rc2-mcp-write-query-auth/claims.yml` | Claims 0403–0407 cover cross-node behavior, partial writes, and table patch responses. | RC-2 evidence does not certify GA behavior. |
-| `research/claims/2026-10-07-enterprise-3.12-three-node-rollback/claims.yml` | Claims 0400–0403 show incompatible catalog records and incorrect query results after catalog-only restoration. | Binary startup does not establish a supported rollback path. |
-| `research/work/mcp-trusted-readonly-investigation/phase1-results/` | Raw 3.12.1 results show pre-first-row resource failures returning Core 500 and Enterprise 429. | Promoted in part by the new query/access ledger below. No mid-result failure reproduced. |
-| `research/work/mcp-trusted-readonly-investigation/phase2-4-results/` | Raw 3.12.1 results cover scoped-token probes, authorization failures, and ingest-only query routing. | The new query/access ledger qualifies which observations are confirmed. |
-| `research/work/mcp-trusted-readonly-investigation/jwt-results/` | Raw Enterprise 3.12.1 role and JWT results. | The new JWT ledger qualifies which observations are confirmed. Hidden commands do not establish public support. |
+| 2026-09-30, RC-2 skills | Claims `claim-20260930-0201` through `0213` cover schema and plugin API behavior. Claims `claim-20260930-0214` through `0217` leave retry and distributed execution questions unknown. | RC-2, with edition and topology limits per claim. |
+| 2026-09-30, RC-2 explicit schema | Claims `claim-20260930-0324` through `0328` distinguish V3 partial writes from legacy endpoint rejection. Claims `claim-20260930-0329` through `0332` address propagation and plugin writes. | Observed propagation delays are not guaranteed bounds. |
+| 2026-09-30, RC-2 MCP write, query, and auth | Claims `claim-20260930-0403` through `0407` cover cross-node behavior, partial writes, and table patch responses. | RC-2 evidence does not certify GA behavior. |
+| 2026-10-07, Enterprise 3.12 three-node rollback | Claims `claim-20261007-0400` through `0403` show incompatible catalog records and incorrect query results after catalog-only restoration. | Binary startup does not establish a supported rollback path. |
+| MCP trusted read-only investigation, phase 1 (raw results) | Raw 3.12.1 results show pre-first-row resource failures returning Core 500 and Enterprise 429. | Promoted in part by the new query/access ledger below. No mid-result failure reproduced. |
+| MCP trusted read-only investigation, phases 2 to 4 (raw results) | Raw 3.12.1 results cover scoped-token probes, authorization failures, and ingest-only query routing. | The new query/access ledger qualifies which observations are confirmed. |
+| MCP trusted read-only investigation, JWT (raw results) | Raw Enterprise 3.12.1 role and JWT results. | The new JWT ledger qualifies which observations are confirmed. Hidden commands do not establish public support. |
 
 ### Newly merged exact-version claims
 
@@ -71,11 +71,11 @@ At docs-tooling commit `6a8a6967eb03ed28f862f5c8138a7429d6a28581`, these runs co
 All three runs scope their entries to 3.12.1.
 Counts reflect ledger verdicts rather than an independent rerun of the probes.
 
-| Ledger run under `research/claims/` | Claim IDs | Verdicts | Compatibility impact |
+| Ledger run | Claim IDs | Verdicts | Compatibility impact |
 |---|---|---|---|
-| `2026-10-15-influxdb3-3.12.1-query-and-access/claims.yml` | `claim-20261015-0101` through `0131` | 30 confirmed, one unknown | Exact-version query errors, empty results, scoped access, routing, and query-pool exhaustion. |
-| `2026-10-21-enterprise-3.12.1-jwt/claims.yml` | `claim-20261021-0001` through `0017` | 13 confirmed, four unknown | JWT and role observations for existing authentication diagnostics. Role administration remains separate capability work. |
-| `2026-10-23-influxdb3-3.12.1-rewritten-point/claims.yml` | `claim-20261023-0001` through `0003` | Three confirmed | Core duplicate-row observations qualify unconditional overwrite and repeated-run safety advice. |
+| 2026-10-15, 3.12.1 query and access | `claim-20261015-0101` through `0131` | 30 confirmed, one unknown | Exact-version query errors, empty results, scoped access, routing, and query-pool exhaustion. |
+| 2026-10-21, Enterprise 3.12.1 JWT | `claim-20261021-0001` through `0017` | 13 confirmed, four unknown | JWT and role observations for existing authentication diagnostics. Role administration remains separate capability work. |
+| 2026-10-23, 3.12.1 rewritten point | `claim-20261023-0001` through `0003` | Three confirmed | Core duplicate-row observations qualify unconditional overwrite and repeated-run safety advice. |
 
 Claims `claim-20261015-0107` and `0108` confirm Core 500 versus Enterprise 429 before the first query row under the tested memory-pool conditions.
 The error body is plain text, with no `Retry-After`, across the tested requested result formats.
