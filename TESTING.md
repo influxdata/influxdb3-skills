@@ -66,8 +66,11 @@ zizmor .github/workflows/
 ## Unit tests
 
 ```sh
-node --test evals/gate.test.mjs evals/check-release.test.mjs
+node --test evals/gate.test.mjs evals/check-release.test.mjs scripts/check-claim-policy.test.mjs
+node scripts/check-claim-policy.mjs
 ```
+
+`check-claim-policy.mjs` fails when `skills/**` contains a claim ID or when any tracked file names a docs-tooling research path. CI and the pre-commit hook run it. Cite claim IDs only in `CHANGELOG.md`, `docs/`, and eval evidence.
 
 ## Run the examples
 
