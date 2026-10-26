@@ -24,12 +24,12 @@ Claim IDs (`claim-YYYYMMDD-NNNN`) refer to InfluxData's internal verification le
 
 ### Live-verified behavior corrections
 
-- Reconcile query error bodies and Core/Enterprise resource-exhaustion statuses with exact 3.12.1 claims. Scoped-token health-route denials do not imply an unreachable server, and hidden databases cannot be distinguished from absent ones by an empty 403 alone. Claims: claim-20261015-0101, claim-20261015-0102, claim-20261015-0103, claim-20261015-0104, claim-20261015-0105, claim-20261015-0106, claim-20261015-0107, claim-20261015-0108, claim-20261015-0113, claim-20261015-0114, claim-20261015-0115, claim-20261015-0116, claim-20261015-0117, claim-20261015-0118.
-- Qualify point overwrite and plugin retry-safety guidance with the observed Core 3.12.1 duplicate rows; retain the unresolved conditions and cause. Claims: claim-20261023-0001, claim-20261023-0002, claim-20261023-0003, claim-20260930-0214, claim-20260930-0215, claim-20260930-0216, claim-20260930-0217.
-- Correct plugin-file creation to JSON POST, optional trigger settings, package-failure status differences, and handling of existing explicit schemas. Claims: claim-20260930-0209, claim-20260930-0210, claim-20260930-0211, claim-20260930-0212, claim-20260930-0213.
-- Correct the TOML example and configuration guidance: parsing belongs to plugin code, and `config_file_path` does not make the engine merge native TOML values into trigger arguments.
-- Preserve the timestamp discrepancy: the tested Core boundary returned 400 after the published maximum, while the tested Enterprise node returned 204 and made the later point query-visible.
-- The diagnostic toolkit verifies permitted read access after a health-route 403 and reports limited read-side health. Claims: claim-20261015-0113, claim-20261015-0114, claim-20261015-0115, claim-20261015-0116, claim-20261015-0117, claim-20261015-0118.
+- Reconcile query error bodies and Core/Enterprise resource-exhaustion statuses with exact 3.12.1 claims. Scoped-token health-route denials do not imply an unreachable server, and hidden databases cannot be distinguished from absent ones by an empty 403 alone. Claims: claim-20261015-0101, claim-20261015-0102, claim-20261015-0107, claim-20261015-0108, claim-20261015-0113, claim-20261015-0114, claim-20261015-0115.
+- Qualify point overwrite and plugin retry-safety guidance with the observed Core 3.12.1 duplicate rows; retain the unresolved conditions and cause. Claims: claim-20261023-0001, claim-20261023-0002.
+- Correct plugin-file creation to JSON POST, optional trigger settings, package-failure status differences, and handling of existing explicit schemas. Claims: claim-20261024-0304, claim-20261024-0312, claim-20261024-0305, claim-20261024-0313, claim-20261024-0306, claim-20261024-0314, claim-20261024-0308, claim-20261024-0317, claim-20261024-0303, claim-20261024-0311.
+- Correct the TOML example and configuration guidance: parsing belongs to plugin code, and `config_file_path` does not make the engine merge native TOML values into trigger arguments. Claims: claim-20261024-0318, claim-20261024-0319.
+- Preserve the timestamp discrepancy: the tested Core boundary returned 400 after the published maximum, while the tested Enterprise node returned 204 and made the later point query-visible. Claims: claim-20261024-0307, claim-20261024-0315, claim-20261024-0326.
+- The diagnostic toolkit verifies permitted read access after a health-route 403 and reports limited read-side health. Claims: claim-20261024-0316.
 
 Release remains pending final-text formal evals and the complete verification record.
 
