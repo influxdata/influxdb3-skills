@@ -6,8 +6,7 @@
 // --claude takes `claude plugin eval --json` output; --codex takes the
 // summary.json that evals/run-codex-evals.mjs writes. Repeat a flag to layer
 // reruns over a full-suite run: a later file replaces earlier runs of the cases
-// it contains. Each agent is scored separately. Claude Code must meet every
-// bar; Codex is reported but doesn't block.
+// it contains. Each agent is scored separately, and each must meet every bar.
 // Writes a Markdown report to stdout (and to $GITHUB_STEP_SUMMARY when set) and
 // exits 1 on a miss. The bar is documented in evals/README.md and
 // docs/decisions/0002-evals-release-gate.md.
@@ -166,10 +165,9 @@ function main(argv) {
   if (opts.codex.length) {
     const summaries = opts.codex.map(read);
     const scored = score(prompts, mergeRuns(summaries.map((r) => runsFromCodex(r, { validateRuns: opts.minRuns > 1 }))), opts);
-    // Advisory verdicts do not waive the full-suite evidence requirement.
-    pass &&= scored.incomplete.length === 0;
+    pass &&= scored.pass;
     const models = [...new Set(summaries.map((s) => s.model ?? '?'))].join(', ');
-    sections.push(report('Codex (advisory, does not block)', scored, `Model: ${models}.`));
+    sections.push(report('Codex', scored, `Model: ${models}.`));
   }
   const text = `## Evals release gate: ${pass ? 'PASS' : 'FAIL'}\n\n${sections.join('\n\n')}\n`;
   process.stdout.write(text);

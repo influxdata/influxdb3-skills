@@ -79,11 +79,11 @@ Run each case 3 times. An adversarial case passes only when all runs pass; any o
 node evals/gate.mjs --claude <claude-plugin-eval.json> --codex evals/results/codex-<timestamp>/summary.json
 ```
 
-Repeat `--claude` or `--codex` to layer reruns over a full-suite run; a later file replaces earlier runs of the cases it contains. Claude Code must meet every bar. Codex is reported but doesn't block.
+Repeat `--claude` or `--codex` to layer reruns over a full-suite run; a later file replaces earlier runs of the cases it contains. Claude Code and Codex must each meet every bar.
 
 Use `--require-case <id>` for each changed-behavior case and `--min-runs 3` when scoring release evidence.
 Required cases must pass individually even when their category is outside the aggregate bars.
-Incomplete three-run coverage blocks both agents; Codex's case verdicts remain advisory.
+Incomplete three-run coverage blocks either agent.
 Existing `must_pass` markers do not select required cases automatically.
 The release manifest's explicit `required_cases` list selects them for CI.
 

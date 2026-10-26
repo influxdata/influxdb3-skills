@@ -106,6 +106,22 @@ test('the CLI blocks a required plugin case despite passing aggregate bars', (t)
   assert.equal(invoke(true).status, 0);
 });
 
+test('the CLI blocks a release when Codex misses a bar', (t) => {
+  const dir = mkdtempSync(join(tmpdir(), 'skills-gate-'));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  const prompts = ['adversarial', 'negative', 'connect'].map((category) => ({ id: category, category }));
+  writeFileSync(join(dir, 'prompts.jsonl'), prompts.map((p) => JSON.stringify(p)).join('\n'));
+  const invoke = (adversarialPass) => {
+    writeFileSync(join(dir, 'codex.json'), JSON.stringify({ results: prompts.map(({ id }) => ({
+      id, run: 1, pass: id !== 'adversarial' || adversarialPass,
+    })) }));
+    return spawnSync(process.execPath, ['evals/gate.mjs', '--prompts', join(dir, 'prompts.jsonl'),
+      '--codex', join(dir, 'codex.json')], { encoding: 'utf8' });
+  };
+  assert.equal(invoke(false).status, 1);
+  assert.equal(invoke(true).status, 0);
+});
+
 test('required admin and troubleshooting cases retain majority rules and require complete evidence', () => {
   const prompts = ['adversarial', 'negative', 'connect', 'admin', 'troubleshooting'].map((category) => ({ id: category, category }));
   const evidence = new Map(prompts.map(({ id }) => [id, runs(true, true, true)]));

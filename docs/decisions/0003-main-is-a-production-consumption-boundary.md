@@ -25,7 +25,7 @@ The skills explain behavior needed for correct use and link to the API spec for 
 Each skill-changing merge requires the full existing release gate against its final text, plus applicable Enterprise and plugin checks.
 Process-only documentation changes require relevant checks.
 Changed-behavior eval cases must also pass individually under the existing three-run rules, including cases outside the aggregate gate categories.
-Codex remains advisory, but demonstrated product or skill defects must be resolved.
+Claude Code and Codex results gate equally.
 
 Corrections for encountering an explicit-schema database are compatibility work.
 Teaching users to create or administer explicit schemas is a separate capability.

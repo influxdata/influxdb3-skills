@@ -80,8 +80,8 @@ function verify(base, changed) {
       return agent === 'claude' ? runsFromClaude(result, { validateRuns: true }) : runsFromCodex(result, { validateRuns: true });
     });
     const scored = score(prompts, mergeRuns(maps), { requiredCases: manifest.required_cases, minRuns: 3 });
-    passed &&= agent === 'claude' ? scored.pass : scored.incomplete.length === 0;
-    sections.push(report(agent === 'claude' ? 'Claude Code' : 'Codex (advisory verdicts)', scored));
+    passed &&= scored.pass;
+    sections.push(report(agent === 'claude' ? 'Claude Code' : 'Codex', scored));
   }
   const output = `## Release verification: ${passed ? 'PASS' : 'FAIL'}\n\n${sections.join('\n\n')}\n`;
   console.log(output);

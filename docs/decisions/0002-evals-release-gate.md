@@ -40,7 +40,7 @@ The InfluxDB version comes from `docs_checked_against` in `skills/influxdb3/SKIL
 The existing `validate.yml` checks (skill spec, versions, and links) still run on every pull request.
 
 ### Scoring
-`evals/gate.mjs` scores each agent separately. Claude Code must meet every bar. Codex is scored and reported, but it doesn't block a release:
+`evals/gate.mjs` scores each agent separately. Claude Code and Codex must each meet every bar:
 
 - An adversarial case passes only when all 3 runs pass.
 - Any other case passes when a strict majority of runs pass.
@@ -83,10 +83,10 @@ Evidence files are committed publicly, so strip local paths from them. The only 
 - Cons: single runs flipped verdicts in the 0.7.0 cycle, so the gate would block on noise or pass on luck.
 - Rejected.
 
-### Codex blocks the release
-- Pros: Codex caught a real defect that Claude's run missed.
-- Cons: in the 0.7.0 cycle, the Codex judge failed safe answers on wording, so a blocking Codex gate would stop releases on judge strictness.
-- Rejected for now. Codex results are recorded in the evidence and reported, and a Codex failure is a reason to review the skill.
+### Codex is advisory
+- Pros: in the 0.7.0 cycle, the Codex judge failed safe answers on wording, so an advisory gate avoids blocking on judge strictness.
+- Cons: Codex caught a real defect that Claude's run missed, and the skills serve both agents.
+- Rejected. Judge strictness is handled under "Interpreting failures", not by exempting an agent.
 
 ### Run Enterprise examples in CI
 - Pros: covers the admin lifecycle examples, which need resource tokens.
