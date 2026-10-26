@@ -9,6 +9,7 @@ When the skill content does not cover a developer's plugin question — or when 
 | Topic | URL | When to fetch |
 |---|---|---|
 | Processing engine and Python plugins | https://docs.influxdata.com/influxdb3/enterprise/plugins/ | Concepts, plugin types, trigger types, security overview |
+| Enterprise release notes | https://docs.influxdata.com/influxdb3/enterprise/release-notes/ | Version-specific repeated-run and trigger behavior; keep edition and storage-engine qualifiers |
 | Extend plugins with API features and state management | https://docs.influxdata.com/influxdb3/enterprise/plugins/extend-plugin/ | `influxdb3_local`, `LineBuilder`, `Cache` deeper docs |
 | Plugin library | https://docs.influxdata.com/influxdb3/enterprise/plugins/library/ | Browse official + community plugins |
 | Processing engine reference | https://docs.influxdata.com/influxdb3/enterprise/reference/processing-engine/ | Enable/disable, distributed considerations |

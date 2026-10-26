@@ -23,10 +23,10 @@ List what you ran and the result. Examples:
   or `claude plugin eval ./ --case <id>`
 
 For any skill change that states or relies on product behavior, cite the
-claim IDs from the docs-tooling verification claims ledger
-(`research/claims/<run-id>/claims.yml`), for example `claim-20260925-0188`.
-If no claim covers the behavior, record one there first, and add the skill
-lines to the claim's `cites`.
+claim IDs from the docs-tooling verification claims ledger, for example
+`claim-20260925-0188`. If no claim covers the behavior, record one there first,
+and add the skill lines to the claim's `cites`. Cite IDs here and in
+`CHANGELOG.md`, never in `skills/`.
 -->
 
 Claims:
@@ -38,4 +38,6 @@ Claims:
 - [ ] Skills validate: `uvx --from <skills-ref> skills-ref validate skills/<skill>/` (see `.github/workflows/validate.yml`)
 - [ ] Versions match: `scripts/check-versions.sh`
 - [ ] `CHANGELOG.md` updated for user-visible changes
-- [ ] Product claims cite the docs-tooling claims ledger, with version support written as `X+`
+- [ ] Product claims cite the docs-tooling claims ledger with exact edition/version and evidence state
+- [ ] Skill changes include a new shared package version, final-content full-suite evidence, and explicit `required_cases` for changed behavior
+- [ ] Release review checks target and intervening release notes on current docs-v2 `master` and production, with source commit, URLs, access date, and dispositions recorded

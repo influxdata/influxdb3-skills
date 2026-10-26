@@ -9,6 +9,20 @@ permissions:
   contents: read
 
 jobs:
+  gate-tests:
+    name: Release gate behavior
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          package-manager-cache: false
+      - run: node --test evals/gate.test.mjs evals/check-release.test.mjs scripts/check-claim-policy.test.mjs
+      - run: python3 evals/run-plugin-examples.test.py
+
   skills:
     name: Agent Skills spec
     runs-on: ubuntu-latest
@@ -33,6 +47,19 @@ jobs:
         with:
           persist-credentials: false
       - run: scripts/check-versions.sh
+
+  claim-policy:
+    name: Claim IDs and ledger paths
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          package-manager-cache: false
+      - run: node scripts/check-claim-policy.mjs
 
   paths:
     name: No home directories

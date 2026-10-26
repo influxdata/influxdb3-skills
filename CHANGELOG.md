@@ -4,6 +4,35 @@ All notable changes to this skill will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+Claim IDs (`claim-YYYYMMDD-NNNN`) refer to InfluxData's internal verification ledger. They aren't publicly resolvable and need no action.
+
+## [0.7.3] — Unreleased
+
+### Packaging and verification
+
+- Both existing skills remain one package. Every skill-changing main merge requires a new shared version and final-content evidence.
+- Release verification runs for unlabeled skill and prompt changes. Changed-behavior eval cases pass individually alongside aggregate bars, including plugin, admin, and troubleshooting cases.
+- Release review reads current docs-v2 master and production release notes, covering 3.12.1 and the intervening 3.12.0 release.
+- Codex follow-up cases supply the same conversation context to the judge and answer model; local skill-file reads are explicitly allowed during evaluations.
+- The example runner fails on database setup or cleanup errors, and the HTTP example checks database visibility and fails on HTTP errors.
+
+### Documentation-grounded corrections
+
+- Preserve existing capability boundaries. Explicit-schema administration and distributed plugin placement remain separate work.
+- Explain query timeouts and named system-table column access. Enterprise authentication is generally available and remains opt-in.
+- Link to the API reference for complete contracts instead of duplicating it.
+
+### Live-verified behavior corrections
+
+- Reconcile query error bodies and Core/Enterprise resource-exhaustion statuses with exact 3.12.1 claims. Scoped-token health-route denials do not imply an unreachable server, and hidden databases cannot be distinguished from absent ones by an empty 403 alone. Claims: claim-20261015-0101, claim-20261015-0102, claim-20261015-0103, claim-20261015-0104, claim-20261015-0105, claim-20261015-0106, claim-20261015-0107, claim-20261015-0108, claim-20261015-0113, claim-20261015-0114, claim-20261015-0115, claim-20261015-0116, claim-20261015-0117, claim-20261015-0118.
+- Qualify point overwrite and plugin retry-safety guidance with the observed Core 3.12.1 duplicate rows; retain the unresolved conditions and cause. Claims: claim-20261023-0001, claim-20261023-0002, claim-20261023-0003, claim-20260930-0214, claim-20260930-0215, claim-20260930-0216, claim-20260930-0217.
+- Correct plugin-file creation to JSON POST, optional trigger settings, package-failure status differences, and handling of existing explicit schemas. Claims: claim-20260930-0209, claim-20260930-0210, claim-20260930-0211, claim-20260930-0212, claim-20260930-0213.
+- Correct the TOML example and configuration guidance: parsing belongs to plugin code, and `config_file_path` does not make the engine merge native TOML values into trigger arguments.
+- Preserve the timestamp discrepancy: the tested Core boundary returned 400 after the published maximum, while the tested Enterprise node returned 204 and made the later point query-visible.
+- The diagnostic toolkit verifies permitted read access after a health-route 403 and reports limited read-side health. Claims: claim-20261015-0113, claim-20261015-0114, claim-20261015-0115, claim-20261015-0116, claim-20261015-0117, claim-20261015-0118.
+
+Release remains pending final-text formal evals and the complete verification record.
+
 ## [0.7.2] — 2026-09-29
 
 ### Fixed

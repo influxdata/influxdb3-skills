@@ -35,16 +35,34 @@ export function readPrompts(text) {
 }
 
 // Normalize each harness's output to Map<caseId, [{ passed, error }]>.
-export function runsFromClaude(result) {
+export function runsFromClaude(result, { validateRuns = false } = {}) {
+  if (validateRuns) {
+    for (const c of result.cases ?? []) {
+      const traces = new Set();
+      for (const run of c.arms?.with ?? []) {
+        if (!run.startedAt || !Number.isFinite(Date.parse(run.startedAt))) throw new Error(`${c.name}: missing Claude run identity (startedAt)`);
+        if (typeof run.tracePath !== 'string' || !run.tracePath.trim()) throw new Error(`${c.name}: missing Claude run identity (tracePath)`);
+        if (traces.has(run.tracePath)) throw new Error(`${c.name}: duplicate Claude run identity`);
+        traces.add(run.tracePath);
+      }
+    }
+  }
   return new Map((result.cases ?? []).map((c) => [
     c.name,
     (c.arms?.with ?? []).map((run) => ({ passed: run.passed === true, error: run.error ?? null })),
   ]));
 }
 
-export function runsFromCodex(summary) {
+export function runsFromCodex(summary, { validateRuns = false } = {}) {
   const runs = new Map();
+  const identities = new Set();
   for (const r of summary.results ?? []) {
+    if (validateRuns) {
+      if (!Number.isInteger(r.run) || r.run < 1) throw new Error(`${r.id}: missing Codex run identity`);
+      const key = `${r.id}:${r.run}`;
+      if (identities.has(key)) throw new Error(`${r.id}: duplicate Codex run identity ${r.run}`);
+      identities.add(key);
+    }
     if (!runs.has(r.id)) runs.set(r.id, []);
     const harnessError = typeof r.reason === 'string' && /^(agent|judge) failed/.test(r.reason) ? r.reason : null;
     runs.get(r.id).push({ passed: r.pass === true, error: harnessError });
@@ -69,7 +87,10 @@ export function scoreCase(testCase, runs) {
   return { id: testCase.id, category: testCase.category, passed, total, errors, pass: total > 0 && passed >= needed };
 }
 
-export function score(prompts, runsById) {
+export function score(prompts, runsById, { requiredCases = [], minRuns = 1 } = {}) {
+  if (!Number.isInteger(minRuns) || minRuns < 1) throw new Error('minRuns must be a positive integer');
+  const ids = new Set(prompts.map((p) => p.id));
+  for (const id of requiredCases) if (!ids.has(id)) throw new Error(`unknown required case: ${id}`);
   const cases = prompts.map((p) => scoreCase(p, runsById.get(p.id) ?? []));
   const bars = BARS.map((bar) => {
     const inBar = cases.filter((c) => bar.categories.includes(c.category));
@@ -77,10 +98,13 @@ export function score(prompts, runsById) {
     const rate = inBar.length ? passed / inBar.length : 0;
     return { ...bar, passed, total: inBar.length, rate, pass: inBar.length > 0 && rate >= bar.min };
   });
-  return { cases, bars, pass: bars.every((bar) => bar.pass) };
+  const required = cases.filter((c) => requiredCases.includes(c.id));
+  const incomplete = cases.filter((c) => c.total < minRuns);
+  return { cases, bars, required, incomplete, minRuns,
+    pass: bars.every((bar) => bar.pass) && required.every((c) => c.pass) && incomplete.length === 0 };
 }
 
-export function report(agent, { cases, bars, pass }, note) {
+export function report(agent, { cases, bars, required, incomplete, minRuns, pass }, note) {
   const pct = (x) => `${Math.round(x * 100)}%`;
   const runsPerCase = Math.max(0, ...cases.map((c) => c.total));
   const lines = [
@@ -92,6 +116,14 @@ export function report(agent, { cases, bars, pass }, note) {
     '|---|---|---|---|',
     ...bars.map((b) => `| ${b.name} | ${pct(b.min)} | ${b.passed}/${b.total} (${pct(b.rate)}) | ${b.pass ? 'pass' : '**fail**'} |`),
   ];
+  if (required.length) {
+    lines.push('', 'Required cases:', '', '| Case | Runs passed | |', '|---|---|---|',
+      ...required.map((c) => `| ${c.id} | ${c.passed}/${c.total} | ${c.pass && c.total >= minRuns ? 'pass' : '**fail**'} |`));
+  }
+  if (incomplete.length) {
+    lines.push('', `Incomplete evidence: at least ${minRuns} runs required for every case.`,
+      ...incomplete.map((c) => `- ${c.id}: ${c.total} runs`));
+  }
   const failed = cases.filter((c) => !c.pass);
   if (failed.length) {
     lines.push('', '| Failed case | Category | Runs passed | Harness errors |', '|---|---|---|---|');
@@ -100,14 +132,16 @@ export function report(agent, { cases, bars, pass }, note) {
   return lines.join('\n');
 }
 
-const USAGE = 'Usage: node evals/gate.mjs [--claude <result.json>]... [--codex <summary.json>]... [--prompts <file>]';
+const USAGE = 'Usage: node evals/gate.mjs [--claude <result.json>]... [--codex <summary.json>]... [--prompts <file>] [--require-case <id>]... [--min-runs <N>]';
 
 function main(argv) {
-  const opts = { claude: [], codex: [], prompts: new URL('./prompts.jsonl', import.meta.url) };
+  const opts = { claude: [], codex: [], requiredCases: [], minRuns: 1, prompts: new URL('./prompts.jsonl', import.meta.url) };
   for (let i = 0; i < argv.length; i += 1) {
     if (argv[i] === '--claude') opts.claude.push(argv[++i]);
     else if (argv[i] === '--codex') opts.codex.push(argv[++i]);
     else if (argv[i] === '--prompts') opts.prompts = argv[++i];
+    else if (argv[i] === '--require-case') opts.requiredCases.push(argv[++i]);
+    else if (argv[i] === '--min-runs') opts.minRuns = Number(argv[++i]);
     else {
       console.error(`unknown argument '${argv[i]}'\n${USAGE}`);
       return 2;
@@ -123,7 +157,7 @@ function main(argv) {
   const read = (file) => JSON.parse(readFileSync(file, 'utf8'));
   if (opts.claude.length) {
     const results = opts.claude.map(read);
-    const scored = score(prompts, mergeRuns(results.map(runsFromClaude)));
+    const scored = score(prompts, mergeRuns(results.map((r) => runsFromClaude(r, { validateRuns: opts.minRuns > 1 }))), opts);
     pass &&= scored.pass;
     const cost = results.reduce((sum, r) => sum + (r.costUsd ?? 0), 0);
     const versions = [...new Set(results.map((r) => r.claudeVersion ?? '?'))].join(', ');
@@ -131,7 +165,9 @@ function main(argv) {
   }
   if (opts.codex.length) {
     const summaries = opts.codex.map(read);
-    const scored = score(prompts, mergeRuns(summaries.map(runsFromCodex)));
+    const scored = score(prompts, mergeRuns(summaries.map((r) => runsFromCodex(r, { validateRuns: opts.minRuns > 1 }))), opts);
+    // Advisory verdicts do not waive the full-suite evidence requirement.
+    pass &&= scored.incomplete.length === 0;
     const models = [...new Set(summaries.map((s) => s.model ?? '?'))].join(', ');
     sections.push(report('Codex (advisory, does not block)', scored, `Model: ${models}.`));
   }
@@ -141,4 +177,7 @@ function main(argv) {
   return pass ? 0 : 1;
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) process.exit(main(process.argv.slice(2)));
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  try { process.exitCode = main(process.argv.slice(2)); }
+  catch (error) { console.error(error.message); process.exitCode = 2; }
+}

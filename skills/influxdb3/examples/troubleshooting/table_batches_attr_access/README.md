@@ -23,7 +23,10 @@ influxdb3 query -d "$INFLUXDB_DATABASE" --token "$INFLUXDB_TOKEN" \
    ORDER BY event_time DESC LIMIT 10"
 ```
 
-Look for `AttributeError: 'dict' object has no attribute`. That's the symptom.
+Look for `AttributeError: 'dict' object has no attribute`. If the query does not
+show the exception, inspect the server's scheduler logs. In the Enterprise
+3.12.1 demonstration, the uncaught exception appeared in the server logs but
+not in this system table. An empty result does not rule out the failure.
 
 ## Fix
 
@@ -62,7 +65,7 @@ curl -sS -X POST "$INFLUXDB_HOST/api/v3/write_lp?db=$INFLUXDB_DATABASE&precision
   --data-binary "demo_attr,host=h1 value=1.0 $NOW"
 sleep 3
 
-# Read the logs — should show AttributeError
+# Check plugin logs; also inspect server scheduler logs for AttributeError
 influxdb3 query -d "$INFLUXDB_DATABASE" --token "$INFLUXDB_TOKEN" \
   "SELECT event_time, log_level, log_text FROM system.processing_engine_logs
    WHERE trigger_name='attr_demo_broken' ORDER BY event_time DESC LIMIT 5"

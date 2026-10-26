@@ -65,7 +65,7 @@ reading it:
 
 1. Is `INFLUXDB_TOKEN` set? `echo "${INFLUXDB_TOKEN:0:8}..."` should show the first 8 chars (typically `apiv3_`). (This is the developer truncating their own env var to verify it's loaded — it does NOT violate the redaction rule above, which only forbids echoing tokens pasted into the conversation.)
 2. Is the script reading from the right env var name? App code reads `INFLUXDB_TOKEN`; the `influxdb3` CLI reads `INFLUXDB3_AUTH_TOKEN`. See `quirks.md` entry 5.
-3. Is the host correct? `curl -sS -i -H "Authorization: Bearer $INFLUXDB_TOKEN" "$INFLUXDB_HOST/ping"` — should return 200 with the `x-influxdb-build` header. (A 401 without a token still proves the host/port is right; see `references/quirks.md` entry 1.)
+3. Is the host correct? `GET /ping` with an admin token returns 200 with the build header. A 401 proves reachability. On Enterprise 3.12.1 a scoped token or Member JWT can receive 403 while permitted queries work; see `references/quirks.md` entry 1.
 4. Was the token recently rotated? See [Token rotation aftermath](#token-rotation-aftermath).
 5. Is the token still valid? Run the diagnostic toolkit (`examples/diagnose/diagnose.py`) — it reports token validity.
 
@@ -73,12 +73,23 @@ reading it:
 
 ### HTTP 403 — auth valid but lacks scope
 
-**Diagnose:** the token is valid but doesn't have the operation's required permissions. Common cases:
+**Diagnose:** the credential lacks access to this operation; the response does not establish database existence. Common cases:
 
 - Application token (scoped) trying to do admin operations (create DB, create token). Use the admin token for admin work.
 - Admin token (with `*:*:*`) being used at the data plane unnecessarily. See `quirks.md` and `references/tokens.md` → "Adversarial scenarios" — the admin token at the data plane is a foot-gun even when it works.
 - A write token without `write` on the target database. `/api/v2/write` returns 403 for this case (3.10.0+); earlier releases return 401.
 - Permission scoped to a different database than you're writing to. Check `system.tokens.permissions` (remember the JSON-string parsing — `quirks.md` entry 4).
+
+On Enterprise 3.12.1, scoped queries against a denied database and a nonexistent database both returned 403 with an empty body.
+The database list is filtered to the credential's visible databases.
+Use an authorized administrator to distinguish absent resources from hidden ones; don't try to parse an empty 403 body as JSON.
+An admin query against an unknown database returned 404 instead.
+
+For Enterprise 3.12.1 user JWTs, the tested Member could query data while the tested Auditor could not; listing databases did not establish data-read permission.
+An expired JWT and a malformed credential returned the same 401 error.
+A node with user auth off and no JWT key also rejected a JWT accepted by the configured node.
+These observations do not establish cross-node acceptance with matching keys.
+Use the [user-authentication docs](https://docs.influxdata.com/influxdb3/enterprise/admin/security/manage-users/) for session and role administration.
 
 **Fix:** on Enterprise or InfluxDB 3 Cloud, create a scoped token with the right permissions; on Core, use a named admin token because Core has no scoped tokens. Reference: `references/tokens.md`.
 
@@ -160,9 +171,11 @@ See `quirks.md` entry 11.
 
 **Fix:** reduce batch size. Recommended: 1,000–10,000 points per write call (matches the batching rule in `references/writing.md`).
 
-### 429 — rate limited
+### 429 — temporarily rejected
 
-**Diagnose:** Cloud Serverless rate-limits writes per organization. Self-hosted Core/Enterprise typically does not unless you've configured it.
+**Diagnose:** Cloud Serverless can rate-limit writes.
+The 3.12.0 release notes also describe WAL-buffer pressure rejecting writes with 429 on Core and Enterprise's Parquet engine.
+Do not assume every self-hosted 429 is an authentication or cloud-rate-limit problem.
 
 **Fix:** retry with exponential backoff and jitter. Documented in `references/writing.md` → "Error handling".
 
@@ -182,7 +195,18 @@ See `quirks.md` entry 11.
 
 ## Query failures
 
+Check the status before decoding the body.
+Core and Enterprise 3.12.1 errors can be plain text despite a JSON result request.
+For query-pool exhaustion before any rows, Core returned 500 and Enterprise returned 429, without `Retry-After`.
+Use bounded backoff for a transient resource error; don't classify every 500 as memory pressure.
+An Enterprise 405 on an ingest-only node calls for a query-capable endpoint, not repeated attempts on the same node.
+See `references/querying.md` → "Query failures on Core and Enterprise 3.12.1".
+
 ### 0 rows returned
+
+An empty JSON result is `[]`.
+On Core and Enterprise 3.12.1, InfluxQL also returned 200 with `[]` for an unknown table; SQL returned a plain-text 400 planning error.
+An empty InfluxQL response alone therefore does not prove that the table exists.
 
 **Diagnose (in order):**
 

@@ -17,10 +17,10 @@ description: >-
   INFLUXDB_DATABASE. For Processing Engine plugin code, use
   influxdb3-plugins.
 metadata:
-  version: "0.7.2"
-  docs_checked: "2026-09-29"
-  docs_checked_against: "influxdb3-core 3.11.5, influxdb3-enterprise 3.11.5"
-  live_verified: "2026-09-29"
+  version: "0.7.3"
+  docs_checked: "2026-10-24"
+  docs_checked_against: "influxdb3-core 3.12.1, influxdb3-enterprise 3.12.1"
+  live_verified: "2026-10-24"
   clients_verified_against: "influxdb3-python 0.21, influxdb3-js 2.4, influxdb3-go 2.17, influxdb3-java 1.11, influxdb3-csharp 1.10"
 ---
 
@@ -91,7 +91,7 @@ Give the checklist as setup steps in the same reply as the code.
 Don't hold the code back to ask questions: read settings from the env vars below, use placeholders, and ask only for values you can't default.
 The generated code checks at startup that the database exists, and stops with a clear error if it doesn't.
 
-- [ ] **The server is reachable.** `curl -H "Authorization: Bearer <token>" <host>/ping` returns 200 with an `x-influxdb-build` header. `/ping` needs a token by default; a 401 still means the server is up (see `references/quirks.md` entry 1).
+- [ ] **The server is reachable.** An admin token on `GET /ping` returns 200 with an `x-influxdb-build` header. A 401 still proves the server is reachable. On Enterprise 3.12.1, a scoped token can receive 403 on `/ping` while permitted queries work; don't reject it solely on that probe (see `references/quirks.md` entry 1).
 - [ ] **An admin token exists.** For Core and Enterprise, it's the operator token printed at first start, or one created with `influxdb3 create token --admin`. For other products, follow that product's token docs.
 - [ ] **The target database exists.** Check with `influxdb3 show databases --token <admin-token>` or `GET /api/v3/configure/database?format=json`. Create it with `influxdb3 create database <name> --token <admin-token>` or `POST /api/v3/configure/database` with body `{"db":"<name>"}`.
 - [ ] **An application token exists** with read and write on that database. For InfluxDB 3 Enterprise and InfluxDB 3 Cloud, best practice is a scoped token, not the admin token: `influxdb3 create token --permission "db:<name>:read,write" --name <app> --token <admin-token>`. Core has admin tokens only (§11).
@@ -154,9 +154,10 @@ Auth details and `.env` loaders for each language: `references/connecting.md`.
 - **Check that the database exists before the first write.** Auto-create hides typos: a misspelled `INFLUXDB_DATABASE` becomes a new, empty database with no error. Create the database during setup (§2), or have generated code list databases at startup and stop with a clear error if the target is missing.
 - **Write line protocol.** InfluxDB 3 ingests line protocol; don't invent a JSON write path.
 - **Batch writes:** 1,000 points or more, or a 1-second flush, whichever comes first.
-- **Use second precision unless you need finer.** Coarser timestamps make line protocol smaller. Use a finer precision when a series gets more than one point per second: points with the same table, tags, and timestamp overwrite each other.
+- **Use second precision unless you need finer.** Use finer precision to distinguish multiple points from the same source in one second. Points with the same table, tags, and timestamp share a logical identity, but Core 3.12.1 has returned duplicates after rewrites. Don't promise unconditional overwrite or retry safety (`references/quirks.md` entry 13).
 - **Sort errors into retriable (5xx, 429) and non-retriable (400, 401, 403, 404).** One exception: a 400 from `/api/v3/write_lp` can be a partial write. The valid lines are already stored, so resend only the rejected lines.
 - **Recent official clients write through `/api/v2/write` by default.** There, one invalid line rejects the whole batch.
+- **Respect existing explicit schemas.** In an Enterprise explicit-schema database, writes cannot introduce undeclared tables or columns. Diagnose the schema violation and route declaration work to the Enterprise docs; don't disable enforcement or create declarations from the application's write path.
 
 Details: `references/writing.md`. Batch-write code for each language: the table in §4. Auto-create and the database check: `references/connecting.md` → "The silent auto-create footgun".
 
@@ -166,6 +167,7 @@ Details: `references/writing.md`. Batch-write code for each language: the table 
 - InfluxQL is for v1 and v2 compatibility only. If the developer asks for it, push back gently and suggest SQL.
 - InfluxDB 3 doesn't run Flux. Don't write Flux, even as a before-and-after comparison. Give the SQL.
 - Parameterize user input. Never concatenate it into a query string.
+- **Handle errors before parsing results.** On 3.12.1, query errors can be plain text even when JSON was requested. Query-pool exhaustion before the first row returned Core 500 and Enterprise 429 with no `Retry-After`. Use bounded backoff for transient resource failures; don't treat every 500 as resource exhaustion. A scoped-token 403 does not prove the database is absent. See `references/querying.md`.
 
 Time idioms with `DATE_BIN`, pagination, and parameterization for each language: `references/querying.md`.
 
@@ -233,7 +235,7 @@ Example reply:
 - The admin (operator) token comes from server bootstrap on Core and Enterprise. For other products, it comes from the process in that product's docs. Application code never reads it directly.
 - On InfluxDB 3 Enterprise and InfluxDB 3 Cloud, application code uses **scoped resource tokens** with permissions like `db:<dbname>:read,write`. Create them with the admin token, and rotate them.
 - **InfluxDB 3 Core has admin tokens only**, with no resource tokens and no RBAC. Don't generate `--permission` or resource-token API calls for Core. Give each Core application its own named admin token. Details: `references/tokens.md` → "InfluxDB 3 Core: admin tokens only."
-- Rotate in this order: **create the new token, swap the secret or env var, then revoke the old token.** The reverse order causes downtime or worse.
+- Rotate in this order: **create the new token with the same permissions, swap the secret or env var, confirm every consumer uses the replacement, then revoke the old token.** A fixed grace period alone does not establish that consumers switched. Generated scripts must require positive confirmation before revocation.
 - The create response shows a new token's secret **once**. Capture it right away; the server can't return it later.
 
 | Goal | Read |

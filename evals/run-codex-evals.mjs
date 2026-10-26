@@ -4,7 +4,7 @@
 //
 // Examples:
 //   node evals/run-codex-evals.mjs --case admin-db-crud --runs 1
-//   node evals/run-codex-evals.mjs --runs 3 --model gpt-5.3-codex
+//   node evals/run-codex-evals.mjs --runs 3 --model gpt-6-luna --judge-model gpt-6-luna
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -21,7 +21,7 @@ function usage(message) {
 }
 
 function args(argv) {
-  const options = { caseIds: null, runs: 1, model: null, judgeModel: null };
+  const options = { caseIds: null, runs: 1, model: 'gpt-6-luna', judgeModel: 'gpt-6-luna' };
   for (let i = 0; i < argv.length; i += 1) {
     const value = argv[i];
     if (value === '--case') options.caseIds = (argv[++i] ?? '').split(',').filter(Boolean);
@@ -80,7 +80,7 @@ function runCodex({ prompt, tracePath, outputPath, model, schemaPath }) {
 function evaluatorPrompt(testCase, response) {
   const numberedCriteria = testCase.criteria.map((criterion, index) => `${index + 1}. ${criterion}`).join('\n');
   return `You are a strict evaluator. Grade the assistant response to the user prompt against every criterion below.\n\n` +
-    `User prompt:\n${testCase.prompt}\n\nCriteria:\n${numberedCriteria}\n\nAssistant response:\n${response}\n\n` +
+    `User prompt:\n${promptFor(testCase, byId)}\n\nCriteria:\n${numberedCriteria}\n\nAssistant response:\n${response}\n\n` +
     `Return JSON only. Include exactly one check for each criterion, using consecutive ids starting at 1. ` +
     `Set pass to true only when every criterion passes. Evidence must cite the response without exposing any secret-like value.`;
 }
@@ -116,7 +116,7 @@ const cases = options.caseIds
   ? options.caseIds.map((id) => byId.get(id) ?? usage(`unknown case '${id}'`))
   : allCases;
 const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-const resultDir = join(evalsDir, 'results', `codex-${timestamp}`);
+const resultDir = join(evalsDir, 'results', `codex-${timestamp}-${process.pid}`);
 mkdirSync(resultDir, { recursive: true });
 const results = [];
 
@@ -124,7 +124,7 @@ for (const testCase of cases) {
   for (let runNumber = 1; runNumber <= options.runs; runNumber += 1) {
     const execution = runCodex({
       prompt: skillPrompt(testCase) +
-        `Do not edit files or run external commands. Answer the following request directly:\n\n${promptFor(testCase, byId)}`,
+        `Do not edit files or contact a live service. You may read local skill and reference files. Answer the following request directly:\n\n${promptFor(testCase, byId)}`,
       tracePath: join(resultDir, `${testCase.id}.run-${runNumber}.trace.jsonl`),
       outputPath: join(resultDir, `${testCase.id}.run-${runNumber}.answer.txt`),
       model: options.model,
