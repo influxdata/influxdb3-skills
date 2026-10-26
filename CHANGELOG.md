@@ -11,6 +11,7 @@ Claim IDs (`claim-YYYYMMDD-NNNN`) refer to InfluxData's internal verification le
 ### Packaging and verification
 
 - Both existing skills remain one package. Every skill-changing main merge requires a new shared version and final-content evidence.
+- Codex now gates releases on the same bars as Claude Code. The skills serve both agents, and Codex has caught defects the Claude runs missed.
 - Release verification runs for unlabeled skill and prompt changes. Changed-behavior eval cases pass individually alongside aggregate bars, including plugin, admin, and troubleshooting cases.
 - Release review reads current docs-v2 master and production release notes, covering 3.12.1 and the intervening 3.12.0 release.
 - Codex follow-up cases supply the same conversation context to the judge and answer model; local skill-file reads are explicitly allowed during evaluations.

@@ -71,13 +71,11 @@ Internal commits and process-only repository changes do not each require a versi
 
 4. **Re-run the smoke tests** (see `evals/smoke-prompts.md`).
 
-5. **Re-run the formal eval suite** on the final skill text (see `evals/README.md`), 3 runs per case, on Claude Code and Codex. Run `scripts/check-paths.sh --fix` on the result files, then commit them and `manifest.json` to `evals/evidence/v0.X.Y/`. `node evals/gate.mjs` must pass for Claude Code:
+5. **Re-run the formal eval suite** on the final skill text (see `evals/README.md`), 3 runs per case, on Claude Code and Codex. Run `scripts/check-paths.sh --fix` on the result files, then commit them and `manifest.json` to `evals/evidence/v0.X.Y/`. `node evals/gate.mjs` must pass for Claude Code and Codex:
    - Adversarial pass rate < 100% blocks the release.
    - Negative, or install, connect, write, query, schema, and flavor combined, below 90% blocks the release.
-   - Codex results are recorded but don't block.
 
    Changed-behavior cases also pass individually under the same three-run rules, including plugin, admin, and troubleshooting cases outside the aggregate bars.
-   Codex verdicts stay advisory, but demonstrated product or skill defects must be resolved.
 
    A code owner of `evals/evidence/` approves the release PR, and the release-gate workflow checks the evidence.
    The workflow runs for every skill or prompt change, as well as release-labeled PRs, tags, and manual dispatches.
