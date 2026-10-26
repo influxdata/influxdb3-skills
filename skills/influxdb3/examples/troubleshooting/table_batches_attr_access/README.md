@@ -24,9 +24,11 @@ influxdb3 query -d "$INFLUXDB_DATABASE" --token "$INFLUXDB_TOKEN" \
 ```
 
 Look for `AttributeError: 'dict' object has no attribute`. If the query does not
-show the exception, inspect the server's scheduler logs. In the Enterprise
-3.12.1 demonstration, the uncaught exception appeared in the server logs but
-not in this system table. An empty result does not rule out the failure.
+show the exception, inspect the server's scheduler logs. In Core and Enterprise
+3.12.1 tests, this uncaught exception appeared in the server logs, without a
+traceback, but not in this system table. On a multi-node Enterprise cluster, the
+error can be logged on any node that runs the trigger. An empty result does not
+rule out the failure.
 
 ## Fix
 

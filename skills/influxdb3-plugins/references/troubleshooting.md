@@ -76,9 +76,14 @@ influxdb3 query -d "$INFLUXDB_DATABASE" --token "$INFLUXDB_TOKEN" \
 
 **Common error patterns:**
 
-Uncaught Python exceptions can appear in server scheduler logs without appearing
-in this table, as observed on Enterprise 3.12.1. If plugin logs do not explain a
-failure, inspect the server logs too; an empty query does not prove success.
+Uncaught Python exceptions may not appear in this table. In tested Core and
+Enterprise 3.12.1 runs, request and WAL triggers wrote only INFO rows here. The
+exception type and message appeared in the server log as an `ERROR
+influxdb3_processing_engine::scheduler: trigger execution failed` line, without a
+Python traceback. A request trigger also returned the error in its HTTP 500 body.
+On a multi-node Enterprise cluster, check every node that runs the trigger: one
+WAL trigger failed on three nodes, each logging its own error. An empty query
+does not prove success.
 
 ### `AttributeError: 'dict' object has no attribute 'rows'`
 

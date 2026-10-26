@@ -30,6 +30,7 @@ Claim IDs (`claim-YYYYMMDD-NNNN`) refer to InfluxData's internal verification le
 - Correct the TOML example and configuration guidance: parsing belongs to plugin code, and `config_file_path` does not make the engine merge native TOML values into trigger arguments. Claims: claim-20261024-0318, claim-20261024-0319.
 - Preserve the timestamp discrepancy: the tested Core boundary returned 400 after the published maximum, while the tested Enterprise node returned 204 and made the later point query-visible. Claims: claim-20261024-0307, claim-20261024-0315, claim-20261024-0326.
 - The diagnostic toolkit verifies permitted read access after a health-route 403 and reports limited read-side health. Claims: claim-20261024-0316.
+- Uncaught plugin exceptions: on Core and Enterprise 3.12.1, they reached the server log (type and message, no traceback) but not `system.processing_engine_logs`. On Enterprise, check every node that runs the trigger. Claims: claim-20261024-0320, claim-20261024-0321, claim-20261024-0322, claim-20261024-0323, claim-20261024-0327, claim-20261024-0328.
 
 Release remains pending final-text formal evals and the complete verification record.
 
