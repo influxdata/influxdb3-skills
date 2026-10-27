@@ -58,11 +58,12 @@ Build Claude's cases, then run them:
 
 ```sh
 node evals/build-claude-cases.mjs
-claude plugin eval ./ --model opus --judge-model sonnet --runs 3 --ablation none --trust-plugin --json > evals/results/claude-opus.json
+claude plugin eval ./ --model claude-opus-5-5 --judge-model claude-sonnet-5-5 --runs 3 --ablation none --trust-plugin --json > evals/results/claude-opus.json
 ```
 
 Opus answers gate the release, and Sonnet judges.
-For comparison, run the same command with `--model haiku` and record its gate report in `docs/eval-history.md`.
+Use full model IDs, not aliases: the CLI can remap an alias, and the result file doesn't record the resolved model.
+For comparison, run the same command with `--model claude-haiku-5-5` and record its gate report in `docs/eval-history.md`.
 Haiku results don't block a release and don't go in the release manifest.
 
 The harness scores each prompt on triggering, routing, API correctness, and security. See `prompts.jsonl` for the per-prompt criteria.
