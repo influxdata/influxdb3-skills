@@ -187,13 +187,13 @@ Full reference: `references/troubleshooting.md`.
 
 If the developer asks about any of these, defer politely:
 
-- **Distributed cluster placement** (`--node-spec`, ingester vs query nodes, WAL fan-out, schedule-write-back patterns) → not covered; route to the docs.
+- **Distributed cluster placement** (which nodes run a trigger in a multi-node cluster) → not covered; route to the docs. Don't describe placement flags or routing behavior.
 - **Full air-gapped setup** (offline mirrors, custom plugin repos, offline `pip` installs) → lead with the deferral and the docs link in `references/dependencies.md` → "Air-gapped / locked-down environments". Then give only that section's version-specific flag and the pre-install rule; don't write offline install steps.
 - **Full Explorer-compatible plugin metadata schemas** → not covered; see `references/plugin-structure.md` → 'Plugin metadata docstring' for a pointer to the canonical schema."
 
 Sample deferral:
 
-> "Plugin distributed-cluster placement isn't covered by this skill. The official docs at https://docs.influxdata.com/influxdb3/enterprise/plugins/ cover the cluster patterns; in this skill I can help you with single-node plugin work."
+> "Plugin distributed-cluster placement isn't covered by this skill. The official docs at https://docs.influxdata.com/influxdb3/enterprise/plugins/ cover the cluster patterns; in this skill I can help you with single-node plugin work. On a single-node deployment, every write reaches the one node that runs the trigger, so this routing problem doesn't apply."
 
 ## When in doubt, fetch fresh docs
 

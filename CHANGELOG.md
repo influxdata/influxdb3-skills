@@ -22,6 +22,11 @@ Claim IDs (`claim-YYYYMMDD-NNNN`) refer to InfluxData's internal verification le
 - Preserve existing capability boundaries. Explicit-schema administration and distributed plugin placement remain separate work.
 - Explain query timeouts and named system-table column access. Enterprise authentication is generally available and remains opt-in.
 - Link to the API reference for complete contracts instead of duplicating it.
+- Use InfluxQL when the developer asks for it, and default to SQL otherwise. InfluxDB 3 supports both, so the skill no longer argues against InfluxQL.
+- State in the skill body that `/ping` requires a token by default, how `--disable-authz` opts routes out, and the naming and reserved-word rules. Agents rarely opened the references that held them.
+- Distinguish InfluxDB 3 Cloud (hosted Enterprise) from the other Cloud products, and say `/api/v3/*` fails on InfluxDB Cloud Serverless and InfluxDB Cloud Dedicated.
+- Stop naming plugin placement flags in the scope note, which agents repeated as facts, and say single-node deployments don't have the routing problem.
+- Revise eval criteria that conflicted with the skill or graded wording instead of behavior: separate admin-token variables, labeled fake-data stubs, `.env` handling that respects the user's setup, and ambiguous "Cloud" requests.
 
 ### Live-verified behavior corrections
 
