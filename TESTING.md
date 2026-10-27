@@ -103,7 +103,7 @@ To rerun one case while you iterate:
 ```sh
 # Claude Code
 node evals/build-claude-cases.mjs
-claude plugin eval ./ --eval-dir evals/claude-cases --case <id> --runs 3 --ablation none --trust-plugin --judge-model sonnet
+claude plugin eval ./ --eval-dir evals/claude-cases --case <id> --runs 3 --ablation none --trust-plugin --model opus --judge-model sonnet
 
 # Codex
 node evals/run-codex-evals.mjs --case <id> --runs 3 --model gpt-6-luna --judge-model gpt-6-luna
