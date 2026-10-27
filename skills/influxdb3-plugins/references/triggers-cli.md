@@ -127,7 +127,10 @@ Remove the unused file server-side through deployment tooling after deleting the
 All admin-required operations need `Authorization: Bearer <admin-token>`.
 Core and Enterprise 3.12.1 accept trigger creation with `trigger_settings` and `disabled` omitted.
 The omitted-settings probe observed an enabled trigger and error behavior `log`.
-It did not behavior-test concurrency defaults; consult the API reference for complete settings and allowed values.
+It did not behavior-test concurrency defaults.
+In the HTTP body, `trigger_settings.error_behavior` takes the same lowercase values as the CLI flag: `log`, `retry`, and `disable`.
+The 3.12 documentation gives these values, and the probe read back `log`.
+For other settings and allowed values, fetch the API reference or ask the InfluxDB Documentation MCP server.
 Use `references/installing.md` for the upload example and the [API reference](https://docs.influxdata.com/influxdb3/enterprise/api/v3/) for complete contracts.
 
 ## Where to fetch more
