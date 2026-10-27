@@ -19,8 +19,7 @@ Closes #
 <!--
 List what you ran and the result. Examples:
 - live example runs, with product and version (for example, Core 3.11.5)
-- eval cases rerun: `node evals/run-codex-evals.mjs --case <id> --runs 3`
-  or `claude plugin eval ./ --case <id>`
+- eval cases rerun, with the commands in `TESTING.md` → "Run the evals"
 
 For any skill change that states or relies on product behavior, cite the
 claim IDs from the docs-tooling verification claims ledger, for example
