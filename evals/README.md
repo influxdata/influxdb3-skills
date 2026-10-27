@@ -39,13 +39,7 @@ read-only Codex session, captures the JSONL trace, and grades every criterion
 with a second Codex session constrained to a JSON schema. It writes all traces,
 answers, and results to the gitignored `evals/results/` directory.
 
-```sh
-# One affected case (recommended while iterating)
-node evals/run-codex-evals.mjs --case admin-db-crud --runs 1
-
-# Entire suite, three samples per case
-node evals/run-codex-evals.mjs --runs 3
-```
+See `TESTING.md` → "Run the evals" for the commands.
 
 Codex must already be authenticated (`codex login status`). The runner defaults
 to `gpt-6-luna` for both answers and judging; use `--model <model>` and

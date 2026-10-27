@@ -1,10 +1,11 @@
 # Testing
 
-How to check a change to the skills before you open a pull request.
+This page explains how to check a change to the skills before you open a pull request.
 CI runs the validation checks on every pull request.
 Every skill or prompt change also runs the release gate, even without a `release` label.
-Run the full eval suite locally on final skill text and commit its evidence before merging a skill change.
-The gate runs Core application examples; applicable Enterprise, plugin, and troubleshooting checks remain local obligations.
+Before you merge a skill change, run the full eval suite locally on the final skill text and commit its evidence.
+The gate runs Core application examples.
+You run the applicable Enterprise, plugin, and troubleshooting checks locally.
 
 ## Before you open a pull request
 
@@ -48,7 +49,8 @@ git config core.hooksPath .githooks
 
 ## Check links
 
-CI checks links with [lychee](https://github.com/lycheeverse/lychee). To run the same check locally:
+CI checks links with [lychee](https://github.com/lycheeverse/lychee).
+To run the same check locally:
 
 ```sh
 lychee --no-progress --max-retries 3 --exclude-loopback 'skills/**/*.md' README.md
@@ -56,7 +58,8 @@ lychee --no-progress --max-retries 3 --exclude-loopback 'skills/**/*.md' README.
 
 ## Lint workflows
 
-Workflow actions are pinned to commit SHAs. Run both linters after you edit a workflow:
+Workflow actions are pinned to commit SHAs.
+Run both linters after you edit a workflow:
 
 ```sh
 actionlint
@@ -70,7 +73,9 @@ node --test evals/gate.test.mjs evals/check-release.test.mjs scripts/check-claim
 node scripts/check-claim-policy.mjs
 ```
 
-`check-claim-policy.mjs` fails when `skills/**` contains a claim ID or when any tracked file names a docs-tooling research path. CI and the pre-commit hook run it. Cite claim IDs only in `CHANGELOG.md`, `docs/`, and eval evidence.
+`check-claim-policy.mjs` fails when `skills/**` contains a claim ID or when any tracked file names a docs-tooling research path.
+CI and the pre-commit hook run it.
+Cite claim IDs only in `CHANGELOG.md`, `docs/`, and eval evidence.
 
 ## Run the examples
 
@@ -81,7 +86,7 @@ It needs Python (with `uv`), Node.js, Go, Java, and .NET.
 To run it against a throwaway InfluxDB 3 Core container, as CI does:
 
 ```sh
-docker run -d --name influxdb3-test -p 8181:8181 influxdb:3.11.5-core \
+docker run -d --name influxdb3-test -p 8181:8181 influxdb:3.12.1-core \
   serve --node-id test --object-store memory
 export INFLUXDB_HOST=http://127.0.0.1:8181
 export INFLUXDB_TOKEN=$(docker exec influxdb3-test influxdb3 create token --admin --format json | jq -r .token)
@@ -90,15 +95,18 @@ docker rm -f influxdb3-test
 ```
 
 Set `PRODUCT=enterprise` against an InfluxDB 3 Enterprise instance to also run the admin lifecycle examples, which need resource tokens.
-The runner does not run Processing Engine round trips or the troubleshooting broken/fixed demonstrations.
+The runner doesn't run Processing Engine round trips or the troubleshooting broken/fixed demonstrations.
 Run those separately when applicable, following `docs/publishing.md`, and record cleanup results.
 
 ## Run the evals
 
-The formal eval suite is `evals/prompts.jsonl`. Each case has a prompt and the criteria a judge grades the answer against.
-You can run it with Claude Code or Codex. `evals/README.md` has the pass bar, the model policy, and the change-control policy.
+The formal eval suite is `evals/prompts.jsonl`.
+Each case has a prompt and the criteria a judge grades the answer against.
+You can run it with Claude Code or Codex.
+`evals/README.md` has the pass bar, the model policy, and the change-control policy.
 
-Run the full Claude Code suite. Opus gates the release; Haiku is a comparison:
+Opus results gate the release, and Haiku results are a comparison.
+To run the full Claude Code suite:
 
 ```sh
 mkdir -p evals/results
@@ -107,6 +115,13 @@ claude plugin eval ./ --eval-dir evals/claude-cases --model claude-opus-5-5 --ju
 node evals/gate.mjs --claude evals/results/claude-opus.json --min-runs 3
 claude plugin eval ./ --eval-dir evals/claude-cases --model claude-haiku-5-5 --judge-model claude-sonnet-5-5 --runs 3 --ablation none --trust-plugin --json > evals/results/claude-haiku.json
 node evals/gate.mjs --claude evals/results/claude-haiku.json --min-runs 3
+```
+
+To run the full Codex suite:
+
+```sh
+node evals/run-codex-evals.mjs --runs 3 --model gpt-6-luna --judge-model gpt-6-luna
+node evals/gate.mjs --codex evals/results/codex-<timestamp>/summary.json --min-runs 3
 ```
 
 To rerun one case while you iterate:
@@ -120,13 +135,14 @@ claude plugin eval ./ --eval-dir evals/claude-cases --case <id> --model claude-o
 node evals/run-codex-evals.mjs --case <id> --runs 3 --model gpt-6-luna --judge-model gpt-6-luna
 ```
 
-A single run is noisy. Run a case 3 times before you change the skill or its criteria.
+A single run is noisy.
+Run a case 3 times before you change the skill or its criteria.
 Results go to the gitignored `evals/results/` and `evals/claude-cases/` directories.
 
 `evals/smoke-prompts.md` lists prompts to try by hand in a fresh agent session against a live instance.
 
 For every skill-changing merge, maintainers run the full suite with three samples per case on both agents and commit the results to `evals/evidence/v<new-version>/`.
-The manifest records full skills/prompt hashes, fixed model/judge/CLI versions, and explicit `required_cases` for changed behavior.
+The manifest records the full skills and prompts hashes, the fixed model, judge, and CLI versions, and explicit `required_cases` for changed behavior.
 Required cases must pass individually, including plugin, admin, and troubleshooting cases outside the aggregate bars.
 Use `node evals/check-release.mjs verify --base <target-commit>` on the committed candidate to check the same evidence as CI.
 See `docs/publishing.md` for evidence review and live checks.

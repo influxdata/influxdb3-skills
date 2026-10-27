@@ -83,7 +83,7 @@ Each skill loads automatically when its topics come up in a conversation with yo
 The skills don't require an MCP server.
 If the InfluxDB Documentation MCP server is connected, the skills use it to look up the docs.
 The server is hosted, so you don't run it or need an API key.
-It only asks for an OAuth login, which it uses for rate limiting.
+It asks only for an OAuth login, which it uses for rate limiting.
 To connect your agent to it, see [the MCP server setup page](https://docs.influxdata.com/platform/mcp/server/).
 
 Generated code covers Python, JavaScript and TypeScript, Go, Java, C#, and raw HTTP.
@@ -113,7 +113,7 @@ Generated code covers Python, JavaScript and TypeScript, Go, Java, C#, and raw H
 
 - **Develop plugins:** the `influxdb3_local` runtime API, `LineBuilder`, the cache, and the three entry points (`process_writes`, `process_scheduled_call`, and `process_request`).
   `table_batches` items are dicts, not class instances.
-- **Install plugins:** `--upload`, `PUT /api/v3/plugins/files`, and the `gh:` prefix for the official plugin repo.
+- **Install plugins:** `--upload`, `POST /api/v3/plugins/files` with a JSON body, and the `gh:` prefix for the official plugin repo.
 - **Test plugins:** `influxdb3 test wal_plugin` and `influxdb3 test schedule_plugin` for offline runs, and a live loop with `influxdb3 update trigger` and `system.processing_engine_logs`.
 - **Manage plugin dependencies:** `influxdb3 install package` installs into the server's embedded virtual environment.
   The skill doesn't suggest `python -m venv` against the system Python.
@@ -140,7 +140,8 @@ For these topics, the skills point to the official docs instead of guessing:
 Each `SKILL.md` records under `metadata:` the date and InfluxDB 3 versions its docs were checked against,
 and the date and versions it was last live-verified against.
 The `influxdb3` skill also records the client library versions.
-If those look stale, the skill might be drifting from the product. Open an issue in this repository.
+If those look stale, the skill might be drifting from the product.
+Open an issue in this repository.
 
 Release history is in [`CHANGELOG.md`](CHANGELOG.md).
 
@@ -161,7 +162,8 @@ To install your working copy instead of the published version, clone the repo:
 git clone https://github.com/influxdata/influxdb3-skills.git ~/Projects/influxdb3-skills
 ```
 
-In Claude Code, remove the published marketplace first, because both use the name `influxdata-influxdb3`:
+The published marketplace and your local one both use the name `influxdata-influxdb3`.
+In Claude Code, remove the published marketplace first:
 
 ```text
 /plugin uninstall influxdb3-skills@influxdata-influxdb3
