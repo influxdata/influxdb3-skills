@@ -2,7 +2,7 @@
 
 ## SQL is the default
 
-InfluxDB 3's primary query language is SQL (Apache DataFusion under the hood). When in doubt, generate SQL. Reach for InfluxQL **only** when the developer is on v1/v2 compatibility for legacy reasons — flag it as a smell otherwise.
+InfluxDB 3 supports SQL (Apache DataFusion under the hood) and InfluxQL. Use the language the developer asks for. When they don't say, generate SQL.
 
 Flux is **not** supported in v3 — if a developer brings Flux code, route them to the migration roadmap (deferred to v1.2).
 
@@ -68,9 +68,9 @@ LIMIT 1000 OFFSET 5000
 
 `SELECT * FROM sensor` against a large measurement will return everything — slow and expensive. Always include a `WHERE time >= ...` filter or a `LIMIT`. The skill should add one even if the developer didn't, and call it out.
 
-## InfluxQL — only when forced
+## InfluxQL
 
-If the developer asks for InfluxQL on a fresh project, push back: "v3 SQL is the recommended query language. InfluxQL is supported for v1/v2 compatibility but lacks some v3 features. Are you sure?" If they confirm, use the `/api/v3/query_influxql` endpoint or the client's InfluxQL mode.
+When the developer asks for InfluxQL, use the `/api/v3/query_influxql` endpoint or the client's InfluxQL mode.
 
 ## Query failures on Core and Enterprise 3.12.1
 

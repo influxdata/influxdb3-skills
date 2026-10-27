@@ -1,7 +1,13 @@
 # InfluxDB 3 Flavors
 
-This table compares InfluxDB 3 Core, InfluxDB 3 Enterprise, InfluxDB Cloud Serverless, and InfluxDB Cloud Dedicated. For InfluxDB 3 Cloud and InfluxDB Clustered, check their docs. Only InfluxDB 3 Core, InfluxDB 3 Enterprise, and InfluxDB 3 Cloud have `/api/v3` endpoints.
-InfluxDB Cloud Serverless and InfluxDB Cloud Dedicated have none.
+This table compares InfluxDB 3 Core, InfluxDB 3 Enterprise, InfluxDB Cloud Serverless, and InfluxDB Cloud Dedicated. For InfluxDB Clustered, check its docs.
+
+Only InfluxDB 3 Core, InfluxDB 3 Enterprise, and InfluxDB 3 Cloud have `/api/v3/*` endpoints.
+InfluxDB Cloud Serverless and InfluxDB Cloud Dedicated don't: code that calls `/api/v3/*` fails there.
+
+InfluxDB 3 Cloud is hosted InfluxDB 3 Enterprise, not another name for the other Cloud products.
+It uses Enterprise's API and token model where the InfluxDB 3 Cloud docs confirm it.
+InfluxDB Cloud Serverless, InfluxDB Cloud Dedicated, and InfluxDB Cloud (TSM) are separate products with their own APIs and token models.
 Most code is portable across flavors when host and token are env-driven; this reference exists for the cases where they actually differ.
 
 ## Comparison table

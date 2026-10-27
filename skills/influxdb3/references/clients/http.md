@@ -11,7 +11,7 @@ For InfluxDB Cloud Serverless and InfluxDB Cloud Dedicated, see `references/flav
 | Health probe / flavor detection | `GET` | `/ping` | See `references/flavor-detection.md` |
 | Write line protocol | `POST` | `/api/v3/write_lp?db=$INFLUXDB_DATABASE` | Body is line protocol; one line per point |
 | Query (SQL) | `POST` | `/api/v3/query_sql` | JSON body: `{"db": "...", "q": "..."}` |
-| Query (InfluxQL) | `POST` | `/api/v3/query_influxql` | Same shape; legacy compat only |
+| Query (InfluxQL) | `POST` | `/api/v3/query_influxql` | Same shape |
 
 ## Auth
 

@@ -91,7 +91,7 @@ Give the checklist as setup steps in the same reply as the code.
 Don't hold the code back to ask questions: read settings from the env vars below, use placeholders, and ask only for values you can't default.
 The generated code checks at startup that the database exists, and stops with a clear error if it doesn't.
 
-- [ ] **The server is reachable.** An admin token on `GET /ping` returns 200 with an `x-influxdb-build` header. A 401 still proves the server is reachable. On Enterprise 3.12.1, a scoped token can receive 403 on `/ping` while permitted queries work; don't reject it solely on that probe (see `references/quirks.md` entry 1).
+- [ ] **The server is reachable.** An admin token on `GET /ping` returns 200 with an `x-influxdb-build` header. A 401 still proves the server is reachable: `/ping` requires a token by default. Since 3.10, `--disable-authz` (a comma-separated list of `health`, `ping`, and `metrics`) opts those routes out of authorization. On Enterprise 3.12.1, a scoped token can receive 403 on `/ping` while permitted queries work; don't reject it solely on that probe (see `references/quirks.md` entry 1).
 - [ ] **An admin token exists.** For Core and Enterprise, it's the operator token printed at first start, or one created with `influxdb3 create token --admin`. For other products, follow that product's token docs.
 - [ ] **The target database exists.** Check with `influxdb3 show databases --token <admin-token>` or `GET /api/v3/configure/database?format=json`. Create it with `influxdb3 create database <name> --token <admin-token>` or `POST /api/v3/configure/database` with body `{"db":"<name>"}`.
 - [ ] **An application token exists** with read and write on that database. For InfluxDB 3 Enterprise and InfluxDB 3 Cloud, best practice is a scoped token, not the admin token: `influxdb3 create token --permission "db:<name>:read,write" --name <app> --token <admin-token>`. Core has admin tokens only (§11).
@@ -163,8 +163,7 @@ Details: `references/writing.md`. Batch-write code for each language: the table 
 
 ## 6. Querying data
 
-- Generate SQL by default. SQL is the primary query language in InfluxDB 3.
-- InfluxQL is for v1 and v2 compatibility only. If the developer asks for it, push back gently and suggest SQL.
+- InfluxDB 3 supports SQL and InfluxQL. Use the language the developer asks for. When they don't say, generate SQL.
 - InfluxDB 3 doesn't run Flux. Don't write Flux, even as a before-and-after comparison. Give the SQL.
 - Parameterize user input. Never concatenate it into a query string.
 - **Handle errors before parsing results.** On 3.12.1, query errors can be plain text even when JSON was requested. Query-memory exhaustion before the first row returns 429 with no `Retry-After`; Core 3.12.1 returned 500. Use bounded backoff for transient resource failures; don't treat every 500 as resource exhaustion. A scoped-token 403 does not prove the database is absent. See `references/querying.md`.
@@ -176,6 +175,7 @@ Time idioms with `DATE_BIN`, pagination, and parameterization for each language:
 - **Tags** identify the data's source or context: `host`, `region`, device IDs. A row's identity is its table, tags, and timestamp.
 - **Fields** hold measured values.
 - **An identifier that tells sources apart is a tag, not a field.** InfluxDB 3 has no tag-cardinality limit, so InfluxDB v1 and v2 cardinality advice doesn't apply.
+- **Name tables and columns in singular snake_case, and avoid SQL reserved words** such as `time`, `value`, and `select`. A reserved word needs double quotes in every query.
 
 Decision rule, naming, and common mistakes: `references/schema-design.md`.
 
