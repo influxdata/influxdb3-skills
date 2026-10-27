@@ -197,7 +197,7 @@ Do not assume every self-hosted 429 is an authentication or cloud-rate-limit pro
 
 Check the status before decoding the body.
 Core and Enterprise 3.12.1 errors can be plain text despite a JSON result request.
-For query-pool exhaustion before any rows, Core returned 500 and Enterprise returned 429, without `Retry-After`.
+Query-memory exhaustion before any rows returns 429 without `Retry-After`; Core 3.12.1 returned 500.
 Use bounded backoff for a transient resource error; don't classify every 500 as memory pressure.
 An Enterprise 405 on an ingest-only node calls for a query-capable endpoint, not repeated attempts on the same node.
 See `references/querying.md` → "Query failures on Core and Enterprise 3.12.1".
