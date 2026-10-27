@@ -83,7 +83,7 @@ A requested result format does not determine the error body's format.
 | InfluxQL unknown table returns 200 with `[]` | An empty InfluxQL result does not prove that the table exists. Empty SQL and InfluxQL JSON results are also `[]`. |
 | Admin query against an unknown database returns 404 | Check the database name and provision it through the setup workflow if needed. |
 | Scoped Enterprise query returns 403 with an empty body | The tested credential receives the same response for a denied database and a nonexistent database. Check access and visible databases; don't infer existence from the response. |
-| Memory-pool exhaustion before the first row returns Core 500 or Enterprise 429 | The tested errors were plain text across JSON, JSONL, CSV, pretty, and Parquet requests, without `Retry-After`. Use bounded exponential backoff with jitter for transient resource failures. If repeated, report the resource error and route performance work to the tuning docs. |
+| Query-memory exhaustion before the first row returns 429; Core 3.12.1 returned 500 | The tested errors were plain text across JSON, JSONL, CSV, pretty, and Parquet requests, without `Retry-After`. Use bounded exponential backoff with jitter for transient resource failures. If repeated, report the resource error and route performance work to the tuning docs. |
 | Enterprise data query returns 405 on an ingest-only node | Use an endpoint that runs query mode. Retrying the same data query on the same node does not fix routing. Success of general system-table queries on such a node has not been verified. |
 
 These are observed conditions, not a rule that every 500 means resource exhaustion.

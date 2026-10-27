@@ -167,7 +167,7 @@ Details: `references/writing.md`. Batch-write code for each language: the table 
 - InfluxQL is for v1 and v2 compatibility only. If the developer asks for it, push back gently and suggest SQL.
 - InfluxDB 3 doesn't run Flux. Don't write Flux, even as a before-and-after comparison. Give the SQL.
 - Parameterize user input. Never concatenate it into a query string.
-- **Handle errors before parsing results.** On 3.12.1, query errors can be plain text even when JSON was requested. Query-pool exhaustion before the first row returned Core 500 and Enterprise 429 with no `Retry-After`. Use bounded backoff for transient resource failures; don't treat every 500 as resource exhaustion. A scoped-token 403 does not prove the database is absent. See `references/querying.md`.
+- **Handle errors before parsing results.** On 3.12.1, query errors can be plain text even when JSON was requested. Query-memory exhaustion before the first row returns 429 with no `Retry-After`; Core 3.12.1 returned 500. Use bounded backoff for transient resource failures; don't treat every 500 as resource exhaustion. A scoped-token 403 does not prove the database is absent. See `references/querying.md`.
 
 Time idioms with `DATE_BIN`, pagination, and parameterization for each language: `references/querying.md`.
 
