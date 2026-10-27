@@ -51,6 +51,10 @@ function verify(base, changed) {
   if (manifest.required_cases.length === 0 && !manifest.required_cases_reason?.trim()) {
     throw new Error('an empty required_cases list needs a required_cases_reason for reviewer assessment');
   }
+  if (typeof manifest.review_record !== 'string' || !git('ls-files', '--', manifest.review_record) ||
+      !readFileSync(manifest.review_record, 'utf8').trim()) {
+    throw new Error('manifest review_record must name a nonempty tracked review file');
+  }
   const prompts = readPrompts(readFileSync('evals/prompts.jsonl', 'utf8'));
   if (base) {
     const old = new Map(readPrompts(git('show', `${base}:evals/prompts.jsonl`)).map((p) => [p.id, p]));
@@ -64,6 +68,10 @@ function verify(base, changed) {
   let passed = true;
   for (const agent of ['claude', 'codex']) {
     if (!Array.isArray(manifest[agent]) || manifest[agent].length === 0) throw new Error(`missing ${agent} full-suite evidence`);
+    // Prompts, criteria, and models stay frozen during measurement.
+    if (new Set(manifest[agent].map((entry) => `${entry.model}\0${entry.judge}`)).size > 1) {
+      throw new Error(`${agent} answer or judge model changed during measurement`);
+    }
     const maps = manifest[agent].map((entry) => {
       if (typeof entry.file !== 'string' || basename(entry.file) !== entry.file || !entry.file.endsWith('.json')) {
         throw new Error(`invalid ${agent} evidence filename`);
@@ -77,6 +85,9 @@ function verify(base, changed) {
         throw new Error(`${entry.file}: record model, judge, CLI version, and three runs per case`);
       }
       const result = JSON.parse(readFileSync(file, 'utf8'));
+      if (agent === 'codex' && (result.model !== entry.model || result.judgeModel !== entry.judge)) {
+        throw new Error(`${entry.file}: result models do not match the manifest`);
+      }
       return agent === 'claude' ? runsFromClaude(result, { validateRuns: true }) : runsFromCodex(result, { validateRuns: true });
     });
     const scored = score(prompts, mergeRuns(maps), { requiredCases: manifest.required_cases, minRuns: 3 });
