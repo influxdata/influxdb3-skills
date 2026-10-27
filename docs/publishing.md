@@ -85,7 +85,7 @@ Internal commits and process-only repository changes do not each require a versi
    - Full `skills_tree` and `prompts_blob` hashes matching the committed final contents.
    - `required_cases`: unique IDs of changed-behavior eval cases. Every added or modified prompt must be included. Review coverage of unchanged prompts whose supported behavior changed too.
    - `required_cases_reason` if the list is empty, explaining why the skill edit changes no behavior.
-   - Nonempty `claude` and `codex` result lists. Each entry records `file`, matching full hashes, `runs: 3`, `model`, `judge`, and `cli_version` All entries for one agent use the same `model` and `judge`, and Codex result files must name the same models.
+   - Nonempty `claude` and `codex` result lists. Each entry records `file`, matching full hashes, `runs: 3`, `model`, `judge`, and `cli_version`. All entries for one agent use the same `model` and `judge`, and Codex result files must name the same models.
    - `review_record`: a tracked, nonempty review file, such as `docs/releases/3.12.1-review.md`.
 
    Every case must have at least three actual samples in each agent's merged results, regardless of the entry's declared run count.
