@@ -53,7 +53,7 @@ iter, err := client.QueryWithParameters(ctx,
 
 ## Error handling
 
-Inspect the error type / wrapped HTTP status. 429/5xx → retriable; 400/401/404 → non-retriable.
+Inspect the error type / wrapped HTTP status. 429/5xx → retriable; 400/401/403/404/413 → non-retriable.
 
 ## Where to fetch more
 

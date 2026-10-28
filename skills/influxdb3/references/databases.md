@@ -13,7 +13,7 @@ A database goes through: **create → use → (optionally) update retention → 
 ### Create, write, and drop: which token does what
 
 Follow this pattern whenever a task both manages a database and writes to it, including a one-off demo or sample script.
-The write always uses the app token: don't send it with the admin token and mention the app token only as advice.
+Recommend sending the write with the app token. If the developer chooses the admin token, state the risk and use it.
 Use two env vars so the admin token never reaches the write path: `INFLUXDB_ADMIN_TOKEN` for lifecycle operations and `INFLUXDB_TOKEN` for the application's writes.
 
 ```bash
@@ -46,32 +46,32 @@ The CLI connects to `http://127.0.0.1:8181` unless you pass `--host` or set `INF
 ### Create
 
 ```bash
-influxdb3 create database <name> --token "$INFLUXDB_TOKEN"
+influxdb3 create database <name> --token "$INFLUXDB_ADMIN_TOKEN"
 
 # With retention period (human-readable duration: "30d", "24h", "1y")
-influxdb3 create database <name> --retention-period 30d --token "$INFLUXDB_TOKEN"
+influxdb3 create database <name> --retention-period 30d --token "$INFLUXDB_ADMIN_TOKEN"
 ```
 
-> The CLI also reads `INFLUXDB3_AUTH_TOKEN` from env. Examples in this skill use `--token "$INFLUXDB_TOKEN"` explicitly so the same `INFLUXDB_TOKEN` env var works for both CLI and application code without renaming.
+> The CLI also reads `INFLUXDB3_AUTH_TOKEN` from env. These examples pass `--token "$INFLUXDB_ADMIN_TOKEN"` explicitly to keep the admin token separate from the application's `INFLUXDB_TOKEN`.
 
 ### List
 
 ```bash
-influxdb3 show databases --token "$INFLUXDB_TOKEN"
-influxdb3 show databases --format json --token "$INFLUXDB_TOKEN"
+influxdb3 show databases --token "$INFLUXDB_ADMIN_TOKEN"
+influxdb3 show databases --format json --token "$INFLUXDB_ADMIN_TOKEN"
 
 # Include soft-deleted databases
-influxdb3 show databases --show-deleted --token "$INFLUXDB_TOKEN"
+influxdb3 show databases --show-deleted --token "$INFLUXDB_ADMIN_TOKEN"
 ```
 
 ### Update retention
 
 ```bash
 # Set retention
-influxdb3 update database -d <name> -r 7d --token "$INFLUXDB_TOKEN"
+influxdb3 update database -d <name> -r 7d --token "$INFLUXDB_ADMIN_TOKEN"
 
 # Clear retention (keep data forever)
-influxdb3 update database -d <name> -r none --token "$INFLUXDB_TOKEN"
+influxdb3 update database -d <name> -r none --token "$INFLUXDB_ADMIN_TOKEN"
 ```
 
 > `update database` uses `-d/--database <name>` (a flag), not a positional argument.
@@ -79,23 +79,23 @@ influxdb3 update database -d <name> -r none --token "$INFLUXDB_TOKEN"
 ### Delete
 
 ```bash
-influxdb3 delete database <name> -y --token "$INFLUXDB_TOKEN"
+influxdb3 delete database <name> -y --token "$INFLUXDB_ADMIN_TOKEN"
 ```
 
-The CLI **prompts for confirmation** (3.10+); pass `-y`/`--yes` for scripting (without it, a non-interactive run fails with `Cannot proceed without confirmation`, exit 1). There is no `--force` flag (`delete trigger` has one; `delete database` uses `-y`). The HTTP API `DELETE /api/v3/configure/database?db=<name>` never prompts. See `references/quirks.md` entry 7. Advanced options:
+The CLI **prompts for confirmation** (3.10+); pass `-y`/`--yes` for scripting (without it, a non-interactive run fails with `Cannot proceed without confirmation`, exit 1). The HTTP API `DELETE /api/v3/configure/database?db=<name>` never prompts. See `references/quirks.md` entry 7. Advanced options:
 
 ```bash
 # Soft-delete: keep data and resources, mark for hard-delete later
-influxdb3 delete database <name> -y --hard-delete never --token "$INFLUXDB_TOKEN"
+influxdb3 delete database <name> -y --hard-delete never --token "$INFLUXDB_ADMIN_TOKEN"
 
 # Hard-delete now (default)
-influxdb3 delete database <name> -y --hard-delete now --token "$INFLUXDB_TOKEN"
+influxdb3 delete database <name> -y --hard-delete now --token "$INFLUXDB_ADMIN_TOKEN"
 
 # Delete only data (keep tokens, triggers, caches, schema)
-influxdb3 delete database <name> -y --data-only --token "$INFLUXDB_TOKEN"
+influxdb3 delete database <name> -y --data-only --token "$INFLUXDB_ADMIN_TOKEN"
 
 # Delete data + tables, keep DB-level resources (tokens, triggers)
-influxdb3 delete database <name> -y --data-only --remove-tables --token "$INFLUXDB_TOKEN"
+influxdb3 delete database <name> -y --data-only --remove-tables --token "$INFLUXDB_ADMIN_TOKEN"
 ```
 
 ## HTTP API
@@ -108,7 +108,6 @@ See `references/admin-http-api.md` for the full endpoint reference. Quick summar
 | Create | `POST /api/v3/configure/database` body `{"db": "<name>"}` |
 | Delete | `DELETE /api/v3/configure/database?db=<name>` |
 
-Database CRUD is **identical across Core and Enterprise**.
 
 ## Per-flavor differences
 
@@ -120,17 +119,17 @@ Database CRUD is **identical across Core and Enterprise**.
 
 ## Recovering from the silent auto-create footgun
 
-InfluxDB 3 silently auto-creates a database on first write to a name that doesn't exist. If you've written to a typo'd database name (e.g., `senor_data` instead of `sensor_data`):
+With the default config, InfluxDB 3 Core and Enterprise silently auto-create a database on first write to a name that doesn't exist. If you've written to a typo'd database name (e.g., `senor_data` instead of `sensor_data`):
 
 1. Verify which DB has the data:
    ```bash
-   influxdb3 query -d <typo_name> --token "$INFLUXDB_TOKEN" "SELECT count(*) FROM <table>"
-   influxdb3 query -d <correct_name> --token "$INFLUXDB_TOKEN" "SELECT count(*) FROM <table>"
+   influxdb3 query -d <typo_name> --token "$INFLUXDB_ADMIN_TOKEN" "SELECT count(*) FROM <table>"
+   influxdb3 query -d <correct_name> --token "$INFLUXDB_ADMIN_TOKEN" "SELECT count(*) FROM <table>"
    ```
 2. Fix the env var or the typo in code so future writes target the correct name.
 3. Once you've confirmed writes are now flowing to the correct DB, drop the typo'd one:
    ```bash
-   influxdb3 delete database <typo_name> -y --token "$INFLUXDB_TOKEN"
+   influxdb3 delete database <typo_name> -y --token "$INFLUXDB_ADMIN_TOKEN"
    ```
 
 For prevention guidance, see the setup checklist in `SKILL.md` §2 and `references/connecting.md` → "The silent auto-create footgun".
@@ -138,9 +137,9 @@ For prevention guidance, see the setup checklist in `SKILL.md` §2 and `referenc
 ## Reserved or problematic names
 
 - `_internal` — system database; do not use as your application's DB name. Reading from it (e.g., `system.tokens`, `system.processing_engine_logs`) is fine.
-- Names containing `..`, `/`, or starting with `_` — rejected or reserved.
+- Names containing `..`, `/`, or starting with `_` — avoid; the server may reject them.
 - SQL reserved words (`time`, `value`, `select`, `database`, etc.) work as DB names but make queries awkward; avoid.
 
 ## Where to fetch more
 
-`references/doc-urls.md` → InfluxDB 3 Enterprise reference for the database CLI command page.
+`references/doc-urls.md` → "Enterprise CLI reference" for the database commands.

@@ -32,9 +32,7 @@ const points = Array.from({ length: 1000 }, () =>
 await client.write(points);
 ```
 
-Default rule: batch ≥ 1,000 points or flush every 1 second.
-
-> **InfluxDB Cloud Serverless:** writes go to the v2-compatibility endpoint `/api/v2/write`. `@influxdata/influxdb3-client` 2.3.0+ writes through `/api/v2/write` by default for every product, so one invalid line rejects the whole batch. For partial writes or `noSync` on InfluxDB 3 Core or Enterprise, set `useV2Api: false`. If you drop down to raw HTTP for InfluxDB Cloud Serverless, you need the v2 path and the `INFLUXDB_ORG` env var. See `references/writing.md` → "Official clients write through `/api/v2/write` by default". See `references/flavors.md` for the full per-flavor matrix and `references/clients/http.md` for the raw-HTTP shapes.
+`@influxdata/influxdb3-client` 2.3.0+ writes through `/api/v2/write` by default, so one invalid line rejects the whole batch. For partial writes or `noSync` on InfluxDB 3 Core or Enterprise, set `useV2Api: false`. See `references/writing.md` → "Official clients write through `/api/v2/write` by default".
 
 ## Parameterized SQL query
 
@@ -51,7 +49,7 @@ for await (const row of rows) {
 
 ## Error handling
 
-Catch and inspect `error.statusCode`. Treat 429 / 5xx as retriable; 400 / 401 / 404 as non-retriable.
+Catch and inspect `error.statusCode`. Treat 429 / 5xx as retriable; 400 / 401 / 403 / 404 / 413 as non-retriable.
 
 ## Where to fetch more
 

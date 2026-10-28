@@ -86,7 +86,7 @@ for row in result:
     print(row)
 ```
 
-> Note: as of `influxdb3-python` 0.19.x, the keyword for parameters is `query_parameters` (not `parameters`). Always pass user input here, never via string formatting.
+> The keyword for parameters is `query_parameters`, not `parameters`.
 
 ## Error handling
 
@@ -100,7 +100,7 @@ except InfluxDBError as e:
         # retriable — back off and retry
         ...
     else:
-        # 400/401/404 — fix and don't retry blindly
+        # 400/401/403/404/413 — fix the request; don't retry
         raise
 ```
 

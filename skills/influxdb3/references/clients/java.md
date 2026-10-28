@@ -15,7 +15,7 @@
 </dependency>
 ```
 
-> Pin to the latest stable. `references/doc-urls.md` → Java for the current release.
+> Use the current release; see `references/doc-urls.md` → "Java".
 
 ## JVM flags
 

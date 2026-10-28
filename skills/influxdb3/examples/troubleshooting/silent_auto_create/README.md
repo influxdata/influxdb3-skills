@@ -28,7 +28,7 @@ If you see both `sensor_data` and `senor_data` (or similar), one is the typo.
 
 `fixed.py` adds a verify-then-create-if-missing step BEFORE the first write. The intended database name is checked against the live list; if it's missing, it's created explicitly. No silent surprise.
 
-Generated production code should also include this kind of startup check, OR explicit database creation as part of the deployment pipeline.
+Generated production code should also include this kind of startup check, or explicit database creation as part of the deployment pipeline.
 
 For deeper recovery (if you've already misrouted production data), see `references/troubleshooting.md` → "Silent auto-create misroute".
 
@@ -43,6 +43,6 @@ python fixed.py     # creates admin_test_sensor_data_<ts>; verifies; auto-cleans
 > The broken version creates a real `senor_data_<ts>` database that is NOT auto-cleaned. After running it, manually run:
 >
 > ```bash
-> influxdb3 show databases --format json | python3 -c "import json,sys; print([d['iox::database'] for d in json.load(sys.stdin) if 'senor_data_' in d['iox::database']])"
+> influxdb3 show databases --format json --token "$INFLUXDB_TOKEN" | python3 -c "import json,sys; print([d['iox::database'] for d in json.load(sys.stdin) if 'senor_data_' in d['iox::database']])"
 > # Then delete each one with: influxdb3 delete database <name> --token "$INFLUXDB_TOKEN"
 > ```

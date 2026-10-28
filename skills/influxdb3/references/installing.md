@@ -4,7 +4,7 @@ For users who installed the `influxdb3-skills` plugin but don't have a server ye
 
 > **Cloud Serverless and Cloud Dedicated** are managed services — they're not installed locally. Sign up at https://www.influxdata.com/products/influxdb-overview/ for those flavors. Once you have credentials, return to `references/connecting.md`. The agent doesn't create accounts on your behalf.
 
-> **Already have an instance running?** Skip to `SKILL.md` §2 (First-time setup checklist).
+> **Already have an instance running?** Skip to `SKILL.md` §2 (Setup checklist).
 
 ## Decision: Core or Enterprise?
 
@@ -16,7 +16,7 @@ For users who installed the `influxdb3-skills` plugin but don't have a server ye
 | Last-value & distinct-value caches | ✅ | ✅ |
 | HA / read replicas | ❌ | ✅ |
 | Object store backends | local, S3, Azure, GCS | local, S3, Azure, GCS |
-| When to pick | Trying it out, dev/test, small production | Production with HA needs, performance primitives, multi-node |
+| When to pick | Trying it out, dev/test, small production | Production that needs HA or multiple nodes |
 
 If you're not sure, start with Core. You can move to Enterprise later — the data format is compatible.
 
@@ -43,7 +43,7 @@ sudo ln -s ~/.influxdb/influxdb3 /usr/local/bin/influxdb3
 
 ## Install path B: Docker
 
-Image: `influxdb:3-core` or `influxdb:3-enterprise` (AMD64 and ARM64). Pin a version with a tag such as `influxdb:3.10-core`.
+Image: `influxdb:3-core` or `influxdb:3-enterprise` (AMD64 and ARM64). Pin a version with a tag such as `influxdb:3.12-core`.
 
 Best when you want isolation, easy version pinning, or are testing alongside an existing install.
 
@@ -131,7 +131,7 @@ influxdb3 serve \
 
 If you already have a license file, pass `--license-file <path>` and skip `--license-email` / `--license-type`. The two options are mutually exclusive.
 
-Each flag has an environment variable: `INFLUXDB3_LICENSE_EMAIL`, `INFLUXDB3_LICENSE_TYPE`, `INFLUXDB3_LICENSE_FILE` (v3.11+). The older `INFLUXDB3_ENTERPRISE_LICENSE_*` and `INFLUXDB3_ENTERPRISE_CLUSTER_ID` names still work but log a deprecation warning. Other `serve` flags follow the same pattern, for example `INFLUXDB3_OBJECT_STORE`, `INFLUXDB3_DATA_DIR` (formerly `INFLUXDB3_DB_DIR`) and `INFLUXDB3_PLUGIN_DIR`.
+Each flag has an environment variable: `INFLUXDB3_LICENSE_EMAIL`, `INFLUXDB3_LICENSE_TYPE`, `INFLUXDB3_LICENSE_FILE` (v3.11+). Other `serve` flags follow the same pattern, for example `INFLUXDB3_OBJECT_STORE`, `INFLUXDB3_DATA_DIR`, and `INFLUXDB3_PLUGIN_DIR`.
 
 > **Don't run a bare `serve`.** On a new/fresh cluster (no cached license), give the complete start command with `--license-email you@example.com` and `--license-type home` as marked placeholders, and ask the developer for their real email and type before you run it for them. Never run it with the placeholder email. A license-less non-interactive start **fails fast** with `No interactive TTY detected. Cannot prompt for email.` — it does not hang; supplying `--license-email` is what avoids the prompt. Note: `--object-store memory` can't cache the license, so prefer a file store (below).
 
@@ -142,7 +142,7 @@ Each flag has an environment variable: `INFLUXDB3_LICENSE_EMAIL`, `INFLUXDB3_LIC
 | `--object-store` | Data | When to use |
 |---|---|---|
 | `file` | On disk under `--data-dir` (Parquet + catalog) | **Local/dev choice.** Survives restarts; license caches once; RAM stays bounded. Requires `--data-dir`. |
-| `s3` / `google` / `azure` | Remote object store | Production and shared/multi-node storage. Each takes its own flags: `--bucket` plus `--aws-access-key-id`, `--aws-secret-access-key` and possibly `--aws-default-region` (s3), `--google-service-account` (google), or `--azure-storage-account` and `--azure-storage-access-key` (azure). See `doc-urls.md`. |
+| `s3` / `google` / `azure` | Remote object store | Production and shared/multi-node storage. Each takes its own flags: `--bucket` plus `--aws-access-key-id`, `--aws-secret-access-key` and possibly `--aws-default-region` (s3), `--google-service-account` (google), or `--azure-storage-account` and `--azure-storage-access-key` (azure). See the install docs for each backend. |
 | `memory-throttled` | RAM only, with simulated cloud latency | Testing behavior against a slow object store. Same RAM caveats as `memory`. |
 | `memory` | **RAM only, nothing on disk** | Brief throwaway tests only. |
 
@@ -152,17 +152,17 @@ Each flag has an environment variable: `INFLUXDB3_LICENSE_EMAIL`, `INFLUXDB3_LIC
 
 The very first token is created without authentication (this only works once, and only against an instance that has no admin tokens yet).
 
-> **Caution:** until the first admin token exists, the token endpoint accepts unauthenticated requests and the server listens on all interfaces (`--http-bind` defaults to `0.0.0.0:8181`). Create the token before exposing the port. On a reachable network, start with `--http-bind 127.0.0.1:8181` (Docker: publish `-p 127.0.0.1:8181:8181`), create the token, then restart on the address you want. Or start with a preconfigured admin token (see `doc-urls.md`).
+> **Caution:** until the first admin token exists, the token endpoint accepts unauthenticated requests and the server listens on all interfaces (`--http-bind` defaults to `0.0.0.0:8181`). Create the token before exposing the port. On a reachable network, start with `--http-bind 127.0.0.1:8181` (Docker: publish `-p 127.0.0.1:8181:8181`), create the token, then restart on the address you want. Or start with a preconfigured admin token (`doc-urls.md` → "Preconfigured admin token").
 
 ```bash
 influxdb3 create token --admin
 ```
 
-The plaintext token is shown ONCE in the response — copy it immediately. Save to a `.env`:
+The token is shown once in the response, so copy it right away. Add `.env` to `.gitignore`, then save the values to `.env`:
 ```bash
+grep -qxF '.env' .gitignore 2>/dev/null || echo '.env' >> .gitignore
 echo "INFLUXDB_HOST=http://localhost:8181" >> .env
 echo "INFLUXDB_TOKEN=<paste-the-token-here>" >> .env
-echo ".env" >> .gitignore
 ```
 
 ## Verify it works
@@ -173,7 +173,7 @@ curl -sS -i -H "Authorization: Bearer $INFLUXDB_TOKEN" http://localhost:8181/pin
 # expect: HTTP/1.1 200 OK with x-influxdb-build and x-influxdb-version headers
 ```
 
-If you see `HTTP/1.1 200 OK` with `x-influxdb-build: Core` (or `Enterprise`), you're done. `/ping` needs a token by default; see `references/quirks.md` entry 1 for the opt-out.
+If you see `HTTP/1.1 200 OK` with `x-influxdb-build: Core` (or `Enterprise`), you're done.
 
 To tell which edition and version an existing instance runs, use the docs' identify-version pages: https://docs.influxdata.com/influxdb3/core/admin/identify-version/ (same content under `/influxdb3/enterprise/`). `references/flavor-detection.md` covers the full procedure.
 
@@ -183,7 +183,7 @@ To tell which edition and version an existing instance runs, use the docs' ident
 
 You now have a running, authenticated InfluxDB 3 instance. Pick your path:
 
-- Want to write data and query it? → `SKILL.md` §2 (First-time setup checklist) → §4–§6 (Connect, Write, Query)
+- Want to write data and query it? → `SKILL.md` §2 (Setup checklist) → §4–§6 (Connect, Write, Query)
 - Want to provision a database now? → `references/databases.md`
 - Want to develop a Processing Engine plugin? → sibling skill `influxdb3-plugins` (you'll need to ensure `--plugin-dir` is set, which the commands above already do)
 
@@ -192,4 +192,4 @@ You now have a running, authenticated InfluxDB 3 instance. Pick your path:
 - Official Core docs: https://docs.influxdata.com/influxdb3/core/install/
 - Official Enterprise docs: https://docs.influxdata.com/influxdb3/enterprise/install/
 - `references/doc-urls.md` for additional install-related URLs
-- Docs are the authority for flags and env vars; this file follows them except where the claims ledger verified otherwise against a live instance.
+- Docs are the authority for flags and env vars.

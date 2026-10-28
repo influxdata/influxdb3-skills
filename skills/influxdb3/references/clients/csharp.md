@@ -42,7 +42,6 @@ For bulk writes, build fixed-size `List<PointData>` batches and send each batch 
 Put the call in a bounded retry loop.
 Retry 429 and 5xx responses with exponential backoff and jitter.
 Surface 400, 401, 403, and 404 without retrying.
-This is basic write correctness, not workload-specific batch-size tuning.
 The C# client doesn't expose the Python client's automatic `batch_size` or `flush_interval` settings.
 
 See `references/writing.md` → "Error handling" for the status-code meanings.
