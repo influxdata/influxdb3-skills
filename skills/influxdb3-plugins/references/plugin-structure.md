@@ -85,9 +85,9 @@ influxdb3 create trigger \
 
 The official plugin library uses a JSON metadata docstring header to declare the plugin's supported trigger types and configurable arguments — this is what the InfluxDB 3 Explorer UI reads to render plugin configuration forms.
 
-The canonical schema lives at `~/Projects/influxdb3_plugins/REQUIRED_PLUGIN_METADATA.md` (or in the public repo at https://github.com/influxdata/influxdb3_plugins).
+The canonical schema is `REQUIRED_PLUGIN_METADATA.md` in https://github.com/influxdata/influxdb3_plugins.
 
-Our hello-world examples in `examples/` do **not** ship full metadata docstrings — they're minimal by design. If a customer plans to share their plugin via the official library or via Explorer's UI, they should add the metadata docstring per the canonical schema before publishing.
+Our hello-world examples in `examples/` do **not** ship full metadata docstrings — they're minimal by design. If a developer plans to share their plugin via the official library or via Explorer's UI, they should add the metadata docstring per the canonical schema before publishing.
 
 ## Plugin configuration via TOML
 
@@ -181,7 +181,7 @@ See `skills/influxdb3-plugins/examples/toml_config/` for a runnable scheduled-tr
 
 ### When in doubt
 
-For canonical real-world examples of TOML config in production InfluxData plugins, see the official repo's `influxdata/` directory: https://docs.influxdata.com/influxdb3/enterprise/plugins/library/
+For canonical real-world examples of TOML config in production InfluxData plugins, see the official repo's `influxdata/` directory: https://github.com/influxdata/influxdb3_plugins/tree/main/influxdata
 
 ## Where to fetch more
 

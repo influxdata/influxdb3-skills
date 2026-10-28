@@ -17,7 +17,7 @@ influxdb3 create trigger \
 
 ## Wait for it to fire
 
-The trigger fires automatically every 30s. Wait at least 70 seconds (so it fires twice), then:
+The trigger fires automatically every 30s. Wait about 70 seconds, then:
 
 ```bash
 influxdb3 query \
@@ -25,7 +25,7 @@ influxdb3 query \
   "SELECT event_time, log_level, log_text FROM system.processing_engine_logs WHERE trigger_name='cache_counter' ORDER BY event_time DESC LIMIT 8"
 ```
 
-Expected: messages like `counter=1 last_seen=2026-05-08T... temp_delete=ok`, then `counter=2 ...`, then `counter=3 ...` — proving the counter persists across invocations.
+Expected: messages like `counter=1 last_seen=2026-05-08T... temp_delete=ok`, then `counter=2 ...`, and so on — proving the counter persists across invocations.
 
 ```bash
 influxdb3 query \

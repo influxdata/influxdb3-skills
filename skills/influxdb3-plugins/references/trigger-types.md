@@ -41,7 +41,7 @@ def process_writes(influxdb3_local, table_batches, args=None):
 
 ### Patterns to study
 
-In `~/Projects/influxdb3_plugins/influxdata/`:
+In https://github.com/influxdata/influxdb3_plugins/tree/main/influxdata:
 - `state_change/` — state-machine WAL plugin pattern
 - `threshold_deadman_checks/` — WAL alerting on threshold crossings
 - `schema_validator/` — WAL validation pattern
