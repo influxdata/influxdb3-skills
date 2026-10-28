@@ -109,7 +109,7 @@ Use the [user-authentication docs](https://docs.influxdata.com/influxdb3/enterpr
 
 ```bash
 # CLI
-influxdb3 show databases --token "$INFLUXDB_TOKEN"
+influxdb3 show databases --token "$INFLUXDB_ADMIN_TOKEN"
 
 # Or HTTP API
 curl -sS -H "Authorization: Bearer $INFLUXDB_TOKEN" \
@@ -132,7 +132,7 @@ done
 1. Identify which DB has the data and which DB the writes *should* go to.
 2. Fix the env var or code typo so future writes target the correct name.
 3. (Optional) migrate the data from the typo'd DB to the correct one — copy out via SQL `SELECT *`, write back as line protocol.
-4. Drop the typo'd DB: `influxdb3 delete database <typo_name> -y --token "$INFLUXDB_TOKEN"` (`-y` skips the confirmation prompt for scripting; there is no `--force` — see `quirks.md` entry 7).
+4. Drop the typo'd DB: `influxdb3 delete database <typo_name> -y --token "$INFLUXDB_ADMIN_TOKEN"` (`-y` skips the confirmation prompt for scripting; there is no `--force` — see `quirks.md` entry 7).
 
 **Prevention:** SKILL.md §2 "Setup checklist" covers checking that the database exists before the first write. Generated app code should include a startup check.
 
@@ -259,14 +259,14 @@ WHERE table_name = '<measurement>';
 
 ```bash
 # List databases with the test pattern
-influxdb3 show databases --format json --token "$INFLUXDB_TOKEN" | python3 -c "
+influxdb3 show databases --format json --token "$INFLUXDB_ADMIN_TOKEN" | python3 -c "
 import json, sys
 dbs = [d['iox::database'] for d in json.load(sys.stdin)]
 print([d for d in dbs if d.startswith('<your-test-prefix>')])
 "
 
 # List tokens with the test pattern
-influxdb3 show tokens --format json --token "$INFLUXDB_TOKEN" | python3 -c "
+influxdb3 show tokens --format json --token "$INFLUXDB_ADMIN_TOKEN" | python3 -c "
 import json, sys
 data = json.load(sys.stdin)
 print([t['name'] for t in data if t['name'].startswith('<your-test-prefix>')])

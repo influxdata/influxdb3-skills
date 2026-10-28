@@ -99,7 +99,7 @@ Then `--path "gh:myorg/custom_plugin.py"` resolves against that custom URL.
 
 ## Updating a plugin in place
 
-Use `influxdb3 update trigger` with `--path` pointing at the new code. Trigger configuration (spec, arguments, error-behavior) is preserved.
+Use `influxdb3 update trigger` with `--path` pointing at the local file containing the new code. Core and Enterprise 3.12.1 read and send that file without `--upload`; the update command rejects that flag. Trigger configuration (spec, arguments, error-behavior) is preserved.
 
 ```bash
 influxdb3 update trigger \
@@ -133,7 +133,7 @@ Schema columns: `plugin_name` (str), `file_name` (str), `file_path` (str), `size
 Plugin upload, update, and trigger creation **require an admin token**. For application code that *talks to* InfluxDB, use a database-scoped token on Enterprise or a separate named admin token on Core; use the admin token only for plugin lifecycle operations.
 
 The server enforces:
-- **Path traversal protection** — without `--upload`, `--path` is relative to `--plugin-dir`, and the server rejects paths that contain `..` or start with `/`. With `--upload`, `--path` names a local file or directory; the CLI uploads it and the server chooses where it lands inside `--plugin-dir`.
+- **Path traversal protection** — for `create trigger` without `--upload`, `--path` is relative to `--plugin-dir`, and the server rejects paths that contain `..` or start with `/`. With `--upload`, `--path` names a local file or directory; the CLI uploads it and the server chooses where it lands inside `--plugin-dir`. For `update trigger`, `--path` identifies local code to send.
 - **Symlink escape protection** — symlinks that resolve outside `--plugin-dir` are rejected.
 - **Admin-only deploys** — non-admin tokens cannot upload, update, or create triggers.
 

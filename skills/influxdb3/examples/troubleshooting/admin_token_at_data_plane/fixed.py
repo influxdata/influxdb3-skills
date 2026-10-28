@@ -61,7 +61,7 @@ def write_lp(host: str, scoped_token: str, db: str, line: str) -> int:
 def main() -> int:
     load_dotenv()
     host = os.environ["INFLUXDB_HOST"]
-    admin_token = os.environ["INFLUXDB_TOKEN"]
+    admin_token = os.environ["INFLUXDB_ADMIN_TOKEN"]
     db = os.environ.get("INFLUXDB_DATABASE", "claude_skill_test")
 
     ts = int(time.time())

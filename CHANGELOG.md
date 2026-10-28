@@ -26,6 +26,9 @@ Claim IDs (`claim-YYYYMMDD-NNNN`) refer to InfluxData's internal verification le
 - State in the skill body that `/ping` requires a token by default, how `--disable-authz` opts routes out, and the naming and reserved-word rules. Agents rarely opened the references that held them.
 - Distinguish InfluxDB 3 Cloud (hosted Enterprise) from the other Cloud products, and say `/api/v3/*` fails on InfluxDB Cloud Serverless and InfluxDB Cloud Dedicated.
 - Stop naming plugin placement flags in the scope note, which agents repeated as facts, and say single-node deployments don't have the routing problem.
+- Keep testbench observations attributed to the product and version that produced them. The review edits had generalized Core 3.12.1 results, such as duplicate rows after rewrites, to every 3.12.1 deployment.
+- Say that `update trigger` on Core and Enterprise 3.12.1 reads the local `--path` file and rejects `--upload`, and that `delete trigger --force` permits deleting an active trigger.
+- Use `INFLUXDB_ADMIN_TOKEN` in every admin CLI command and in the troubleshooting demos that manage databases and tokens, so the admin token stays separate from the application's `INFLUXDB_TOKEN`.
 - State the lowercase HTTP values for `trigger_settings.error_behavior`, and point to the API reference or the InfluxDB Documentation MCP server for other settings.
 - Judge Claude evals with Opus. A diagnostic regrade showed the Sonnet judge failing correct answers on wording.
 - Revise eval criteria that conflicted with the skill or graded wording instead of behavior: separate admin-token variables, labeled fake-data stubs, `.env` handling that respects the user's setup, and ambiguous "Cloud" requests.

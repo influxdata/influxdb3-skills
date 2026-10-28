@@ -28,7 +28,7 @@ Both modes still go through the same write path; the only difference is whether 
 
 WAL synchronization and logical deduplication are different properties.
 A durable write does not make a retried event safe to repeat.
-3.12.1 has returned duplicate rows after same-point rewrites; see the `influxdb3` skill's `references/quirks.md` entry 13 before promising that a deterministic timestamp makes retries safe.
+Core 3.12.1 has returned duplicate rows after same-point rewrites; see the `influxdb3` skill's `references/quirks.md` entry 13 before promising that a deterministic timestamp makes retries safe.
 
 ### Quick examples
 

@@ -77,7 +77,8 @@ Check that the user's binary accepts the flag (`influxdb3 serve --help` lists it
 | 3.10.x | `--package-manager disabled` | `--package-manager` is deprecated (3.10+), and the server prints a deprecation warning. `disabled` still blocks package-install API calls. |
 | Earlier than 3.10 | `--package-manager disabled` | Blocks package-install API calls. |
 
-The first row's behavior comes from the `--help` text and hasn't been behavior-tested.
+The 3.11.0 release notes add `--disable-package-management`, but the reference docs don't describe it yet.
+The behavior in the first row comes from the 3.11.5 `--help` text and hasn't been behavior-tested.
 
 ```bash
 influxdb3 serve \

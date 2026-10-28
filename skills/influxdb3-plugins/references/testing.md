@@ -88,7 +88,7 @@ influxdb3 update trigger \
   --path "/absolute/path/my_plugin.py"
 ```
 
-`update trigger` preserves the trigger spec, arguments, and error-behavior — only the plugin code is replaced.
+In Core and Enterprise 3.12.1, `update trigger` reads the local file specified by `--path` without `--upload`. The command preserves the trigger spec, arguments, and error-behavior while replacing the plugin code.
 
 ## Reading plugin logs
 
