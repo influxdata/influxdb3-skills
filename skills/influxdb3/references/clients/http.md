@@ -44,9 +44,11 @@ Expected: JSON array of rows.
 | Status | Meaning | Retriable? |
 |---|---|---|
 | 200 / 204 | Success | n/a |
-| 400 | Bad request — line protocol parse error or invalid SQL | **No** — fix and retry, don't retry blindly |
+| 400 | Bad request — line protocol parse error or invalid SQL | **No** — fix the request |
 | 401 | Auth failed — bad/missing token | **No** — fix env var |
+| 403 | Token lacks permission | **No** — use a token with access |
 | 404 | Database not found | **No** |
+| 413 | Payload too large | **No** — reduce batch size |
 | 429 | Rate limited | **Yes** — exponential backoff |
 | 5xx | Server side | **Yes** — backoff + retry |
 

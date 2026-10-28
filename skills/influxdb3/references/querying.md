@@ -4,7 +4,7 @@
 
 InfluxDB 3 supports SQL (Apache DataFusion under the hood) and InfluxQL. Use the language the developer asks for. When they don't say, generate SQL.
 
-Flux is **not** supported in v3 — if a developer brings Flux code, route them to the migration roadmap (deferred to v1.2).
+InfluxDB 3 doesn't run Flux. Migration from Flux is out of scope; see SKILL.md §9.
 
 ## Time idioms
 
@@ -66,7 +66,7 @@ LIMIT 1000 OFFSET 5000
 
 ## Avoid unbounded `SELECT *`
 
-`SELECT * FROM sensor` against a large measurement will return everything — slow and expensive. Always include a `WHERE time >= ...` filter or a `LIMIT`. The skill should add one even if the developer didn't, and call it out.
+`SELECT * FROM sensor` against a large measurement will return everything — slow and expensive. Include a `WHERE time >= ...` filter or a `LIMIT`. If the developer's query has neither, add one and say that you added it.
 
 ## InfluxQL
 
@@ -86,10 +86,8 @@ A requested result format does not determine the error body's format.
 | Query-memory exhaustion before the first row returns 429; Core 3.12.1 returned 500 | The tested errors were plain text across JSON, JSONL, CSV, pretty, and Parquet requests, without `Retry-After`. Use bounded exponential backoff with jitter for transient resource failures. If repeated, report the resource error and route performance work to the tuning docs. |
 | Enterprise data query returns 405 on an ingest-only node | Use an endpoint that runs query mode. Retrying the same data query on the same node does not fix routing. Success of general system-table queries on such a node has not been verified. |
 
-These are observed conditions, not a rule that every 500 means resource exhaustion.
-The [3.12.1 release notes](https://docs.influxdata.com/influxdb3/enterprise/release-notes/#v3121) describe returning the error status before any rows rather than sending 200 and closing the connection.
-The live memory-pool probes exercised failures before the first row, not failures partway through a result.
-Still detect incomplete responses; the release notes describe early termination after streaming has begun.
+Not every 500 means resource exhaustion.
+The [3.12.1 release notes](https://docs.influxdata.com/influxdb3/enterprise/release-notes/#v3121) describe returning the error status before any rows, but a stream can still end early after rows start, so detect incomplete responses.
 
 The [3.12.0 notes](https://docs.influxdata.com/influxdb3/enterprise/release-notes/#v3120) also describe a finite query-concurrency limit.
 Excess queries wait for a slot, so set a client timeout instead of assuming every overload fails immediately.

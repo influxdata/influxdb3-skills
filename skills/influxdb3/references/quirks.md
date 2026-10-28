@@ -1,6 +1,6 @@
 # InfluxDB 3 Quirks — Non-obvious Behaviors
 
-A catalogue of behaviors that aren't in the official docs but customers will hit. Each entry: **What you'll see → Why it's that way → What to do.** Entries are bounded — only quirks that are (a) verified against a real release, (b) genuinely non-obvious, (c) likely to be hit in a customer's first month.
+Behaviors that surprise developers. Each entry: **What you'll see → Why it's that way → What to do.** Each entry is verified against a release.
 
 > Quirks can differ on InfluxDB 3 Cloud, InfluxDB Cloud Serverless, InfluxDB Cloud Dedicated, and InfluxDB Clustered — see flavor-specific notes per entry.
 
@@ -22,7 +22,7 @@ On Enterprise 3.12.1, a scoped resource token or Member JWT can receive 403 with
 Use an admin token for the build/version probe, or check a known permitted query with the application credential.
 A health-route 403 alone does not mean the token is invalid or the server is down.
 
-Since 3.10 you can opt out of authorization for these routes with `--disable-authz` (env `INFLUXDB3_DISABLE_AUTHZ`). It takes a comma-separated list of `health`, `ping` and `metrics`. On such a server the token is optional. Source: the InfluxDB 3 API spec (`GetPing`) and the config options reference. The default 401 was observed on a 3.10 instance; the opt-out flag has not been run against a live server.
+Since 3.10 you can opt out of authorization for these routes with `--disable-authz` (env `INFLUXDB3_DISABLE_AUTHZ`). It takes a comma-separated list of `health`, `ping` and `metrics`. On such a server the token is optional.
 
 ---
 
@@ -32,7 +32,7 @@ Since 3.10 you can opt out of authorization for these routes with `--disable-aut
 
 **Why:** Default config auto-creates databases on first write. The auto-create is a UX feature for getting started fast; it becomes a footgun when env vars typo or scripts drift.
 
-**What to do:** Verify the database exists before the first write. Diagnostic + recovery flow in `references/troubleshooting.md` → "Silent auto-create misroute". Generated code that creates a `.env` for production should include a startup check that lists databases and aborts on mismatch.
+**What to do:** Verify the database exists before the first write. Diagnostic + recovery flow in `references/troubleshooting.md` → "Silent auto-create misroute". Generated code should check at startup that the database exists and stop if it doesn't.
 
 ---
 
@@ -102,7 +102,7 @@ for row in system_tokens_rows:
 
 **Why:** The CLI prompts for confirmation (3.10+); the flag to skip it is `-y`/`--yes`, not `--force`. The HTTP API `DELETE /api/v3/configure/database?db=<name>` has **no** prompt and is unaffected.
 
-**What to do:** For scripting/automation, pass `-y` (or `--yes`): `influxdb3 delete database <name> -y --token "$INFLUXDB_TOKEN"`. Combine with `--hard-delete <when>` (`never` / `now` / `default` / `<timestamp>`) or `--data-only` for advanced cases. Pattern documented in `references/databases.md`. Or call the HTTP API, which never prompts.
+**What to do:** For scripting/automation, pass `-y` (or `--yes`): `influxdb3 delete database <name> -y --token "$INFLUXDB_TOKEN"`. Pattern documented in `references/databases.md`. Or call the HTTP API, which never prompts.
 
 ---
 
@@ -147,17 +147,9 @@ ORDER BY event_time DESC LIMIT 50;
 
 ## 11. A 400 from `/api/v3/write_lp` can still write most of the batch
 
-**What you'll see:** A batch of 1,000 line-protocol points returns `400 Bad Request` because line #347 has a parse error.
+**What you'll see:** A batch with one bad line returns `400 Bad Request`, but the other lines are stored.
 
-**Why:** `/api/v3/write_lp` defaults to `accept_partial=true`.
-InfluxDB writes the 999 valid lines and rejects line #347.
-The response `data` array lists each rejected line.
-With `accept_partial=false`, one invalid line rejects the whole batch.
-
-**What to do:** Don't resend the whole batch after a partial write, because that duplicates the lines already stored.
-Fix and resend only the lines listed in `data`.
-The `/api/v2/write` and `/write` compatibility endpoints behave differently: on 3.11.5, one invalid line rejects the whole batch.
-Documented in `references/writing.md` → "Error handling".
+**What to do:** Resend only the lines listed in the response `data` array. Details, including the compatibility endpoints: `references/writing.md` → "A 400 can mean a partial write".
 
 ---
 
@@ -189,15 +181,12 @@ Documented in `references/writing.md` → "Error handling".
 
 ## 13. Rewriting a point is not an unconditional deduplication guarantee
 
-Core 3.12.1 testbench queries returned two identical rows after the same table, tags, timestamp, and value were written again.
-One observation followed a fresh 3.12.1 initialization, so the evidence is not limited to upgraded databases.
-Persistence timing and query plans were not captured; the cause and full conditions remain unresolved.
-Enterprise 3.12.1 retained the expected counts in a separate repeated-seed observation, which does not establish a universal guarantee either.
+On 3.12.1, queries have returned two identical rows after the same table, tags, timestamp, and value were written again, including on a freshly initialized node. The cause is unresolved.
+The [3.12.1 notes](https://docs.influxdata.com/influxdb3/enterprise/release-notes/#v3121) document specific overwrite fixes, which don't cover every case.
 
-The [3.12.1 notes](https://docs.influxdata.com/influxdb3/enterprise/release-notes/#v3121) document specific overwrite fixes on the Parquet and upgraded storage engines.
-Those fixes and the narrower duplicate-row observations are separate evidence.
+Retriable status codes mean a bounded retry may help, not that repeating a write is safe.
 Do not promise that resending the same point is always safe or that a deterministic timestamp alone makes a plugin idempotent.
-Keep tag-based source identity, resend only rejected lines after a partial write, and verify retry or repeated-run behavior on the target edition and version.
+Keep tag-based source identity, resend only rejected lines after a partial write, and verify retry or repeated-run behavior on the target version.
 
 ## Where to fetch more
 

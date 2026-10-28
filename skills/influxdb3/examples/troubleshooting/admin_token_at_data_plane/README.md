@@ -1,12 +1,12 @@
-# Demo: Admin token at the data plane (anti-pattern)
+# Demo: Admin token at the data plane
 
 ## Symptom
 
-Customer audits their app and finds that the application's runtime code is using the admin token (with `*:*:*` permissions) to do regular writes. The app works — but a single leak of that token gives an attacker full control of every database.
+Customer audits their app and finds that the application's runtime code is using the admin token (with `*:*:*` permissions) to do regular writes. The app works. The risk: if that token leaks, an attacker gets full control of every database.
 
 ## Cause
 
-It's the easiest path: the admin token is the first one created (at server bootstrap), so it's already in the customer's secret manager. Application code that "just needs to write" picks it up. Nobody reviews the scope.
+The admin token is the first one created (at server bootstrap), so it's already in the secret manager. Application code that only needs to write picks it up.
 
 ## Diagnostic step
 
@@ -23,13 +23,13 @@ for t in data:
 "
 ```
 
-If the token your application uses appears in that list, it's an admin token. That's the symptom.
+If the token your application uses appears in that list, it's an admin token.
 
 ## Fix
 
 `fixed.py` shows the structure: provision a scoped resource token at deploy time using the admin token, store the SCOPED token as the application's secret, use only the scoped token for runtime writes. The admin token stays in the deploy/CI environment only.
 
-This fix requires InfluxDB 3 Enterprise or InfluxDB 3 Cloud. On Core, every token is an admin token; see `references/tokens.md` → "InfluxDB 3 Core: admin tokens only."
+A scoped token limits the damage of a leak. This fix requires InfluxDB 3 Enterprise or InfluxDB 3 Cloud. On Core, every token is an admin token; give each application its own named admin token so you can revoke it alone. See `references/tokens.md` → "InfluxDB 3 Core: admin tokens only."
 
 For production rotation see `references/tokens.md` → "Token rotation pattern".
 
@@ -37,7 +37,7 @@ For production rotation see `references/tokens.md` → "Token rotation pattern".
 
 ```bash
 # .env should have INFLUXDB_HOST, INFLUXDB_TOKEN (admin), INFLUXDB_DATABASE
-python broken.py    # uses admin token for write — works but anti-pattern
+python broken.py    # uses admin token for write — works, with the risk above
 python fixed.py     # provisions scoped token, uses it, cleans up
 ```
 

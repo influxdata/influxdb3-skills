@@ -8,12 +8,7 @@
 | **Named admin token** | `influxdb3 create token --admin --name <name>` | Admin automation, and application code on Core | The consumer's secret manager or env var |
 | **Scoped resource token** *(Enterprise and InfluxDB 3 Cloud only)* | Created via `--permission` referencing a specific database | Application code: writing data, querying | The application's `INFLUXDB_TOKEN` env var, or its secret manager |
 
-**The most important rule:** application code reads a **scoped resource token** where supported, or a named admin token on Core. The operator token is for admin operations only.
-
 ## InfluxDB 3 Core: admin tokens only
-
-This section is the skill's single source for Core token behavior.
-Other files link here instead of restating it.
 
 - InfluxDB 3 Core has no resource tokens and no RBAC.
   Every Core token is an admin token.
@@ -94,7 +89,7 @@ SELECT * FROM system.tokens;
 
 > **Filtering by name? Bind it, don't interpolate.** Token names are user-chosen, so `WHERE name = '<name>'` built by string-concatenation is a SQL-injection vector. Pass the name as a bound parameter (`WHERE name = $name` with a `params`/`query_parameters` object) — see `references/querying.md` → "Parameterize user input" and the `examples/admin-*/` lifecycle scripts.
 
-> **`permissions` column is a JSON-encoded string** like `["db:gf_ha:read", "db:gf_ha:write"]`. To filter by permission programmatically, `JSON.parse` the column value first.
+> The `permissions` column is a JSON-encoded string. See `references/admin-http-api.md` → "Schema of `system.tokens`".
 
 ### Delete a token
 
@@ -152,16 +147,16 @@ The safe order is:
 3. **Restart consumers** (or do a rolling restart) so they pick up the new token.
 4. **Revoke the old token** only after every consumer has confirmed it's running on the new one.
 
-Reverse this order at your peril:
+What goes wrong in other orders:
 - Delete-then-create: every consumer fails between the two steps (downtime).
-- Create-then-delete-without-swap: you've leaked tokens (the old one is still valid for whoever sees it).
+- Create without swapping: consumers keep using the old token, so nothing was rotated, and the old token stays valid.
 - Swap-without-restart: long-running connections may keep using the old token until they reconnect.
 
 ## Token sources by product
 
 | Flavor | Admin token source | Scoped token creation |
 |---|---|---|
-| Core | First server start prints it; or `influxdb3 create token --admin` | None. See "InfluxDB 3 Core: admin tokens only." |
+| Core | `influxdb3 create token --admin` after the server starts | None. See "InfluxDB 3 Core: admin tokens only." |
 | Enterprise | Same as Core | CLI or HTTP as above |
 | InfluxDB Cloud Serverless | InfluxDB Cloud Serverless UI → Tokens | InfluxDB Cloud Serverless UI → Tokens, or management API |
 | InfluxDB Cloud Dedicated | InfluxDB Cloud Dedicated console → Tokens | InfluxDB Cloud Dedicated console, or management API |
@@ -174,9 +169,8 @@ For InfluxDB 3 Cloud and InfluxDB Clustered, see their docs. Route to that produ
 |---|---|---|
 | Inline the admin token in a CI script | Anyone with read access to the repo or CI logs has full control of your InfluxDB instance | Read from `INFLUXDB_TOKEN` env or secret manager |
 | Use the admin token at the data plane (writes, queries) | One leak = total compromise; admin scope is far broader than the app needs | Create a scoped resource token; use that. On Core, you can't; see "InfluxDB 3 Core: admin tokens only." |
-| Store the token in a Python `Cache` from a Processing Engine plugin | The `Cache` is in-memory and gets restarted; tokens in plugin code are visible to anyone with read on the plugin file | Pass tokens via `args` (CLI `--trigger-arguments`) or by reading env on the server |
 | Per-end-user tokens in a multi-tenant SaaS | InfluxDB tokens are per-application, not per-user — creating thousands of tokens explodes operationally | Authenticate the end user in your app, then proxy the InfluxDB call with one app-scoped token |
 
 ## Where to fetch more
 
-`references/doc-urls.md` → InfluxDB 3 Enterprise reference for the token CLI commands.
+`references/doc-urls.md` → "Enterprise CLI reference" for the token commands.

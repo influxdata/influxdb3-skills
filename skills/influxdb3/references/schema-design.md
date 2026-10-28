@@ -10,9 +10,8 @@ Fields aren't part of that identity.
 - Tag values are always strings. Field values can be integers, unsigned integers, floats, strings, or booleans.
 
 Two points with the same table, tag set, and timestamp share a logical identity.
-Core 3.12.1 has returned duplicate rows after rewriting the same point; see `references/quirks.md` entry 13.
-Do not use the logical identity alone as a guarantee of overwrite or retry safety.
 So a value that tells two data sources apart must be a tag, even when it's unique per device.
+For rewrite and retry safety, see `references/quirks.md` entry 13.
 
 ## Cardinality
 
@@ -35,11 +34,11 @@ If `gpu_id` were a field, their points would share a logical identity rather tha
 
 ## One measurement vs many
 
-Group related measurements that share tag schema into one measurement with a `metric_kind` field, OR keep them as separate measurements. The former simplifies fan-out queries; the latter simplifies retention policies. There's no single right answer — but pick one and apply it consistently.
+Group related measurements that share tag schema into one measurement with a `metric_kind` tag, or keep them as separate measurements. The former simplifies fan-out queries; the latter keeps each measurement's schema narrow. There's no single right answer — but pick one and apply it consistently.
 
 ## Schema evolution
 
-Adding new tags or fields to an existing measurement is safe — old rows just have NULLs in the new columns. Changing a field's **type** is not safe (see `references/writing.md` → "Type stickiness"). Removing a tag/field doesn't drop existing data; it just stops new writes from using it.
+Adding new tags or fields to an existing measurement is safe — old rows just have NULLs in the new columns. Changing a field's **type** is not safe (see `references/writing.md` → "Type stickiness").
 
 Schema-on-write applies to implicit-schema databases.
 An Enterprise database in explicit-schema mode rejects undeclared tables and columns.

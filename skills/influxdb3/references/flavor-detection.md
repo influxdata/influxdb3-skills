@@ -2,7 +2,7 @@
 
 Most code can stay flavor-agnostic by reading host and token from env vars. When the generated code genuinely needs flavor-specific logic (different write endpoints, different retention-period endpoints, etc.), use the `/ping` probe to detect the flavor.
 
-This logic mirrors the detection used by the InfluxData Explorer (`influxdb3_ui` internal source). The patterns below are the ones Explorer uses to distinguish each product.
+This logic follows the detection that InfluxDB 3 Explorer uses to distinguish each product.
 
 ---
 
@@ -12,9 +12,9 @@ This logic mirrors the detection used by the InfluxData Explorer (`influxdb3_ui`
 |---|---|---|
 | `CORE` | InfluxDB 3 Core | Self-hosted, free, single-node |
 | `ENTERPRISE` | InfluxDB 3 Enterprise | Self-hosted, licensed, multi-node |
-| `CLOUD_SERVERLESS` | InfluxDB 3 Cloud Serverless | InfluxData-hosted, multi-tenant |
-| `CLOUD_DEDICATED` | InfluxDB 3 Cloud Dedicated | InfluxData-hosted, single-tenant |
-| `CLUSTERED` | InfluxDB 3 Clustered | Self-hosted, Kubernetes, multi-node |
+| `CLOUD_SERVERLESS` | InfluxDB Cloud Serverless | InfluxData-hosted, multi-tenant |
+| `CLOUD_DEDICATED` | InfluxDB Cloud Dedicated | InfluxData-hosted, single-tenant |
+| `CLUSTERED` | InfluxDB Clustered | Self-hosted, Kubernetes, multi-node |
 
 > Note: Explorer does **not** attempt to detect InfluxDB OSS 1.x or 2.x in this flow. Those product lines use different endpoints and are outside Explorer's scope.
 
@@ -45,7 +45,7 @@ Explorer runs up to six sequential checks. The first check that matches wins; la
 
 3. If step 2 produced no build header (resource token or no header):
    GET <host>/api/v3/configure/retention_period  (Core strategy, with token)
-   ├─ 404 Not Found  → CORE       ✓  stop  (endpoint doesn't exist on Core v3.1+)
+   ├─ 404 Not Found  → CORE       ✓  stop  (Core 3.12.1 returns 404)
    ├─ 403 Forbidden  → ENTERPRISE ✓  stop  (endpoint exists but token lacks permission)
    ├─ 200 (success)  → abort: UnableToDetermineCore (unexpected)
    └─ other          → abort: UnexpectedStatusCodeCore
@@ -87,7 +87,7 @@ If all six checks fail → abort: UnableToDetect
 | Absent | Move to retention-period probe (step 3) |
 
 **Where:** HTTP response header on `GET /ping` (with token).  
-**Rationale:** Explorer source defines `InfluxDBBuildType.ENTERPRISE = 'Enterprise'` and `InfluxDBBuildType.CORE = 'Core'` and matches using a case-insensitive `.includes()` check.
+**Rationale:** Explorer matches these values with a case-insensitive substring check.
 
 ### Step 3: Retention-Period Endpoint Probe (Secondary Signal for Core vs Enterprise)
 
@@ -106,13 +106,13 @@ Successfully listing databases using the Cloud Serverless API base URL identifie
 
 | Host URL substring | Detected flavor |
 |---|---|
-| Contains `"influxdb.io"` | InfluxDB 3 Cloud Dedicated (if DBs validate) |
+| Contains `"influxdb.io"` | InfluxDB Cloud Dedicated (if DBs validate) |
 
-**Rationale:** Explorer defines `InfluxDBUrlPattern.CLOUD_DEDICATED = 'influxdb.io'`. Database names must be supplied and verified before the label is assigned.
+**Rationale:** Explorer treats hosts that contain `influxdb.io` as Cloud Dedicated. Database names must be supplied and verified before the label is assigned.
 
 ### Step 6: Clustered — Fallback
 
-If the host URL does not match the Cloud Dedicated pattern but database names are provided and at least one validates successfully, the server is labeled InfluxDB 3 Clustered.
+If the host URL does not match the Cloud Dedicated pattern but database names are provided and at least one validates successfully, the server is labeled InfluxDB Clustered.
 
 ---
 
@@ -122,10 +122,10 @@ These headers are extracted from the `/ping` response and surfaced in Explorer's
 
 | Header | Description |
 |---|---|
-| `x-influxdb-version` | Server version string, e.g. `"3.8.4"` |
+| `x-influxdb-version` | Server version string, e.g. `"3.12.1"` |
 | `cluster-uuid` | Cluster identifier (Enterprise/Clustered only) |
 
-The live Enterprise 3.8.4 sample (`{"version":"3.8.4","revision":"e0bae40187",...}`) confirms the version is also available in the `/ping` JSON body — Explorer reads it from the header, but either source is valid.
+The `/ping` JSON body also includes `version`.
 
 ---
 
@@ -144,9 +144,9 @@ def detect_flavor(host: str, token: str) -> str | None:
     Returns one of:
         "InfluxDB 3 Core"
         "InfluxDB 3 Enterprise"
-        "InfluxDB 3 Cloud Serverless"
-        "InfluxDB 3 Cloud Dedicated"
-        "InfluxDB 3 Clustered"
+        "InfluxDB Cloud Serverless"
+        "InfluxDB Cloud Dedicated"
+        "InfluxDB Clustered"
         None  -- when the flavor cannot be determined automatically
 
     Raises:
@@ -161,7 +161,7 @@ def detect_flavor(host: str, token: str) -> str | None:
         r0 = requests.get(ping_url, timeout=10)
         if r0.status_code == 500:
             raise RuntimeError(f"Server returned 500 on /ping")
-    except requests.exceptions.ConnectionError as exc:
+    except requests.exceptions.RequestException as exc:
         raise RuntimeError(f"Cannot reach {ping_url}: {exc}") from exc
 
     # Step 2: ping with token — inspect x-influxdb-build header
@@ -204,11 +204,11 @@ def detect_flavor(host: str, token: str) -> str | None:
     # Step 4: Cloud Serverless — host pattern. Cloud Serverless has no
     # /api/v3 endpoints, so these snippets check the documented host instead.
     if "cloud2.influxdata.com" in host:
-        return "InfluxDB 3 Cloud Serverless"
+        return "InfluxDB Cloud Serverless"
 
     # Step 5: Cloud Dedicated — URL pattern
     if "influxdb.io" in host:
-        return "InfluxDB 3 Cloud Dedicated"
+        return "InfluxDB Cloud Dedicated"
 
     # Step 6: Clustered — cannot validate databases without names; signal ambiguity
     return None
@@ -223,9 +223,9 @@ def detect_flavor(host: str, token: str) -> str | None:
  * Returns one of:
  *   "InfluxDB 3 Core"
  *   "InfluxDB 3 Enterprise"
- *   "InfluxDB 3 Cloud Serverless"
- *   "InfluxDB 3 Cloud Dedicated"
- *   "InfluxDB 3 Clustered"
+ *   "InfluxDB Cloud Serverless"
+ *   "InfluxDB Cloud Dedicated"
+ *   "InfluxDB Clustered"
  *   null  -- when the flavor cannot be determined automatically
  *
  * Throws when the server is unreachable or returns a 5xx error.
@@ -299,12 +299,12 @@ async function detectFlavor(host, token) {
   // Step 4: Cloud Serverless — host pattern. Cloud Serverless has no
   // /api/v3 endpoints, so these snippets check the documented host instead.
   if (baseHost.includes("cloud2.influxdata.com")) {
-    return "InfluxDB 3 Cloud Serverless";
+    return "InfluxDB Cloud Serverless";
   }
 
   // Step 5: Cloud Dedicated — URL pattern
   if (baseHost.includes("influxdb.io")) {
-    return "InfluxDB 3 Cloud Dedicated";
+    return "InfluxDB Cloud Dedicated";
   }
 
   // Step 6: Clustered — cannot validate databases without names; signal ambiguity
@@ -316,20 +316,5 @@ async function detectFlavor(host, token) {
 
 ## Fallback to Asking
 
-When detection returns `None` / `null`, prompt the developer:
+When detection returns `None` / `null`, ask which product the developer targets: Core, Enterprise, InfluxDB 3 Cloud, Cloud Serverless, Cloud Dedicated, or Clustered. For Cloud Dedicated and Clustered you will also need one or more database names to validate the connection.
 
-> "I couldn't detect your InfluxDB flavor from `/ping`. Which one are you targeting? Core, Enterprise, Cloud Serverless, Cloud Dedicated, or Clustered?"
-
-Record the answer in context and continue. For Cloud Dedicated and Clustered you will also need one or more database names to validate the connection.
-
----
-
-## Sample `/ping` response
-
-```
-GET /ping  →  200 OK
-Body: {"version":"3.8.4","revision":"e0bae40187","process_id":"..."}
-HEAD /ping →  404  (HEAD is not implemented — use GET only)
-```
-
-The presence of a JSON body with `version` is consistent with Explorer's extraction of `x-influxdb-version` from the response headers. If the authenticated `/ping` in step 2 returns the `x-influxdb-build: Enterprise` header, detection ends immediately with `"InfluxDB 3 Enterprise"` — matching this sample.

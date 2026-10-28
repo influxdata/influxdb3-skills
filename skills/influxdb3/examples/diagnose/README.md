@@ -4,7 +4,7 @@
 
 ## What it does
 
-1. `HEAD /ping` — expecting 404 (a known quirk; only GET works on `/ping`). Verifies network reachability.
+1. `HEAD /ping` — expecting 404 (a known quirk; only GET works on `/ping`). Any HTTP response shows the host is reachable.
 2. `GET /ping` expects 200 with an admin token and reports the build/version headers.
    An Enterprise scoped token can return 403 while permitted queries work.
    In that case, the diagnostic checks a visible database with `SHOW TABLES` and reports limited read-side health instead of declaring the server down.
@@ -38,7 +38,7 @@ host: http://localhost:8181
 [2] GET /ping (expecting 200)
     status: 200
     flavor: Enterprise
-    version: 3.8.4
+    version: 3.12.1
 
 [3] List databases visible to token
     count: 52

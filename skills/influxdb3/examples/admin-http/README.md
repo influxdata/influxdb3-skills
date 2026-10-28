@@ -1,8 +1,8 @@
 # Admin lifecycle — HTTP / curl
 
-`admin_lifecycle.sh` exercises the full token + database lifecycle for InfluxDB 3 **Enterprise** via the HTTP API. Reads `INFLUXDB_HOST` and `INFLUXDB_TOKEN` (admin) from env or `.env`.
+`admin_lifecycle.sh` exercises the full token + database lifecycle via the HTTP API. Reads `INFLUXDB_HOST` and `INFLUXDB_TOKEN` (admin) from env or `.env`.
 
-> **Requires InfluxDB 3 Enterprise or InfluxDB 3 Cloud.** The script creates scoped resource tokens via `/api/v3/enterprise/configure/token`. Core has no resource tokens, so it doesn't run on Core (`references/tokens.md`). Everything else (database CRUD, delete-token, list-tokens-via-SQL) is identical across flavors.
+> **Requires InfluxDB 3 Enterprise or InfluxDB 3 Cloud.** The script creates scoped resource tokens via `/api/v3/enterprise/configure/token`. Core has no resource tokens, so it doesn't run on Core (`references/tokens.md`). Everything else (database CRUD, delete-token, list-tokens-via-SQL) is the same on Core and Enterprise.
 
 ## What it does
 

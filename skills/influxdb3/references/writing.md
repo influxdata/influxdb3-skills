@@ -18,15 +18,15 @@ Spaces separate the three sections. Commas separate tags within section 1 and fi
 
 Quoting: string field values are wrapped in double quotes (`status="ok"`), tag values are not. Escape commas, equals, and spaces in tag/field keys and tag values with `\`; escape double quotes and backslashes inside string field values with `\`.
 
-**Constructing line protocol from untrusted values is injection-prone — a newline is a record separator.** If you hand-build line protocol by interpolating a tag or field value that contains a literal newline (`\n`) or carriage return (`\r`), everything after it is parsed as a *second point* — a value like `"ok\nmalicious,host=x value=1"` forges an extra record. Line protocol has no escape for `\n`/`\r`, so a value that may contain them cannot be safely written raw. Prefer an official client's builder (Python `Point`, or `LineBuilder` in the plugins runtime), which escapes the structural characters it can; for values that might contain `\n`/`\r`, **reject or strip them before writing** rather than relying on escaping. This matters most for whole-batch writes, where per-line partial acceptance means a `400` on a later line doesn't undo an already-parsed forged point.
+**Constructing line protocol from untrusted values is injection-prone — a newline is a record separator.** If you hand-build line protocol by interpolating a tag or field value that contains a literal newline (`\n`) or carriage return (`\r`), everything after it is parsed as a *second point* — a value like `"ok\nmalicious,host=x value=1"` forges an extra record. Line protocol has no escape for `\n`/`\r`, so a value that may contain them cannot be safely written raw. Prefer an official client's point builder, which escapes the structural characters it can; for values that might contain `\n`/`\r`, **reject or strip them before writing** rather than relying on escaping. This matters most on `/api/v3/write_lp` with `accept_partial=true`, where a `400` on a later line doesn't undo an already-stored forged point.
 
 Full spec: see `references/doc-urls.md` → "Line protocol".
 
 ## Batching rule
 
-**Batch ≥ 1,000 points or flush every 1 second**, whichever comes first. The official clients have batching helpers — use them. Avoid one-write-per-point loops; they hammer the server and run out of HTTP connections fast.
+**Batch ≥ 1,000 points or flush every 1 second**, whichever comes first. Avoid one-write-per-point loops; they add a request per point and can exhaust HTTP connections.
 
-For real-time streams, prefer the client's built-in batch-and-flush helper. For bulk loads, build a list of N points (start with 1,000–10,000) and write the list in one call.
+For real-time streams in Python, use the client's batching mode (`references/clients/python.md` → "Automatic batching"). Other clients have no automatic batching; build fixed-size batches. For bulk loads, build a list of N points (start with 1,000–10,000) and write the list in one call.
 
 ## Error handling
 
@@ -42,10 +42,7 @@ For real-time streams, prefer the client's built-in batch-and-flush helper. For 
 | 5xx | Server side | **Yes** — backoff with jitter |
 | No response (connection reset or refused) | The node is stopped or unreachable | **Yes** — back off, or send to another node |
 
-Retriable means a bounded retry may help, not that repeating a write is safe.
-If a response does not establish what was committed, retries can repeat accepted
-work. Qualify retry safety with the target edition/version behavior; see
-`references/quirks.md` entry 13 for the Core 3.12.1 duplicate-row observation.
+Retriable means a bounded retry may help, not that repeating a write is safe; see `references/quirks.md` entry 13.
 
 Before Core and Enterprise 3.10.0, `/api/v2/write` returned 401, not 403, for a valid token that lacks permission.
 Handle both codes as "fix the token."
@@ -114,20 +111,18 @@ Route declaration or schema-mode administration to the [Enterprise database docs
 
 ## Maximum timestamp on 3.12.1
 
-The [3.12.1 notes](https://docs.influxdata.com/influxdb3/enterprise/release-notes/#v3121) document rejection after `2262-04-11T23:39:59.999999999Z`.
-The exact-boundary probe accepted that timestamp and rejected the next nanosecond with 400 on Core 3.12.1.
-The tested Enterprise 3.12.1 node accepted the later timestamp instead, contrary to that general release-note statement.
-The cause and conditions of the difference are unresolved; don't promise a universal Enterprise 400 at that boundary.
-Validate timestamps in application input and verify the exact target behavior when depending on this limit.
+The [3.12.1 notes](https://docs.influxdata.com/influxdb3/enterprise/release-notes/#v3121) document rejection of timestamps after `2262-04-11T23:39:59.999999999Z`.
+On 3.12.1, a write past that boundary returned 400 on one tested node and was accepted on another, so don't promise a 400.
+Validate timestamps in application input.
 
 ## Backfilling vs. live writes
 
-- **Live writes:** omit the timestamp; the server stamps "now". Cheaper.
+- **Live writes:** omit the timestamp; the server stamps "now".
 - **Backfills:** always include explicit timestamps. Use second precision (`?precision=second`) by default unless you genuinely need sub-second resolution — it makes line protocol smaller. Storage precision is the same either way.
 
 ## When to use raw HTTP vs the client
 
-The official clients give you batching, retries, and friendlier error messages for free. Use raw HTTP only when:
+The official clients build and escape line protocol and support parameterized queries. Use raw HTTP only when:
 
 - You're in a language without a first-class client.
 - You need to integrate with an existing HTTP request pipeline.

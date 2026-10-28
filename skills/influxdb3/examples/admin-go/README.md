@@ -1,6 +1,6 @@
 # Admin lifecycle — Go
 
-`admin_lifecycle.go` exercises the full token + database lifecycle for InfluxDB 3 **Enterprise**, using `net/http` to hit the management HTTP API directly. The official `influxdb3-go` client is data-plane only — admin operations go through the management API.
+`admin_lifecycle.go` exercises the full token + database lifecycle, using `net/http` to hit the management HTTP API directly. The official `influxdb3-go` client is data-plane only — admin operations go through the management API.
 
 > **Requires InfluxDB 3 Enterprise or InfluxDB 3 Cloud.** `createScopedToken` creates a scoped resource token via `/api/v3/enterprise/configure/token`. Core has no resource tokens, so it doesn't run on Core (`references/tokens.md`).
 
