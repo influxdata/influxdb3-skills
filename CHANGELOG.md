@@ -29,6 +29,12 @@ Claim IDs (`claim-YYYYMMDD-NNNN`) refer to InfluxData's internal verification le
 - State the lowercase HTTP values for `trigger_settings.error_behavior`, and point to the API reference or the InfluxDB Documentation MCP server for other settings.
 - Judge Claude evals with Opus. A diagnostic regrade showed the Sonnet judge failing correct answers on wording.
 - Revise eval criteria that conflicted with the skill or graded wording instead of behavior: separate admin-token variables, labeled fake-data stubs, `.env` handling that respects the user's setup, and ambiguous "Cloud" requests.
+- Advise instead of overruling the operator. For `.gitignore`, mock-data stubs, the database-existence check, and using the admin token for app writes, the agent explains the risk and then follows the operator's choice. It still never hard-codes a token in code it writes.
+- Recommend not repeating a pasted token, instead of scripting how to refer to it, and stop requiring rotation before diagnosis continues. The old wording assumed the token arrived in an error message.
+- Fix examples an agent would copy: `batch["rows"]` instead of `batch.rows`, a 6-field cron spec, a working engine check instead of invalid `jq`, a timeout-safe detection snippet, `.gitignore` before `.env` writes, and a 401 check that prints no token characters.
+- Correct facts: `serve` doesn't print a token, so create one with `create token --admin`; Core has admin tokens only; HTTP can update retention; the Cloud Serverless host includes the provider; the current write API is `write_sync`; and the skill no longer promises at-least-once plugin writes.
+- Use admin-token variables for admin examples, use only current license environment variable names, and add confirmed doc URLs.
+- Keep one copy of repeated rules (auto-create, retry and rewrite safety, `memory` object store, `gh:` trust boundary, redaction) and point to it elsewhere. Remove test-log narration, internal-source references, and filler.
 
 ### Live-verified behavior corrections
 
