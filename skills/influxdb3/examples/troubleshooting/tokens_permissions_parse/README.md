@@ -42,7 +42,7 @@ for perm in perms:                       # iterate strings, not characters
 ## Run
 
 ```bash
-# .env should have INFLUXDB_HOST, INFLUXDB_TOKEN
+# .env should have INFLUXDB_HOST, INFLUXDB_ADMIN_TOKEN
 python broken.py    # always reports 0 matches, regardless of real state
 python fixed.py     # iterates parsed permission entries; matches actually work
 ```
