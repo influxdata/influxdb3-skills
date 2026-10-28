@@ -26,7 +26,7 @@ Full spec: see `references/doc-urls.md` → "Line protocol".
 
 **Batch ≥ 1,000 points or flush every 1 second**, whichever comes first. Avoid one-write-per-point loops; they add a request per point and can exhaust HTTP connections.
 
-For real-time streams in Python, use the client's batching mode (`references/clients/python.md` → "Automatic batching"). Other clients have no automatic batching; build fixed-size batches. For bulk loads, build a list of N points (start with 1,000–10,000) and write the list in one call.
+For real-time streams in Python, use the client's batching mode (`references/clients/python.md` → "Automatic batching"). For other clients, build fixed-size batches unless the client's docs describe a batching helper. For bulk loads, build a list of N points (start with 1,000–10,000) and write the list in one call.
 
 ## Error handling
 
@@ -112,8 +112,10 @@ Route declaration or schema-mode administration to the [Enterprise database docs
 ## Maximum timestamp on 3.12.1
 
 The [3.12.1 notes](https://docs.influxdata.com/influxdb3/enterprise/release-notes/#v3121) document rejection of timestamps after `2262-04-11T23:39:59.999999999Z`.
-On 3.12.1, a write past that boundary returned 400 on one tested node and was accepted on another, so don't promise a 400.
-Validate timestamps in application input.
+The exact-boundary probe accepted that timestamp and rejected the next nanosecond with 400 on Core 3.12.1.
+The tested Enterprise 3.12.1 node accepted the later timestamp instead, contrary to that general release-note statement.
+The cause and conditions of the difference are unresolved; don't promise a universal Enterprise 400 at that boundary.
+Validate timestamps in application input and verify the exact target behavior when depending on this limit.
 
 ## Backfilling vs. live writes
 

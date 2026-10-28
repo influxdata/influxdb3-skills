@@ -22,7 +22,7 @@ On Enterprise 3.12.1, a scoped resource token or Member JWT can receive 403 with
 Use an admin token for the build/version probe, or check a known permitted query with the application credential.
 A health-route 403 alone does not mean the token is invalid or the server is down.
 
-Since 3.10 you can opt out of authorization for these routes with `--disable-authz` (env `INFLUXDB3_DISABLE_AUTHZ`). It takes a comma-separated list of `health`, `ping` and `metrics`. On such a server the token is optional.
+Since 3.10 you can opt out of authorization for these routes with `--disable-authz` (env `INFLUXDB3_DISABLE_AUTHZ`). It takes a comma-separated list of `health`, `ping` and `metrics`. On such a server the token is optional. Source: the InfluxDB 3 API spec (`GetPing`) and the config options reference. The default 401 was observed on 3.10 and Core 3.12.1 instances; the opt-out flag has not been run against a live server.
 
 ---
 
@@ -102,7 +102,7 @@ for row in system_tokens_rows:
 
 **Why:** The CLI prompts for confirmation (3.10+); the flag to skip it is `-y`/`--yes`, not `--force`. The HTTP API `DELETE /api/v3/configure/database?db=<name>` has **no** prompt and is unaffected.
 
-**What to do:** For scripting/automation, pass `-y` (or `--yes`): `influxdb3 delete database <name> -y --token "$INFLUXDB_TOKEN"`. Pattern documented in `references/databases.md`. Or call the HTTP API, which never prompts.
+**What to do:** For scripting/automation, pass `-y` (or `--yes`): `influxdb3 delete database <name> -y --token "$INFLUXDB_ADMIN_TOKEN"`. Pattern documented in `references/databases.md`. Or call the HTTP API, which never prompts.
 
 ---
 
@@ -112,7 +112,7 @@ for row in system_tokens_rows:
 
 **Why:** Unlike `delete database` (positional `<NAME>`), `delete token` requires the `--token-name <NAME>` flag. The signature differs because there's also a `--token <admin-token>` flag for authentication; positional would be ambiguous.
 
-**What to do:** Use `influxdb3 delete token --token-name <name> -y --token "$INFLUXDB_TOKEN"`. Like `delete database`, it prompts for confirmation, and a script without a TTY fails with `Cannot proceed without confirmation` unless you pass `-y`/`--yes` (observed on 3.11.5). No `--force` here either.
+**What to do:** Use `influxdb3 delete token --token-name <name> -y --token "$INFLUXDB_ADMIN_TOKEN"`. Like `delete database`, it prompts for confirmation, and a script without a TTY fails with `Cannot proceed without confirmation` unless you pass `-y`/`--yes` (observed on 3.11.5). No `--force` here either.
 
 ---
 
@@ -181,12 +181,17 @@ ORDER BY event_time DESC LIMIT 50;
 
 ## 13. Rewriting a point is not an unconditional deduplication guarantee
 
-On 3.12.1, queries have returned two identical rows after the same table, tags, timestamp, and value were written again, including on a freshly initialized node. The cause is unresolved.
-The [3.12.1 notes](https://docs.influxdata.com/influxdb3/enterprise/release-notes/#v3121) document specific overwrite fixes, which don't cover every case.
+Core 3.12.1 testbench queries returned two identical rows after the same table, tags, timestamp, and value were written again.
+One observation followed a fresh 3.12.1 initialization, so the evidence is not limited to upgraded databases.
+Persistence timing and query plans were not captured; the cause and full conditions remain unresolved.
+Enterprise 3.12.1 retained the expected counts in a separate repeated-seed observation, which does not establish a universal guarantee either.
+
+The [3.12.1 notes](https://docs.influxdata.com/influxdb3/enterprise/release-notes/#v3121) document specific overwrite fixes on the Parquet and upgraded storage engines.
+Those fixes and the narrower duplicate-row observations are separate evidence.
 
 Retriable status codes mean a bounded retry may help, not that repeating a write is safe.
 Do not promise that resending the same point is always safe or that a deterministic timestamp alone makes a plugin idempotent.
-Keep tag-based source identity, resend only rejected lines after a partial write, and verify retry or repeated-run behavior on the target version.
+Keep tag-based source identity, resend only rejected lines after a partial write, and verify retry or repeated-run behavior on the target edition and version.
 
 ## Where to fetch more
 

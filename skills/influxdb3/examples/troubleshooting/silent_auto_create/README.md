@@ -15,7 +15,7 @@ In `broken.py`, the developer intended `sensor_data` but typo'd `senor_data_<ts>
 List the databases visible to your token; check for typo'd siblings:
 
 ```bash
-influxdb3 show databases --token "$INFLUXDB_TOKEN" --format json | python3 -c "
+influxdb3 show databases --token "$INFLUXDB_ADMIN_TOKEN" --format json | python3 -c "
 import json, sys
 dbs = [d['iox::database'] for d in json.load(sys.stdin)]
 print([d for d in dbs if 'sensor' in d.lower()])
@@ -35,7 +35,7 @@ For deeper recovery (if you've already misrouted production data), see `referenc
 ## Run
 
 ```bash
-# .env should have INFLUXDB_HOST and INFLUXDB_TOKEN
+# .env should have INFLUXDB_HOST and INFLUXDB_ADMIN_TOKEN
 python broken.py    # creates senor_data_<ts>; "succeeds"; manual cleanup needed
 python fixed.py     # creates admin_test_sensor_data_<ts>; verifies; auto-cleans up
 ```
@@ -43,6 +43,6 @@ python fixed.py     # creates admin_test_sensor_data_<ts>; verifies; auto-cleans
 > The broken version creates a real `senor_data_<ts>` database that is NOT auto-cleaned. After running it, manually run:
 >
 > ```bash
-> influxdb3 show databases --format json --token "$INFLUXDB_TOKEN" | python3 -c "import json,sys; print([d['iox::database'] for d in json.load(sys.stdin) if 'senor_data_' in d['iox::database']])"
-> # Then delete each one with: influxdb3 delete database <name> --token "$INFLUXDB_TOKEN"
+> influxdb3 show databases --format json --token "$INFLUXDB_ADMIN_TOKEN" | python3 -c "import json,sys; print([d['iox::database'] for d in json.load(sys.stdin) if 'senor_data_' in d['iox::database']])"
+> # Then delete each one with: influxdb3 delete database <name> -y --token "$INFLUXDB_ADMIN_TOKEN"
 > ```

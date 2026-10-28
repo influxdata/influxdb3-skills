@@ -75,7 +75,8 @@ Write plugin code so repeating an event or scheduled tick does not repeat an ext
 Don't promise exactly-once or at-least-once delivery.
 For external side effects, use the receiving system's idempotency mechanism when available, and test repeated execution.
 The cache is per node and cleared on restart, so it can't deduplicate side effects across nodes or restarts.
-Rewriting the same point isn't a deduplication guarantee: 3.12.1 has returned duplicate rows after same-point rewrites (`influxdb3` → `references/quirks.md` entry 13).
+A marker write followed by an effect isn't atomic: concurrent runs or a crash between the two steps can duplicate or lose the effect.
+Rewriting the same point isn't a deduplication guarantee: Core 3.12.1 has returned duplicate rows after same-point rewrites (`influxdb3` → `references/quirks.md` entry 13).
 
 ## 5. Single-file vs multi-file plugins
 

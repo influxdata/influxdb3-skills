@@ -13,7 +13,7 @@ The admin token is the first one created (at server bootstrap), so it's already 
 Check what permissions the application's token has:
 
 ```bash
-influxdb3 show tokens --format json --token "$INFLUXDB_TOKEN" | python3 -c "
+influxdb3 show tokens --format json --token "$INFLUXDB_ADMIN_TOKEN" | python3 -c "
 import json, sys
 data = json.load(sys.stdin)
 for t in data:
@@ -36,7 +36,7 @@ For production rotation see `references/tokens.md` → "Token rotation pattern".
 ## Run
 
 ```bash
-# .env should have INFLUXDB_HOST, INFLUXDB_TOKEN (admin), INFLUXDB_DATABASE
+# .env should have INFLUXDB_HOST, INFLUXDB_ADMIN_TOKEN, INFLUXDB_DATABASE
 python broken.py    # uses admin token for write — works, with the risk above
 python fixed.py     # provisions scoped token, uses it, cleans up
 ```

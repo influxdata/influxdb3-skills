@@ -40,13 +40,13 @@ influxdb3 create trigger \
 
 ## `influxdb3 update trigger`
 
-Replace the plugin code for an existing trigger. Trigger configuration (spec, arguments, error-behavior) is preserved.
+Replace the plugin code for an existing trigger. Trigger configuration (spec, arguments, error-behavior) is preserved. In Core and Enterprise 3.12.1, the CLI reads the local file named by `--path`; `update trigger` does not accept `--upload`.
 
 | Flag | Required | Description |
 |---|---|---|
 | `--database <name>` | yes | The trigger's database. |
 | `--trigger-name <name>` | yes | Name of the trigger to update. |
-| `--path <path>` | yes | New plugin code, same forms as `create trigger --path`. |
+| `--path <path>` | yes | Local path to the updated plugin code. |
 | `--token <admin-token>` | yes | Admin token. |
 
 ```bash
@@ -102,7 +102,7 @@ influxdb3 enable trigger \
 
 ## `influxdb3 delete trigger`
 
-Permanently delete a trigger. Positional argument is the trigger name; `--force` skips the interactive confirmation prompt (required for scripted use).
+Permanently delete a trigger. Pass the trigger name as a positional argument. The `--force` option permits deletion when the trigger is active.
 
 ```bash
 influxdb3 delete trigger \
@@ -127,7 +127,9 @@ Remove the unused file server-side through deployment tooling after deleting the
 | Custom HTTP-trigger endpoint | `GET` or `POST /api/v3/engine/<request_path>` |
 
 All admin-required operations need `Authorization: Bearer <admin-token>`.
-On 3.12.1, omitting `trigger_settings` and `disabled` creates an enabled trigger with error behavior `log`.
+Core and Enterprise 3.12.1 accept trigger creation with `trigger_settings` and `disabled` omitted.
+The omitted-settings probe observed an enabled trigger and error behavior `log`.
+It did not behavior-test concurrency defaults.
 In the HTTP body, `trigger_settings.error_behavior` takes the same lowercase values as the CLI flag: `log`, `retry`, and `disable`.
 For other settings and allowed values, fetch the API reference or ask the InfluxDB Documentation MCP server.
 Use `references/installing.md` for the upload example and the [API reference](https://docs.influxdata.com/influxdb3/enterprise/api/v3/) for complete contracts.

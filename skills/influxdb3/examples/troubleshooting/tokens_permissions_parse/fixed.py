@@ -18,7 +18,7 @@ from dotenv import load_dotenv
 def main() -> None:
     load_dotenv()
     host = os.environ["INFLUXDB_HOST"]
-    token = os.environ["INFLUXDB_TOKEN"]
+    token = os.environ["INFLUXDB_ADMIN_TOKEN"]
 
     r = requests.post(
         f"{host}/api/v3/query_sql",

@@ -30,14 +30,14 @@
 
 ```bash
 # Create a new named admin token
-influxdb3 create token --admin --name <name> --token "$INFLUXDB_TOKEN"
+influxdb3 create token --admin --name <name> --token "$INFLUXDB_ADMIN_TOKEN"
 
 # Regenerate the operator token (rotate the bootstrap admin).
 # The old operator token stops working immediately (401).
-influxdb3 create token --admin --regenerate --token "$INFLUXDB_TOKEN"
+influxdb3 create token --admin --regenerate --token "$INFLUXDB_ADMIN_TOKEN"
 
 # With expiry
-influxdb3 create token --admin --name <name> --expiry 90d --token "$INFLUXDB_TOKEN"
+influxdb3 create token --admin --name <name> --expiry 90d --token "$INFLUXDB_ADMIN_TOKEN"
 ```
 
 The new token's secret value is printed to stdout **once** when created — capture it immediately. The server stores only a hash; if you lose the plaintext, you must create a new token.
@@ -77,8 +77,8 @@ Resource type: `db` or `system`. Action: `read` or `write`. `*` is allowed for `
 ### List tokens
 
 ```bash
-influxdb3 show tokens --token "$INFLUXDB_TOKEN"
-influxdb3 show tokens --format json --token "$INFLUXDB_TOKEN"
+influxdb3 show tokens --token "$INFLUXDB_ADMIN_TOKEN"
+influxdb3 show tokens --format json --token "$INFLUXDB_ADMIN_TOKEN"
 ```
 
 The CLI internally queries `system.tokens` under `_internal`. Equivalent SQL:
@@ -94,7 +94,7 @@ SELECT * FROM system.tokens;
 ### Delete a token
 
 ```bash
-influxdb3 delete token --token-name <name> -y --token "$INFLUXDB_TOKEN"
+influxdb3 delete token --token-name <name> -y --token "$INFLUXDB_ADMIN_TOKEN"
 ```
 
 > The flag is `--token-name` (not positional, no `--force`). Don't confuse with `--token`, which is the admin token used to authenticate the request.

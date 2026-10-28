@@ -20,7 +20,7 @@ from dotenv import load_dotenv
 def main() -> None:
     load_dotenv()
     host = os.environ["INFLUXDB_HOST"]
-    admin_token = os.environ["INFLUXDB_TOKEN"]  # ← whatever the customer happens to have
+    admin_token = os.environ["INFLUXDB_ADMIN_TOKEN"]  # ← whatever the customer happens to have
     db = os.environ.get("INFLUXDB_DATABASE", "claude_skill_test")
 
     # ANTI-PATTERN: using an admin token for runtime writes.

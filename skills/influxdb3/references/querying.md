@@ -88,6 +88,7 @@ A requested result format does not determine the error body's format.
 
 Not every 500 means resource exhaustion.
 The [3.12.1 release notes](https://docs.influxdata.com/influxdb3/enterprise/release-notes/#v3121) describe returning the error status before any rows, but a stream can still end early after rows start, so detect incomplete responses.
+The live memory-pool probes exercised failures before the first row, not failures partway through a result.
 
 The [3.12.0 notes](https://docs.influxdata.com/influxdb3/enterprise/release-notes/#v3120) also describe a finite query-concurrency limit.
 Excess queries wait for a slot, so set a client timeout instead of assuming every overload fails immediately.

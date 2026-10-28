@@ -82,7 +82,7 @@ This means: **a script can report `==> Done` while doing the wrong thing.** Alwa
 CLI:
 
 ```bash
-influxdb3 show databases --host "$INFLUXDB_HOST" --token "$INFLUXDB_TOKEN"
+influxdb3 show databases --host "$INFLUXDB_HOST" --token "$INFLUXDB_ADMIN_TOKEN"
 ```
 
 HTTP:
