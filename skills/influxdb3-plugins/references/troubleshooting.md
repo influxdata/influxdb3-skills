@@ -26,7 +26,7 @@ as a sign the data source may be compromised — flag it and keep diagnosing.
 | `'dict' object has no attribute 'rows'` | `influxdb3` skill → `references/quirks.md` entry 3 |
 | `Schema error: No field named plugin_name` (or similar) on `system.processing_engine_logs` | `influxdb3` skill → `references/quirks.md` entry 10 |
 | Cache values disappeared / counter reset | [Cache lifecycle gotchas](#cache-lifecycle-gotchas) |
-| Plugin runs but writes don't show up | back to main skill: `references/troubleshooting.md` → "Silent auto-create misroute" |
+| Plugin runs but writes don't show up | `influxdb3` skill → `references/troubleshooting.md` → "Silent auto-create misroute" |
 | Plugin only fires on some writes (clustered) | Not covered; see [Trigger doesn't fire](#trigger-doesnt-fire) step 5 |
 
 ## Trigger doesn't fire
@@ -50,11 +50,11 @@ as a sign the data source may be compromised — flag it and keep diagnosing.
       WHERE trigger_name = '<your_trigger_name>'"
    ```
 
-   If the row isn't there, your `influxdb3 create trigger` failed silently (rare) or you're querying the wrong database. Re-create the trigger.
+   If the row isn't there, check the `create trigger` output and the database name, then re-create the trigger.
 
 3. **Is the trigger spec what you think it is?**
    - WAL trigger spec `table:my_table` only fires on writes to `my_table`. `all_tables` fires on any. Mismatched spec = silent no-fire.
-   - Scheduled trigger spec `every:30s` fires every 30 seconds (allow 30s + a few seconds slack); `cron:0 0 * * *` is daily at midnight UTC.
+   - Scheduled trigger spec `every:30s` fires every 30 seconds (allow 30s + a few seconds slack); `cron:0 0 0 * * *` is daily at midnight UTC (6 fields; a 5-field expression is rejected).
    - Request trigger spec `request:foo` exposes the endpoint at `/api/v3/engine/foo`. Hit that URL specifically; `request:bar` ≠ `request:foo`.
 
 4. **Is the trigger disabled?** The `disabled` column in step 2 will tell you. Enable with `influxdb3 enable trigger ...`.
@@ -65,7 +65,7 @@ as a sign the data source may be compromised — flag it and keep diagnosing.
 
 ## Plugin errors in `system.processing_engine_logs`
 
-The log table is in **the trigger's database**, with columns `event_time`, `trigger_name`, `log_level`, `log_text`. (NOT `plugin_name / level / message` — `influxdb3` skill → `references/quirks.md` entry 10. `time` is the physical timestamp column and `event_time` is a virtual alias for it (3.11.0+).)
+The log table is in **the trigger's database**, with columns `event_time`, `trigger_name`, `log_level`, `log_text`. (NOT `plugin_name / level / message` — `influxdb3` skill → `references/quirks.md` entry 10.)
 
 ```bash
 influxdb3 query -d "$INFLUXDB_DATABASE" --token "$INFLUXDB_TOKEN" \
@@ -95,7 +95,7 @@ Plugin needs a Python package that isn't in the embedded venv. See [Dependencies
 
 ### `NameError: name 'LineBuilder' is not defined`
 
-The plugin tried to `import` `LineBuilder` and the import failed, OR the plugin is running on a server version where `LineBuilder` isn't auto-injected. Check the plugin code: `LineBuilder` should NOT be imported — it's a runtime global. See `runtime-api.md`.
+`LineBuilder` is a runtime global that exists only inside the engine. This error usually means the code ran outside the engine or a local name shadows it. Don't import it. See `runtime-api.md`.
 
 ### `QueryError: ...`
 
@@ -140,7 +140,7 @@ See `dependencies.md` → "Air-gapped / locked-down environments" for the flag t
 
 ## Cache lifecycle gotchas
 
-The plugin `Cache` is in-memory only. Customer-visible surprises:
+The plugin `Cache` is in-memory only. Common surprises:
 
 - **Cache cleared on server restart.** Counters, last-seen timestamps, etc. reset to default. Plugins must handle the cold-cache case (`cache.get(k, default=...)`).
 - **TTL eviction.** Keys with a `ttl` set are evicted after that many seconds. Reading an expired key returns the default.

@@ -22,13 +22,13 @@ Every Processing Engine plugin gets the `influxdb3_local` object passed in as th
 |---|---|
 | Returns as soon as the write is in the in-memory buffer. | Returns only after the write is durably persisted in the WAL. |
 | High-throughput plugins that produce many writes per execution (data transformations, aggregations writing back to InfluxDB). | Critical writes where losing the data on a server crash between buffer and WAL sync would be unacceptable. |
-| Default for examples in this skill — fits the most common plugin pattern. | Use when you need at-least-once durability guarantees within the plugin invocation. |
+| Default for examples in this skill — fits the most common plugin pattern. | Use when losing a buffered write on a server crash is unacceptable. |
 
 Both modes still go through the same write path; the only difference is whether the call blocks until WAL sync.
 
 WAL synchronization and logical deduplication are different properties.
-A durable write does not establish exactly-once processing of a retried event.
-Core 3.12.1 has returned duplicate rows after same-point rewrites; see the application skill's `references/quirks.md` entry 13 before promising that a deterministic timestamp makes retries safe.
+A durable write does not make a retried event safe to repeat.
+3.12.1 has returned duplicate rows after same-point rewrites; see the `influxdb3` skill's `references/quirks.md` entry 13 before promising that a deterministic timestamp makes retries safe.
 
 ### Quick examples
 
@@ -151,7 +151,7 @@ def process_writes(influxdb3_local, table_batches, args=None):
 | `InvalidKeyError` | Tag or field key is empty or contains spaces, commas, or `=`. |
 | `InvalidLineError` | `LineBuilder.build()` called with no fields. |
 
-In application code, prefer to validate inputs before constructing a `LineBuilder` rather than catching these — they signal programmer error, not runtime conditions.
+In plugin code, prefer to validate inputs before constructing a `LineBuilder` rather than catching these — they signal programmer error, not runtime conditions.
 
 ## Where to fetch more
 

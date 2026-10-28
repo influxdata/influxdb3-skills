@@ -28,8 +28,7 @@ For a Docker deployment, from this example directory:
 docker cp example_toml_config.py <container-name>:/plugins/example_toml_config.py
 ```
 
-The HTTP plugin-file collection endpoint accepts JSON containing filename and source text, not raw file bodies at a filename URL.
-See `references/installing.md` for the Python-file example and the API reference for supported file operations.
+To upload over HTTP instead, see `references/installing.md`.
 The TOML file is sent as an argument below, not uploaded separately.
 
 ### Create the trigger
@@ -81,5 +80,6 @@ The `(int)` shows the type returned by the plugin's TOML parser, not a type conv
 influxdb3 delete trigger \
   --database mydb \
   --token "$INFLUXDB_TOKEN" \
+  --force \
   toml_demo
 ```

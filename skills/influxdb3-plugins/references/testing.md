@@ -58,7 +58,7 @@ influxdb3 test schedule_plugin --help
 There is no offline test command for HTTP plugins. The fastest workflow:
 
 1. Create the real trigger with `--error-behavior log`.
-2. `curl http://localhost:8181/api/v3/engine/<path>` to exercise it.
+2. `curl "$INFLUXDB_HOST/api/v3/engine/<path>" -H "Authorization: Bearer $INFLUXDB_TOKEN"` to exercise it.
 3. `SELECT event_time, log_level, log_text FROM system.processing_engine_logs WHERE trigger_name='<name>' ORDER BY event_time DESC LIMIT 50` to see output.
 4. `influxdb3 update trigger ... --path` to push code changes; trigger config is preserved.
 5. Repeat steps 2–4.
@@ -130,9 +130,9 @@ Set on `influxdb3 create trigger` (or `trigger_settings.error_behavior` via the 
 
 | Flag | Effect |
 |---|---|
-| `--error-behavior log` *(default)* | Errors are logged to `system.processing_engine_logs` and stdout; the trigger keeps running. **Pick this for development.** |
+| `--error-behavior log` *(default)* | Errors are logged to `system.processing_engine_logs` and stdout; the trigger keeps running. |
 | `--error-behavior retry` | The plugin is re-invoked on error. Useful for transient external dependencies (a flaky API, a brief network blip). For an asynchronous trigger (`--run-asynchronous`), a failed invocation retries a limited number of times and is then discarded (3.11.0+); earlier releases retry without limit. Check the release notes for the user's version for the exact limit. |
-| `--error-behavior disable` | The trigger auto-disables on the first error. Pick this for "fail loud" critical paths where silent log failures are unacceptable. |
+| `--error-behavior disable` | The trigger auto-disables on the first error, so a failure stops processing until someone re-enables it. |
 
 ## Inspecting cache state
 
@@ -150,7 +150,7 @@ def process_request(influxdb3_local, query_parameters, request_headers, request_
     return {"key": key, "value": val, "global": use_global}
 ```
 
-Wire it up at `request:cache_inspect`, then `curl "http://localhost:8181/api/v3/engine/cache_inspect?key=counter"` to read.
+Wire it up at `request:cache_inspect`, then `curl "$INFLUXDB_HOST/api/v3/engine/cache_inspect?key=counter" -H "Authorization: Bearer $INFLUXDB_TOKEN"` to read.
 
 ### Pattern B: log cache reads from the plugin under test
 

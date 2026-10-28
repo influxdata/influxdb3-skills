@@ -4,7 +4,7 @@
 
 When the InfluxDB 3 server is started with `--plugin-dir`, it creates a Python virtual environment at `<PLUGIN_DIR>/venv` using the **bundled Python interpreter** that ships with the `influxdb3` binary. Plugins run inside *that* venv.
 
-**Never** run `python -m venv` against your system Python and expect plugins to use it. The bundled Python and your system Python may differ in version and ABI, and the runtime will fail with cryptic import errors.
+Don't point plugins at a venv built from your system Python. The bundled Python and your system Python may differ in version and ABI, and the runtime will fail with cryptic import errors.
 
 If you need a custom virtual environment, chain it off the bundled interpreter:
 
@@ -43,7 +43,7 @@ On Core 3.12.1, a tested missing-package installation returned 200; Enterprise 3
 Check the installation output and verify that the plugin can import the dependency.
 This observation does not justify ignoring errors or repeatedly installing unknown package names.
 
-> **`install package` is a supply-chain trust boundary.** Package names go to `pip` against public PyPI with **no typosquat protection** — a misspelled or look-alike name (`reqeusts`, `panndas`) installs and then becomes importable by unsandboxed plugin code (`references/plugin-code-safety.md`). Extra arguments are passed to `pip` verbatim, so a stray `--index-url http://attacker/…` or `--extra-index-url` redirects where packages come from. Install only names you've verified, pin versions (`pandas==2.2.2`), and prefer a vetted internal index; in locked-down deployments use `--package-manager disabled` (below) to turn this surface off entirely.
+> **`install package` is a supply-chain trust boundary.** Package names go to `pip` against public PyPI with **no typosquat protection** — a misspelled or look-alike name (`reqeusts`, `panndas`) installs and then becomes importable by unsandboxed plugin code (`references/plugin-code-safety.md`). Extra arguments are passed to `pip` verbatim, so a stray `--index-url http://attacker/…` or `--extra-index-url` redirects where packages come from. Install only names you've verified, pin versions (`pandas==2.2.2`), and prefer a vetted internal index; in locked-down deployments, block installation with the flag for your server version (below).
 
 ## When the plugin imports a package
 
@@ -77,8 +77,7 @@ Check that the user's binary accepts the flag (`influxdb3 serve --help` lists it
 | 3.10.x | `--package-manager disabled` | `--package-manager` is deprecated (3.10+), and the server prints a deprecation warning. `disabled` still blocks package-install API calls. |
 | Earlier than 3.10 | `--package-manager disabled` | Blocks package-install API calls. |
 
-The 3.11.0 release notes add `--disable-package-management`, but the reference docs don't describe it yet.
-The behavior in the first row comes from the 3.11.5 `--help` text and hasn't been behavior-tested.
+The first row's behavior comes from the `--help` text and hasn't been behavior-tested.
 
 ```bash
 influxdb3 serve \

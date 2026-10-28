@@ -15,11 +15,10 @@ The engine activates when the server is started with `--plugin-dir` (or `INFLUXD
 Verify the engine is enabled:
 
 ```bash
-curl -sS "$INFLUXDB_HOST/api/v3/configure/database?format=json" \
-  -H "Authorization: Bearer $INFLUXDB_TOKEN" | jq '.[].iox::database'
+influxdb3 show plugins --token "$INFLUXDB_TOKEN"
 ```
 
-If the engine is on, `_internal` will be in the database list. (`_internal` always exists; the indicator is that `system.plugin_files` and `system.processing_engine_logs` work — see `references/testing.md`.)
+If the engine is on, this succeeds and `system.plugin_files` is queryable (see `references/testing.md`).
 
 ## Three install paths
 
@@ -131,7 +130,7 @@ Schema columns: `plugin_name` (str), `file_name` (str), `file_path` (str), `size
 
 ## Security
 
-Plugin upload, update, and trigger creation **require an admin token**. Use a database-scoped token for the application code that *talks to* InfluxDB; use the admin token only for plugin lifecycle operations.
+Plugin upload, update, and trigger creation **require an admin token**. For application code that *talks to* InfluxDB, use a database-scoped token on Enterprise or a separate named admin token on Core; use the admin token only for plugin lifecycle operations.
 
 The server enforces:
 - **Path traversal protection** — without `--upload`, `--path` is relative to `--plugin-dir`, and the server rejects paths that contain `..` or start with `/`. With `--upload`, `--path` names a local file or directory; the CLI uploads it and the server chooses where it lands inside `--plugin-dir`.
@@ -146,10 +145,10 @@ The server enforces:
 - **A deployed plugin is unsandboxed** — `references/plugin-code-safety.md`.
 
 **Plugin hardening flags** (3.10.0+):
-- `--plugin-dir-only` — disables `gh:` fetches and `--upload`, restricting plugins to files already placed in `--plugin-dir` (server-side placement, path 2). This is the single most effective lockdown for plugin sourcing. **Enterprise only** — not available on Core, where the admin token is the entire boundary for plugin sourcing.
+- `--plugin-dir-only` — disables `gh:` fetches and `--upload`, restricting plugins to files already placed in `--plugin-dir` (server-side placement, path 2). **Enterprise only** — not available on Core, where the admin token is the entire boundary for plugin sourcing.
 - `--restrict-plugin-triggers-to` — limits which trigger types may be created (`[possible values: wal, schedule, request]`). **Available on both Core and Enterprise.**
 
-For deployments where a compromised or hostile plugin is in scope, the control that holds even against fully-unsandboxed plugin code is **network egress restriction on the server host** — enforce it at the harness/network layer.
+For deployments where a compromised or hostile plugin is in scope, the control that holds even against fully-unsandboxed plugin code is **restricting outbound network access from the server host**.
 
 ## Where to fetch more
 

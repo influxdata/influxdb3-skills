@@ -1,6 +1,6 @@
 # Trigger Lifecycle CLI Reference
 
-The `influxdb3` CLI is the primary way to create, update, list (via system tables), enable/disable, and delete triggers. Every command also has an HTTP equivalent under `/api/v3/configure/processing_engine_trigger` for programmatic use.
+The `influxdb3` CLI is the primary way to create, update, list (via system tables), enable/disable, and delete triggers. For HTTP equivalents, fetch the API reference.
 
 All commands accept `--token <admin-token>` (or `INFLUXDB3_AUTH_TOKEN` env var) and `-H/--host <url>` (or `INFLUXDB3_HOST_URL` env var). Trigger creation, update, and deletion require an **admin token**.
 
@@ -36,7 +36,7 @@ influxdb3 create trigger \
   sensor_processor
 ```
 
-> **Trigger spec quirk:** the CLI's own `--help` text mistakenly says HTTP triggers use `path:<PATH>`. The parser actually only accepts the prefixes `table:`, `all_tables:`, `cron:`, `every:`, or `request:`. **Use `request:<path>`** for HTTP plugins; `path:` is rejected.
+> **Trigger spec quirk:** the CLI's own `--help` text mistakenly says HTTP triggers use `path:<PATH>`. The parser actually only accepts the prefixes `table:`, `all_tables`, `cron:`, `every:`, or `request:`. **Use `request:<path>`** for HTTP plugins; `path:` is rejected.
 
 ## `influxdb3 update trigger`
 
@@ -65,8 +65,10 @@ There is **no `influxdb3 show triggers`** subcommand. List triggers via SQL on t
 influxdb3 query -d _internal --token "$INFLUXDB_TOKEN" "SHOW TABLES"
 ```
 
-Look for tables matching `trigger`, `plugin`, or `engine`. Two known-good ones:
+Look for tables matching `trigger`, `plugin`, or `engine`. Known-good ones on 3.12.1:
 
+- `system.processing_engine_triggers` — one row per trigger (`trigger_name`, `plugin_filename`, `trigger_specification`, `disabled`, `error_behavior`).
+- `system.processing_engine_trigger_arguments` — trigger arguments.
 - `system.plugin_files` — installed plugin file metadata (`plugin_name`, `file_name`, `file_path`, `size_bytes`, `last_modified`).
 - `system.processing_engine_logs` — runtime log output from every trigger (`event_time`, `trigger_name`, `log_level`, `log_text`). Queryable from any database context.
 
@@ -125,11 +127,8 @@ Remove the unused file server-side through deployment tooling after deleting the
 | Custom HTTP-trigger endpoint | `GET` or `POST /api/v3/engine/<request_path>` |
 
 All admin-required operations need `Authorization: Bearer <admin-token>`.
-Core and Enterprise 3.12.1 accept trigger creation with `trigger_settings` and `disabled` omitted.
-The omitted-settings probe observed an enabled trigger and error behavior `log`.
-It did not behavior-test concurrency defaults.
+On 3.12.1, omitting `trigger_settings` and `disabled` creates an enabled trigger with error behavior `log`.
 In the HTTP body, `trigger_settings.error_behavior` takes the same lowercase values as the CLI flag: `log`, `retry`, and `disable`.
-The 3.12 documentation gives these values, and the probe read back `log`.
 For other settings and allowed values, fetch the API reference or ask the InfluxDB Documentation MCP server.
 Use `references/installing.md` for the upload example and the [API reference](https://docs.influxdata.com/influxdb3/enterprise/api/v3/) for complete contracts.
 

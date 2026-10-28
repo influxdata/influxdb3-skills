@@ -17,7 +17,7 @@ The `Cache` API itself is documented in `references/runtime-api.md`. This page c
 
 - The cache lives in process memory.
 - It's **cleared on server restart**. Plugins must handle the cache-cold case (e.g., `cache.get(k, default=...)`).
-- TTL is per-key, in seconds. `None` (the default) means no expiry in production caches; in `influxdb3 test ...` simulations, untyped TTL defaults to 30 minutes.
+- TTL is per-key, in seconds. `None` (the default) means no expiry in production caches; in `influxdb3 test ...` simulations, unset TTL defaults to 30 minutes.
 
 ## Common patterns
 
@@ -62,7 +62,7 @@ def process_scheduled_call(influxdb3_local, call_time, args=None):
 def process_writes(influxdb3_local, table_batches, args=None):
     tiers = influxdb3_local.cache.get("customer_tiers", default={}, use_global=True)
     for batch in table_batches:
-        for row in batch.rows:
+        for row in batch["rows"]:
             tier = tiers.get(row.get("customer_id"), "unknown")
             # ... use tier
 ```
@@ -76,7 +76,7 @@ def process_writes(influxdb3_local, table_batches, args=None):
     last_ts = influxdb3_local.cache.get("last_processed_ns", default=0)
     new_max = last_ts
     for batch in table_batches:
-        for row in batch.rows:
+        for row in batch["rows"]:
             ts = row["time"]
             if ts <= last_ts:
                 continue
@@ -91,14 +91,14 @@ def process_writes(influxdb3_local, table_batches, args=None):
 If the trigger runs asynchronously (`--run-asynchronous`), multiple invocations of the same plugin can read and write the same cache key concurrently. There's no cross-invocation lock.
 
 Two ways to handle this:
-- **Design for idempotency.** Increment-by-1 patterns can lose updates under concurrent writes; design state so a lost update isn't catastrophic.
+- **Tolerate lost updates.** Increment-by-1 patterns can lose updates under concurrent writes; design state so a lost update isn't catastrophic.
 - **Single-writer pattern.** A scheduled trigger is the only writer; other triggers are readers. Then concurrent reads of stable data are fine.
 
 ## When NOT to use the cache
 
 - For data you need across server restarts → write to a database measurement instead. The `Cache` is volatile.
 - For very large datasets → it lives in process memory. Watch your memory footprint when caching MB-scale objects.
-- For credentials or secrets → use `args` passed to the trigger, not the cache. Args are scoped to the trigger and not exposed elsewhere.
+- For credentials or secrets → use `args` passed to the trigger, not the cache. Args are stored with the trigger configuration, so anyone who can read trigger settings can see them. Don't log them.
 
 ## Where to fetch more
 
