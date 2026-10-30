@@ -12,7 +12,7 @@ Every Processing Engine plugin gets the `influxdb3_local` object passed in as th
 | `query(query, args=None)` | Execute a SQL query. Returns `list[dict[str, Any]]` — one dict per row, column name as key. Time columns return as nanosecond integers. Raises `QueryError` on bad SQL or execution failure. |
 | `write_sync(line, no_sync)` | **Preferred.** Write line protocol to the trigger's database via the write buffer. `no_sync` is required (no default): `no_sync=True` returns as soon as the write is buffered (high-throughput); `no_sync=False` waits for WAL synchronization (durable). `line` must be a `LineBuilder`. |
 | `write_sync_to_db(db_name, line, no_sync)` | Same as `write_sync` but writes to a different database. `no_sync` is required (no default). |
-| `write(line)` | **Legacy.** Queues a line protocol write back to the trigger's database; flushed when the plugin completes. Still works but new plugins should prefer `write_sync(line, no_sync=True)` for explicit control over timing and durability. |
+| `write(line)` | **Legacy.** Queues a line protocol write back to the trigger's database; flushed when the plugin completes. A failed flush doesn't raise in the plugin, so it can lose rows; the failure may appear only in the server log. Still works but new plugins should prefer `write_sync(line, no_sync=True)` for explicit control over timing and durability. |
 | `write_to_db(db_name, line)` | **Legacy.** Same as `write` but to a different database. New plugins should prefer `write_sync_to_db`. |
 | `cache` | Property returning the `Cache` for this trigger. |
 
