@@ -113,7 +113,7 @@ Most often a SQL typo or schema mismatch — see the main skill's `troubleshooti
 
 ```bash
 # Verify the package is in the embedded venv
-ls <PLUGIN_DIR>/venv/lib/python*/site-packages/ | grep <pkg>
+ls <PLUGIN_DIR>/.venv/lib/python*/site-packages/ | grep <pkg>
 ```
 
 If absent: the package isn't in the right venv. Re-install with:
@@ -126,7 +126,7 @@ influxdb3 install package <pkg>
 
 ### `ImportError` after a server restart
 
-The embedded venv is preserved across restarts (it lives at `<PLUGIN_DIR>/venv`). If imports fail right after a restart, suspect:
+The embedded venv is preserved across restarts (it lives at `<PLUGIN_DIR>/.venv`). If imports fail right after a restart, suspect:
 - The `--plugin-dir` changed (server can't find the venv it created last time).
 - Filesystem permissions on the venv changed.
 

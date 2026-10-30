@@ -136,7 +136,7 @@ Full reference + log queries + error-behavior modes + cache inspection: `referen
 
 ## 8. Python dependencies
 
-- Use `influxdb3 install package <pkg>` to install into the embedded venv at `<PLUGIN_DIR>/venv`.
+- Use `influxdb3 install package <pkg>` to install into the embedded venv at `<PLUGIN_DIR>/.venv`.
 - Don't point plugins at a venv built from system Python. Its version and ABI can differ from the bundled interpreter.
 - **Supply-chain caution:** package names hit public PyPI with no typosquat protection and extra args reach `pip` verbatim; install only verified, version-pinned names (`references/dependencies.md`).
 

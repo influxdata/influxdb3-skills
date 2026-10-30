@@ -2,14 +2,14 @@
 
 ## The embedded venv rule (most important)
 
-When the InfluxDB 3 server is started with `--plugin-dir`, it creates a Python virtual environment at `<PLUGIN_DIR>/venv` using the **bundled Python interpreter** that ships with the `influxdb3` binary. Plugins run inside *that* venv.
+When the InfluxDB 3 server is started with `--plugin-dir`, it creates a Python virtual environment at `<PLUGIN_DIR>/.venv` using the **bundled Python interpreter** that ships with the `influxdb3` binary. Plugins run inside *that* venv.
 
 Don't point plugins at a venv built from your system Python. The bundled Python and your system Python may differ in version and ABI, and the runtime will fail with cryptic import errors.
 
 If you need a custom virtual environment, chain it off the bundled interpreter:
 
 ```bash
-<PLUGIN_DIR>/venv/bin/python -m venv <new-venv>
+<PLUGIN_DIR>/.venv/bin/python -m venv <new-venv>
 ```
 
 ## Install a Python package into the plugin venv
