@@ -129,7 +129,7 @@ For these topics, the skills point to the official docs instead of guessing:
 - **Performance tuning:** slow queries, slow writes, cardinality remediation, and workload-specific batch-size tuning.
 - **Migration from InfluxDB v1 or v2 to InfluxDB 3.**
 - **App-pattern templates:** IoT pipelines, dashboards, alerts, and downsampling.
-- **Multi-node plugin deployments:** cluster placement and multi-node patterns.
+- **Full cluster provisioning and multi-process-node designs.** The plugin skill covers documented Enterprise 3.12 standalone process node placement, routing, migration, and recovery checks, then points to the admin guide for complete setup.
 - **Air-gapped setup:** offline mirrors, custom plugin repos, and offline package installs.
 - **Product-specific admin for InfluxDB Cloud Serverless, InfluxDB Cloud Dedicated, and InfluxDB Clustered:**
   these products use different APIs to manage tokens and databases.

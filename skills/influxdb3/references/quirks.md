@@ -116,9 +116,9 @@ for row in system_tokens_rows:
 
 **What you'll see:** Plugin code that imports `pandas` raises `ImportError`, even though `pip install pandas` was run on the host.
 
-**Why:** When the server starts with `--plugin-dir`, it creates a Python virtual environment at `<PLUGIN_DIR>/venv` using the **bundled Python interpreter** that ships with the `influxdb3` binary. Plugins run inside *that* venv, not the system Python.
+**Why:** When the server starts with `--plugin-dir`, it creates a Python virtual environment at `<PLUGIN_DIR>/.venv` using the **bundled Python interpreter** that ships with the `influxdb3` binary. Plugins run inside *that* venv, not the system Python. The `.venv` path is documented for Enterprise 3.12.0; its configuration template incorrectly shows `venv`. Check the server-created path on other versions.
 
-**What to do:** Install packages with `influxdb3 install package <pkg>`. If you need a custom venv, chain off the bundled interpreter: `<PLUGIN_DIR>/venv/bin/python -m venv <new-venv>`. Never `python -m venv` against system Python and expect plugins to use it.
+**What to do:** Install packages with `influxdb3 install package <pkg>`. If you need a custom venv, chain off the bundled interpreter: `<PLUGIN_DIR>/.venv/bin/python -m venv <new-venv>`. Never `python -m venv` against system Python and expect plugins to use it.
 
 ---
 

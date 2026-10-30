@@ -27,7 +27,7 @@ as a sign the data source may be compromised — flag it and keep diagnosing.
 | `Schema error: No field named plugin_name` (or similar) on `system.processing_engine_logs` | `influxdb3` skill → `references/quirks.md` entry 10 |
 | Cache values disappeared / counter reset | [Cache lifecycle gotchas](#cache-lifecycle-gotchas) |
 | Plugin runs but writes don't show up | back to main skill: `references/troubleshooting.md` → "Silent auto-create misroute" |
-| Plugin only fires on some writes (clustered) | Not covered; see [Trigger doesn't fire](#trigger-doesnt-fire) step 5 |
+| Plugin only fires on some writes, or duplicates runs in an Enterprise cluster | [Trigger doesn't fire](#trigger-doesnt-fire) step 5; `references/enterprise-process-node.md` |
 
 ## Trigger doesn't fire
 
@@ -39,7 +39,7 @@ as a sign the data source may be compromised — flag it and keep diagnosing.
    influxdb3 show plugins --token "$INFLUXDB_TOKEN"
    ```
 
-   If this errors with "no plugin directory configured" or returns nothing meaningful, the engine isn't on. Restart the server with `--plugin-dir <path>` and try again.
+   A "no plugin directory configured" error indicates missing configuration. Verify startup flags, environment, and runtime modes. In Enterprise 3.12.0, an empty `show plugins` result or unavailable `system.plugin_files` can occur even with the engine enabled; inspect the process node's plugin directory before changing configuration.
 
 2. **Is the trigger registered?**
 
@@ -59,9 +59,9 @@ as a sign the data source may be compromised — flag it and keep diagnosing.
 
 4. **Is the trigger disabled?** The `disabled` column in step 2 will tell you. Enable with `influxdb3 enable trigger ...`.
 
-5. **For clustered deployments:** the trigger may be pinned to a node that isn't receiving writes (WAL) or isn't query-routable (HTTP). This skill doesn't cover cluster placement, so verify on a single-node deployment first.
+5. **For Enterprise clusters:** check the version and placement using `references/enterprise-process-node.md`. In 3.12, WAL triggers can run on a standalone process node and follow every ingest node through object storage; they need not run on the node receiving writes. Send request-trigger calls to the owning process node, which need not serve data queries. Verify `--node-spec nodes:PROCESS_NODE_ID`, plugin files, dependencies, and ingest/query internode connectivity. Before 3.12.0, standalone WAL triggers cannot read other nodes' WAL files.
 
-**Fix:** correct whichever of 1–4 is wrong. For 5, reproduce on a single node first.
+**Fix:** correct the failing check. For cluster failures, inspect both the process node server log and persisted plugin logs on a query node before changing placement.
 
 ## Plugin errors in `system.processing_engine_logs`
 
@@ -73,6 +73,8 @@ influxdb3 query -d "$INFLUXDB_DATABASE" --token "$INFLUXDB_TOKEN" \
    WHERE trigger_name = '<your_trigger_name>'
    ORDER BY event_time DESC LIMIT 50"
 ```
+
+In Enterprise clusters, run this query on a query node. Also inspect the process node server log: Python tracebacks and failures from deferred `write()` or `write_to_db()` can appear only there. Missing ingest connectivity can prevent plugin log persistence. See `references/enterprise-process-node.md` for routing, WAL retention, and recovery checks.
 
 **Common error patterns:**
 
@@ -104,7 +106,7 @@ Most often a SQL typo or schema mismatch — see the main skill's `troubleshooti
 
 ```bash
 # Verify the package is in the embedded venv
-ls <PLUGIN_DIR>/venv/lib/python*/site-packages/ | grep <pkg>
+ls <PLUGIN_DIR>/.venv/lib/python*/site-packages/ | grep <pkg>
 ```
 
 If absent: the package isn't in the right venv. Re-install with:
@@ -117,7 +119,7 @@ influxdb3 install package <pkg>
 
 ### `ImportError` after a server restart
 
-The embedded venv is preserved across restarts (it lives at `<PLUGIN_DIR>/venv`). If imports fail right after a restart, suspect:
+The embedded venv is preserved across restarts (it lives at `<PLUGIN_DIR>/.venv`). If imports fail right after a restart, suspect:
 - The `--plugin-dir` changed (server can't find the venv it created last time).
 - Filesystem permissions on the venv changed.
 

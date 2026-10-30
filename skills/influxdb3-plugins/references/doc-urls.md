@@ -13,6 +13,17 @@ When the skill content does not cover a developer's plugin question — or when 
 | Plugin library | https://docs.influxdata.com/influxdb3/enterprise/plugins/library/ | Browse official + community plugins |
 | Processing engine reference | https://docs.influxdata.com/influxdb3/enterprise/reference/processing-engine/ | Enable/disable, distributed considerations |
 
+## Enterprise cluster operations
+
+| Topic | URL | When to fetch |
+|---|---|---|
+| Configure a standalone process node | https://docs.influxdata.com/influxdb3/enterprise/admin/processing-engine/ | Enterprise 3.12 configuration, routing, migration, restart recovery, and troubleshooting |
+| Process node architectures | https://docs.influxdata.com/influxdb3/enterprise/admin/clustering/#configure-a-process-node | Standalone and mixed node requirements |
+| Upgrade a multi-node cluster | https://docs.influxdata.com/influxdb3/enterprise/admin/upgrade/#upgrade-a-multi-node-cluster | Upgrade before moving plugins |
+| Enterprise release notes | https://docs.influxdata.com/influxdb3/enterprise/release-notes/#known-issues | Check 3.12 WAL retention, restart, listing, and runtime limitations |
+| Merged standalone-node documentation | https://github.com/influxdata/docs-v2/pull/7952 | Source of the Enterprise 3.12 guidance |
+| Process-node follow-up | https://github.com/influxdata/docs-v2/pull/7956 | Migration and wording corrections while the PR is unpublished; open when checked on 2026-10-28 |
+
 ## CLI reference
 
 | Command | URL | When to fetch |

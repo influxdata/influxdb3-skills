@@ -68,7 +68,7 @@ influxdb3 query -d _internal --token "$INFLUXDB_TOKEN" "SHOW TABLES"
 Look for tables matching `trigger`, `plugin`, or `engine`. Two known-good ones:
 
 - `system.plugin_files` — installed plugin file metadata (`plugin_name`, `file_name`, `file_path`, `size_bytes`, `last_modified`).
-- `system.processing_engine_logs` — runtime log output from every trigger (`event_time`, `trigger_name`, `log_level`, `log_text`). Queryable from any database context.
+- `system.processing_engine_logs` — runtime log output from every trigger (`event_time`, `trigger_name`, `log_level`, `log_text`). Query in the trigger's database; in Enterprise clusters, use a query node and also check the process node server log.
 
 ```bash
 # List installed plugin files

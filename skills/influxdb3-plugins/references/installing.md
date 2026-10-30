@@ -19,7 +19,7 @@ curl -sS "$INFLUXDB_HOST/api/v3/configure/database?format=json" \
   -H "Authorization: Bearer $INFLUXDB_TOKEN" | jq '.[].iox::database'
 ```
 
-If the engine is on, `_internal` will be in the database list. (`_internal` always exists; the indicator is that `system.plugin_files` and `system.processing_engine_logs` work — see `references/testing.md`.)
+The database list does not establish whether the engine is enabled: `_internal` always exists. Verify the server startup configuration and, in Enterprise clusters, the runtime modes in `system.nodes` on a query node. Enterprise 3.12.0 can return an empty plugin listing or lack `system.plugin_files` on a process node despite existing files. Inspect the process node's plugin directory. See `references/enterprise-process-node.md` for configuration and routing checks.
 
 ## Three install paths
 

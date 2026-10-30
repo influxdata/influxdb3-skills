@@ -92,7 +92,7 @@ influxdb3 update trigger \
 
 ## Reading plugin logs
 
-The `system.processing_engine_logs` table holds plugin output for every trigger in the database.
+The `system.processing_engine_logs` table holds persisted plugin output for triggers in the database. In Enterprise clusters, query it on a query node and also inspect the process node server log. Python tracebacks and deferred-write failures can appear only in the server log; missing ingest connectivity can prevent log persistence. See `references/enterprise-process-node.md`.
 
 ```bash
 influxdb3 query \

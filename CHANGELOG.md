@@ -4,6 +4,12 @@ All notable changes to this skill will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Documentation-grounded changes
+- Updated Processing Engine guidance from docs-v2 #7952 and open #7956 for Enterprise 3.12.0 standalone process nodes, trigger placement, request routing, migration, and recovery.
+- Corrected empty plugin listing diagnosis, server-log coverage, and the embedded `.venv` path. Added affected eval cases. These changes have not been live-verified; existing live verification metadata is unchanged.
+
 ## [0.7.2] — 2026-09-29
 
 ### Fixed
