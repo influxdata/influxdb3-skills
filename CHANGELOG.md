@@ -46,6 +46,8 @@ Claim IDs (`claim-YYYYMMDD-NNNN`) refer to InfluxData's internal verification le
 - During token rotation, keep revocation a separate step after consumers confirm the switch. A fixed wait alone doesn't show they switched.
 - State the duplicate-tag-key fix per release line. "3.9.8+" read as covering 3.10.0 through 3.10.2, which still accept the point.
 - Revise eval criteria that required exact recall or one specific tool instead of the behavior: the secret manager in token rotation, the Authorization scheme, the timestamp-boundary wording, misspelled database names, candidate Cloud products, the duplicate-tag-key versions, and the plugin venv path.
+- Split eval cases that asked for several tasks or questions at once into one case per task. A compound case failed on any single miss, which hid which behavior the agent got wrong.
+- Give each eval criterion one check. Split criteria that bundled several checks, merge criteria that repeated each other, make vague criteria concrete, and drop criteria the prompt didn't ask for. The admin-token step after a Docker install and the reserved-word warning moved to their own cases.
 - Keep one copy of repeated rules (auto-create, retry and rewrite safety, `memory` object store, `gh:` trust boundary, redaction) and point to it elsewhere. Remove test-log narration, internal-source references, and filler.
 
 ### Live-verified behavior corrections
