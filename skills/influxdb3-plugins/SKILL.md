@@ -130,14 +130,14 @@ Full rationale, safe/unsafe examples, and the third-party-code note:
 Two layers:
 
 - **Offline (WAL + scheduled only)** — `influxdb3 test wal_plugin` and `influxdb3 test schedule_plugin`. There is no offline test for HTTP request plugins; test those by creating a real trigger and `curl`-ing the endpoint.
-- **Live** — `influxdb3 create trigger ... --error-behavior log`, cause it to fire, then `SELECT event_time, log_level, log_text FROM system.processing_engine_logs WHERE trigger_name='<name>' ORDER BY event_time DESC LIMIT 50`. Iterate with `influxdb3 update trigger --path` (preserves spec/args).
+- **Live** — `influxdb3 create trigger ... --error-behavior log`, cause it to fire, then `SELECT event_time, trigger_name, log_level, log_text FROM system.processing_engine_logs WHERE trigger_name='<name>' ORDER BY event_time DESC LIMIT 50`. Iterate with `influxdb3 update trigger --path` (preserves spec/args).
 
 Full reference + log queries + error-behavior modes + cache inspection: `references/testing.md`. CLI flag reference: `references/triggers-cli.md`.
 
 ## 8. Python dependencies
 
 - Use `influxdb3 install package <pkg>` to install into the embedded venv at `<PLUGIN_DIR>/.venv`.
-- Don't point plugins at a venv built from system Python. Its version and ABI can differ from the bundled interpreter.
+- Don't run `python -m venv` with system Python and point plugins at it. Its version and ABI can differ from the bundled interpreter.
 - **Supply-chain caution:** package names hit public PyPI with no typosquat protection and extra args reach `pip` verbatim; install only verified, version-pinned names (`references/dependencies.md`).
 
 Full reference: `references/dependencies.md`.
@@ -179,11 +179,11 @@ Full reference: `references/troubleshooting.md`.
 
 If the developer asks about any of these, defer politely:
 
-- **Distributed cluster placement** (which nodes run a trigger in a multi-node cluster) → not covered; route to the docs. Don't describe placement flags or routing behavior.
+- **Distributed cluster placement** (which nodes run a trigger in a multi-node cluster) → not covered; see the note below this list.
 - **Full air-gapped setup** (offline mirrors, custom plugin repos, offline `pip` installs) → lead with the deferral and the docs link in `references/dependencies.md` → "Air-gapped / locked-down environments". Then give only that section's version-specific flag and the pre-install rule; don't write offline install steps.
 - **Full Explorer-compatible plugin metadata schemas** → not covered; see `references/plugin-structure.md` → 'Plugin metadata docstring' for a pointer to the canonical schema.
 
-For cluster placement, say it's out of scope for this skill and link https://docs.influxdata.com/influxdb3/enterprise/plugins/. Note that a single-node deployment needs no placement: every write reaches the one node that runs the trigger.
+For cluster placement, say it's out of scope for this skill and link https://docs.influxdata.com/influxdb3/enterprise/plugins/. Don't describe node pinning, `--node-spec` values, or placement steps: placement behavior changes by version, and this skill hasn't verified it. Do say that a single-node deployment needs no placement, because every write reaches the one node that runs the trigger.
 
 ## When in doubt, fetch fresh docs
 
