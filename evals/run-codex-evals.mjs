@@ -3,7 +3,7 @@
 // second, structured Codex pass. Output is intentionally kept in evals/results/.
 //
 // Examples:
-//   node evals/run-codex-evals.mjs --case admin-db-crud --runs 1
+//   node evals/run-codex-evals.mjs --case admin-db-create --runs 1
 //   node evals/run-codex-evals.mjs --runs 3 --model gpt-6-luna --judge-model gpt-6-luna
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
