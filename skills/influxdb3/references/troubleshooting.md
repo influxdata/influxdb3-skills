@@ -150,7 +150,7 @@ done
 
 **Diagnose:**
 
-- Read each `error_message` and `line_number` in the response `data`. Common causes: missing space between tag set and field set, missing field value (for example, `temp 70.0` should be `temp=70.0`), unquoted string in field value, integer/float type confusion (`temp=70` vs `temp=70i` vs `temp=70.0`), and a repeated tag key (rejected in 3.9.8+, 3.10.3+, and 3.11.0+).
+- Read each `error_message` and `line_number` in the response `data`. Common causes: missing space between tag set and field set, missing field value (for example, `temp 70.0` should be `temp=70.0`), unquoted string in field value, integer/float type confusion (`temp=70` vs `temp=70i` vs `temp=70.0`), and a repeated tag key (rejected in 3.9.8 and later 3.9.x, 3.10.3 and later 3.10.x, and 3.11.0 and later; 3.10.0 through 3.10.2 accept it).
 - Check which endpoint and `accept_partial` value the request used before you decide what to resend.
 - When the whole batch was rejected and the response names only the first bad line, split the batch in half and retry each half. This finds the bad lines in O(log n) requests.
 

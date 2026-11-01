@@ -40,6 +40,12 @@ Claim IDs (`claim-YYYYMMDD-NNNN`) refer to InfluxData's internal verification le
 - Fix examples an agent would copy: `batch["rows"]` instead of `batch.rows`, a 6-field cron spec, a working engine check instead of invalid `jq`, a timeout-safe detection snippet, `.gitignore` before `.env` writes, and a 401 check that prints no token characters.
 - Correct facts: `serve` doesn't print a token, so create one with `create token --admin`; Core has admin tokens only; HTTP can update retention; the Cloud Serverless host includes the provider; the current write API is `write_sync`; and the skill no longer promises at-least-once plugin writes.
 - Use admin-token variables for admin examples, use only current license environment variable names, and add confirmed doc URLs.
+- Remove the Python and JavaScript snippets from `flavor-detection.md`. They repeated the decision flow in more detail than agents need.
+- Say that when only `--help` text disagrees with the docs, neither is proven. The agent recommends a behavior test or a support question and suggests reporting the discrepancy.
+- Tell agents not to build a plugin venv with system Python, and filter plugin log queries by `trigger_name`.
+- During token rotation, keep revocation a separate step after consumers confirm the switch. A fixed wait alone doesn't show they switched.
+- State the duplicate-tag-key fix per release line. "3.9.8+" read as covering 3.10.0 through 3.10.2, which still accept the point.
+- Revise eval criteria that required exact recall or one specific tool instead of the behavior: the secret manager in token rotation, the Authorization scheme, the timestamp-boundary wording, misspelled database names, candidate Cloud products, the duplicate-tag-key versions, and the plugin venv path.
 - Keep one copy of repeated rules (auto-create, retry and rewrite safety, `memory` object store, `gh:` trust boundary, redaction) and point to it elsewhere. Remove test-log narration, internal-source references, and filler.
 
 ### Live-verified behavior corrections

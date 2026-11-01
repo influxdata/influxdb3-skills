@@ -87,7 +87,8 @@ The message text differs between the docs and some releases.
 ### Duplicate tag keys
 
 A point that repeats a tag key, such as `m,t=a,t=a f=1i`, returns 400.
-Core and Enterprise reject it in 3.9.8+, 3.10.3+, and 3.11.0+.
+Core and Enterprise reject it in 3.9.8 and later 3.9.x releases, 3.10.3 and later 3.10.x releases, and 3.11.0 and later.
+3.10.0 through 3.10.2 still accept it.
 Earlier releases accepted the point, and the node then crash-looped on WAL replay.
 If the user runs an earlier version, validate tag keys client-side before writing.
 
