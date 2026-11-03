@@ -32,7 +32,7 @@ influxdb3 create trigger \
   --upload \
   --trigger-arguments threshold=90,unit=fahrenheit \
   --error-behavior log \
-  --token "$INFLUXDB_TOKEN" \
+  --token "$INFLUXDB_ADMIN_TOKEN" \
   sensor_processor
 ```
 
@@ -54,7 +54,7 @@ influxdb3 update trigger \
   --database my_database \
   --trigger-name sensor_processor \
   --path "/absolute/local/process_sensors.py" \
-  --token "$INFLUXDB_TOKEN"
+  --token "$INFLUXDB_ADMIN_TOKEN"
 ```
 
 ## Listing triggers
@@ -62,7 +62,7 @@ influxdb3 update trigger \
 There is **no `influxdb3 show triggers`** subcommand. List triggers via SQL on the `_internal` database. The relevant system tables are flavor- and version-dependent; check available tables on your installed version:
 
 ```bash
-influxdb3 query -d _internal --token "$INFLUXDB_TOKEN" "SHOW TABLES"
+influxdb3 query -d _internal --token "$INFLUXDB_ADMIN_TOKEN" "SHOW TABLES"
 ```
 
 Look for tables matching `trigger`, `plugin`, or `engine`. Known-good ones on 3.12.1:
@@ -74,7 +74,7 @@ Look for tables matching `trigger`, `plugin`, or `engine`. Known-good ones on 3.
 
 ```bash
 # List installed plugin files
-influxdb3 query -d _internal --token "$INFLUXDB_TOKEN" \
+influxdb3 query -d _internal --token "$INFLUXDB_ADMIN_TOKEN" \
   "SELECT plugin_name, file_name FROM system.plugin_files ORDER BY plugin_name"
 
 # Recent log activity per trigger
@@ -91,12 +91,12 @@ Toggle a trigger off without deleting it (useful when debugging a misbehaving pl
 ```bash
 influxdb3 disable trigger \
   --database my_database \
-  --token "$INFLUXDB_TOKEN" \
+  --token "$INFLUXDB_ADMIN_TOKEN" \
   sensor_processor
 
 influxdb3 enable trigger \
   --database my_database \
-  --token "$INFLUXDB_TOKEN" \
+  --token "$INFLUXDB_ADMIN_TOKEN" \
   sensor_processor
 ```
 
@@ -107,7 +107,7 @@ Permanently delete a trigger. Pass the trigger name as a positional argument. Th
 ```bash
 influxdb3 delete trigger \
   --database my_database \
-  --token "$INFLUXDB_TOKEN" \
+  --token "$INFLUXDB_ADMIN_TOKEN" \
   --force \
   sensor_processor
 ```

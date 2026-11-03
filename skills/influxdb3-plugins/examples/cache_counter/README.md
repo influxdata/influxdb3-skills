@@ -5,10 +5,10 @@
 ## Wire it up
 
 ```bash
-# Assumes INFLUXDB_HOST, INFLUXDB_TOKEN (admin), INFLUXDB_DATABASE are set.
+# Assumes INFLUXDB_HOST, INFLUXDB_ADMIN_TOKEN, INFLUXDB_TOKEN, INFLUXDB_DATABASE are set.
 influxdb3 create trigger \
   --database "$INFLUXDB_DATABASE" \
-  --token "$INFLUXDB_TOKEN" \
+  --token "$INFLUXDB_ADMIN_TOKEN" \
   --trigger-spec "every:30s" \
   --path "$(pwd)/counter.py" \
   --upload \
@@ -42,7 +42,7 @@ Expected: `count` increasing on each row.
 ```bash
 influxdb3 delete trigger \
   --database "$INFLUXDB_DATABASE" \
-  --token "$INFLUXDB_TOKEN" \
+  --token "$INFLUXDB_ADMIN_TOKEN" \
   --force \
   cache_counter
 ```

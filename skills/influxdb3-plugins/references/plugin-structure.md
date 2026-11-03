@@ -155,7 +155,7 @@ influxdb3 create trigger \
   --path my_plugin.py \
   --trigger-spec "every:1m" \
   --trigger-arguments "config_toml_b64=$CONFIG_TOML_B64" \
-  --token "$INFLUXDB_TOKEN" \
+  --token "$INFLUXDB_ADMIN_TOKEN" \
   my_plugin_trigger
 ```
 

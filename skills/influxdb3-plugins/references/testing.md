@@ -38,7 +38,7 @@ Example:
 ```bash
 influxdb3 test wal_plugin \
   --database "$INFLUXDB_DATABASE" \
-  --token "$INFLUXDB_TOKEN" \
+  --token "$INFLUXDB_ADMIN_TOKEN" \
   --lp 'sensor,host=server01,region=us-west temperature=72.4 1714400000000000000' \
   my_plugin.py
 ```
@@ -73,7 +73,7 @@ Once `influxdb3 test` (or, for HTTP plugins, the live trigger) validates your pl
 # Initial create — uploads the file
 influxdb3 create trigger \
   --database "$INFLUXDB_DATABASE" \
-  --token "$INFLUXDB_TOKEN" \
+  --token "$INFLUXDB_ADMIN_TOKEN" \
   --trigger-spec "table:sensors" \
   --path "/absolute/path/my_plugin.py" \
   --upload \
@@ -83,7 +83,7 @@ influxdb3 create trigger \
 # Iterate: edit the local plugin file, then push without re-creating the trigger
 influxdb3 update trigger \
   --database "$INFLUXDB_DATABASE" \
-  --token "$INFLUXDB_TOKEN" \
+  --token "$INFLUXDB_ADMIN_TOKEN" \
   --trigger-name my_trigger \
   --path "/absolute/path/my_plugin.py"
 ```

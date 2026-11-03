@@ -44,7 +44,7 @@ influxdb3 create trigger \
   --path example_toml_config.py \
   --trigger-spec "every:10s" \
   --trigger-arguments "config_toml_b64=$CONFIG_TOML_B64" \
-  --token "$INFLUXDB_TOKEN" \
+  --token "$INFLUXDB_ADMIN_TOKEN" \
   toml_demo
 ```
 
@@ -79,7 +79,7 @@ The `(int)` shows the type returned by the plugin's TOML parser, not a type conv
 ```bash
 influxdb3 delete trigger \
   --database mydb \
-  --token "$INFLUXDB_TOKEN" \
+  --token "$INFLUXDB_ADMIN_TOKEN" \
   --force \
   toml_demo
 ```

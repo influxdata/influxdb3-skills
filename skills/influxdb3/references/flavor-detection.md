@@ -23,6 +23,7 @@ This logic follows the detection that InfluxDB 3 Explorer uses to distinguish ea
 ## Decision Flow
 
 Explorer runs up to six sequential checks. The first check that matches wins; later checks are skipped.
+If no check matches, don't guess. Have the code return an unknown result, and ask the developer which product they target or read it from configuration (see "Fallback to Asking").
 
 ```
 1. GET <host>/ping  (no token — pure connectivity check)
