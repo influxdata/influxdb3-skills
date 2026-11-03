@@ -92,7 +92,7 @@ jobs:
       - name: Run the examples
         env:
           INFLUXDB_HOST: http://127.0.0.1:8181
-          INFLUXDB_TOKEN: ${{ steps.token.outputs.token }}
+          INFLUXDB_ADMIN_TOKEN: ${{ steps.token.outputs.token }}
           PRODUCT: core
           OUT: ${{ runner.temp }}/example-logs
         run: evals/run-examples.sh

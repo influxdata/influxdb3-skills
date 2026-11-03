@@ -114,7 +114,7 @@ def _write_point(host: str, scoped_token: str, db: str, line: str) -> int:
 def main() -> int:
     load_dotenv()
     host = os.environ["INFLUXDB_HOST"]
-    admin_token = os.environ["INFLUXDB_TOKEN"]
+    admin_token = os.environ["INFLUXDB_ADMIN_TOKEN"]
 
     ts = int(time.time())
     test_db = f"admin_test_python_{ts}"

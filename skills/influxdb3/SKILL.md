@@ -122,6 +122,7 @@ Decision flow: `references/flavor-detection.md`. Product differences: `reference
 Follow the rules in `references/connecting.md` → "The Five Rules". The key points:
 
 - **Never hard-code a token in code you write,** even when asked. Read it from an env var. A token in source code leaks through commits, logs, and screenshots.
+- **Env var names:** `INFLUXDB_TOKEN` (application) and `INFLUXDB_ADMIN_TOKEN` (admin) are this skill's names, not product names. The `influxdb3` CLI reads `INFLUXDB3_AUTH_TOKEN` when `--token` is absent, so pass `--token` explicitly and don't let an admin token in that variable reach every command.
 - **Add `.env` to `.gitignore` before you create a `.env`.** If the developer wants to skip or defer that, warn that one commit of `.env` publishes the token, then follow their choice.
 - **Mock data instead of a live instance:** explain that a stub won't catch auth, database, or schema errors, and offer to diagnose the connection (`/ping`, §2). If they still want the stub, build it and label it as fake.
 

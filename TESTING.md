@@ -89,7 +89,7 @@ To run it against a throwaway InfluxDB 3 Core container, as CI does:
 docker run -d --name influxdb3-test -p 8181:8181 influxdb:3.12.1-core \
   serve --node-id test --object-store memory
 export INFLUXDB_HOST=http://127.0.0.1:8181
-export INFLUXDB_TOKEN=$(docker exec influxdb3-test influxdb3 create token --admin --format json | jq -r .token)
+export INFLUXDB_ADMIN_TOKEN=$(docker exec influxdb3-test influxdb3 create token --admin --format json | jq -r .token)
 PRODUCT=core evals/run-examples.sh
 docker rm -f influxdb3-test
 ```
