@@ -7,7 +7,7 @@ Activate with:
     --path example_toml_config.py \\
     --trigger-spec "every:10s" \\
     --trigger-arguments "config_toml_b64=$CONFIG_TOML_B64" \\
-    --token "$INFLUXDB_TOKEN" \\
+    --token "$INFLUXDB_ADMIN_TOKEN" \\
     toml_demo
 
 The deployment command encodes TOML into one trigger argument. The plugin

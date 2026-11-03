@@ -11,7 +11,7 @@
 # token must be an admin token)
 influxdb3 create trigger \
   --database "$INFLUXDB_DATABASE" \
-  --token "$INFLUXDB_TOKEN" \
+  --token "$INFLUXDB_ADMIN_TOKEN" \
   --trigger-spec "table:sensors_demo" \
   --path "$(pwd)/process_writes_hello.py" \
   --upload \
@@ -54,7 +54,7 @@ Expected: a row with `source_table=sensors_demo` and `row_count=1`.
 ```bash
 influxdb3 delete trigger \
   --database "$INFLUXDB_DATABASE" \
-  --token "$INFLUXDB_TOKEN" \
+  --token "$INFLUXDB_ADMIN_TOKEN" \
   --force \
   wal_hello
 ```

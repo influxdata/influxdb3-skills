@@ -55,21 +55,21 @@ The new token's secret value is printed to stdout **once** when created — capt
 influxdb3 create token \
   --permission "db:<dbname>:read,write" \
   --name <token-name> \
-  --token "$INFLUXDB_TOKEN"
+  --token "$INFLUXDB_ADMIN_TOKEN"
 
 # Multiple permissions
 influxdb3 create token \
   --permission "db:db1:read,write" \
   --permission "db:db2:read" \
   --name <token-name> \
-  --token "$INFLUXDB_TOKEN"
+  --token "$INFLUXDB_ADMIN_TOKEN"
 
 # With expiry
 influxdb3 create token \
   --permission "db:<dbname>:read,write" \
   --name <token-name> \
   --expiry 30d \
-  --token "$INFLUXDB_TOKEN"
+  --token "$INFLUXDB_ADMIN_TOKEN"
 ```
 
 Resource type: `db` or `system`. Action: `read` or `write`. `*` is allowed for `RESOURCE_NAMES` (e.g., `db:*:read,write` to grant cross-database access — use sparingly).

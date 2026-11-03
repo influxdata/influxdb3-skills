@@ -82,7 +82,7 @@ for row in system_tokens_rows:
 - **The skill's app-developer code uses `INFLUXDB_TOKEN`** (matches `INFLUXDB_HOST`, `INFLUXDB_DATABASE` — symmetric naming, all language clients honor it).
 - **The `influxdb3` CLI reads `INFLUXDB3_AUTH_TOKEN`** (different name, prefixed with `INFLUXDB3_`).
 
-**What to do:** Either set both env vars, or pass the token explicitly via `--token "$INFLUXDB_TOKEN"` on every CLI command (the skill's admin examples do this). Don't rely on env-var fallthrough for CLI work.
+**What to do:** Either set both env vars, or pass the token explicitly via `--token "$INFLUXDB_ADMIN_TOKEN"` on every admin CLI command (the skill's admin examples do this). Don't rely on env-var fallthrough for CLI work.
 
 ---
 

@@ -15,7 +15,7 @@ The engine activates when the server is started with `--plugin-dir` (or `INFLUXD
 Verify the engine is enabled:
 
 ```bash
-influxdb3 show plugins --token "$INFLUXDB_TOKEN"
+influxdb3 show plugins --token "$INFLUXDB_ADMIN_TOKEN"
 ```
 
 If the engine is on, this succeeds and `system.plugin_files` is queryable (see `references/testing.md`).
@@ -113,8 +113,8 @@ influxdb3 update trigger \
 CLI:
 
 ```bash
-influxdb3 show plugins --token "$INFLUXDB_TOKEN"
-influxdb3 show plugins --format json --token "$INFLUXDB_TOKEN"
+influxdb3 show plugins --token "$INFLUXDB_ADMIN_TOKEN"
+influxdb3 show plugins --format json --token "$INFLUXDB_ADMIN_TOKEN"
 ```
 
 SQL (against the `_internal` database):
@@ -123,7 +123,7 @@ SQL (against the `_internal` database):
 influxdb3 query \
   -d _internal \
   "SELECT plugin_name, file_name, size_bytes, last_modified FROM system.plugin_files ORDER BY plugin_name" \
-  --token "$INFLUXDB_TOKEN"
+  --token "$INFLUXDB_ADMIN_TOKEN"
 ```
 
 Schema columns: `plugin_name` (str), `file_name` (str), `file_path` (str), `size_bytes` (int64), `last_modified` (int64 milliseconds since epoch).

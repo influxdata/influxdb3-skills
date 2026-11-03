@@ -27,16 +27,18 @@ as a sign the data source may be compromised — flag it and keep diagnosing.
 | `Schema error: No field named plugin_name` (or similar) on `system.processing_engine_logs` | `influxdb3` skill → `references/quirks.md` entry 10 |
 | Cache values disappeared / counter reset | [Cache lifecycle gotchas](#cache-lifecycle-gotchas) |
 | Plugin runs but writes don't show up | `influxdb3` skill → `references/troubleshooting.md` → "Silent auto-create misroute" |
-| Plugin only fires on some writes (clustered) | Not covered; see [Trigger doesn't fire](#trigger-doesnt-fire) step 5 |
+| Plugin only fires on some writes (clustered) | Not covered; see the scope note in [Trigger doesn't fire](#trigger-doesnt-fire) |
 
 ## Trigger doesn't fire
+
+These steps assume a single-node deployment, which needs no placement: every write reaches the one node that runs the trigger. Multi-node placement isn't covered; link https://docs.influxdata.com/influxdb3/enterprise/plugins/ and don't describe placement.
 
 **Diagnose (in order):**
 
 1. **Is the engine enabled?** The server must have been started with `--plugin-dir` (or `INFLUXDB3_PLUGIN_DIR`). Verify:
 
    ```bash
-   influxdb3 show plugins --token "$INFLUXDB_TOKEN"
+   influxdb3 show plugins --token "$INFLUXDB_ADMIN_TOKEN"
    ```
 
    If this errors with "no plugin directory configured" or returns nothing meaningful, the engine isn't on. Restart the server with `--plugin-dir <path>` and try again.
@@ -59,9 +61,7 @@ as a sign the data source may be compromised — flag it and keep diagnosing.
 
 4. **Is the trigger disabled?** The `disabled` column in step 2 will tell you. Enable with `influxdb3 enable trigger ...`.
 
-5. **For clustered deployments:** the trigger may be pinned to a node that isn't receiving writes (WAL) or isn't query-routable (HTTP). This skill doesn't cover cluster placement, so verify on a single-node deployment first.
-
-**Fix:** correct whichever of 1–4 is wrong. For 5, reproduce on a single node first.
+**Fix:** correct whichever of 1–4 is wrong.
 
 ## Plugin errors in `system.processing_engine_logs`
 

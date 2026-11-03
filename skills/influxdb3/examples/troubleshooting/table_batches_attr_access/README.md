@@ -57,7 +57,7 @@ influxdb3 create trigger \
   --trigger-spec "table:demo_attr" \
   --path "$(pwd)/broken.py" \
   --upload \
-  --token "$INFLUXDB_TOKEN" \
+  --token "$INFLUXDB_ADMIN_TOKEN" \
   attr_demo_broken
 
 # Cause it to fire by writing a point to the watched table
@@ -77,7 +77,7 @@ influxdb3 update trigger \
   --database "$INFLUXDB_DATABASE" \
   --trigger-name attr_demo_broken \
   --path "$(pwd)/fixed.py" \
-  --token "$INFLUXDB_TOKEN"
+  --token "$INFLUXDB_ADMIN_TOKEN"
 
 # Fire again
 NOW=$(date +%s)
@@ -92,7 +92,7 @@ influxdb3 query -d "$INFLUXDB_DATABASE" --token "$INFLUXDB_TOKEN" \
    WHERE trigger_name='attr_demo_broken' ORDER BY event_time DESC LIMIT 5"
 
 # Cleanup
-influxdb3 delete trigger --database "$INFLUXDB_DATABASE" --force --token "$INFLUXDB_TOKEN" attr_demo_broken
+influxdb3 delete trigger --database "$INFLUXDB_DATABASE" --force --token "$INFLUXDB_ADMIN_TOKEN" attr_demo_broken
 ```
 
 ## Where to fetch more
