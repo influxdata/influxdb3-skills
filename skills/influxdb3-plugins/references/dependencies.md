@@ -21,6 +21,8 @@ influxdb3 install package pandas
 influxdb3 install package requests numpy        # multiple at once
 ```
 
+The package lands in `<PLUGIN_DIR>/.venv`, the venv the plugins run in. Don't create a separate venv with system Python (`python -m venv`) for plugins.
+
 Docker:
 
 ```bash
@@ -31,7 +33,7 @@ HTTP API:
 
 ```bash
 curl -X POST "$INFLUXDB_HOST/api/v3/configure/plugin_environment/install_packages" \
-  --header "Authorization: Bearer $INFLUXDB_TOKEN" \
+  --header "Authorization: Bearer $INFLUXDB_ADMIN_TOKEN" \
   --header "Content-Type: application/json" \
   --data '{"packages": ["pandas", "requests", "numpy"]}'
 ```

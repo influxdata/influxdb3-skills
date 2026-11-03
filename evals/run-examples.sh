@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 # Run the influxdb3 skill's runnable examples against a live InfluxDB 3 instance.
 #
-#   INFLUXDB_HOST=http://127.0.0.1:8181 INFLUXDB_TOKEN=... PRODUCT=core evals/run-examples.sh
+#   INFLUXDB_HOST=http://127.0.0.1:8181 INFLUXDB_ADMIN_TOKEN=... PRODUCT=core evals/run-examples.sh
+#
+# INFLUXDB_TOKEN is the token the data examples use. It defaults to the admin
+# token, because Core has admin tokens only.
 #
 # PRODUCT is core or enterprise. The admin lifecycle examples need resource
 # tokens, so they run only for enterprise. The examples are copied to a temp
@@ -10,7 +13,8 @@
 set -euo pipefail
 
 : "${INFLUXDB_HOST:?set INFLUXDB_HOST}"
-: "${INFLUXDB_TOKEN:?set INFLUXDB_TOKEN (an admin token)}"
+: "${INFLUXDB_ADMIN_TOKEN:?set INFLUXDB_ADMIN_TOKEN (an admin token)}"
+export INFLUXDB_TOKEN=${INFLUXDB_TOKEN:-$INFLUXDB_ADMIN_TOKEN}
 PRODUCT=${PRODUCT:-core}
 repo=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 work=$(mktemp -d)
@@ -21,15 +25,15 @@ cp -R "$repo/skills/influxdb3/examples/." "$work/"
 export INFLUXDB_DATABASE=$DB MAVEN_OPTS=${MAVEN_OPTS:---add-opens=java.base/java.nio=ALL-UNNAMED}
 export DOTNET_CLI_TELEMETRY_OPTOUT=1 DOTNET_NOLOGO=1
 
-redact() { TOKEN=$INFLUXDB_TOKEN perl -pe 's/\Q$ENV{TOKEN}\E/<redacted>/g; s/apiv3_[A-Za-z0-9+\/_=-]{12,}/<redacted>/g'; }
+redact() { TOKEN=$INFLUXDB_TOKEN ADMIN=$INFLUXDB_ADMIN_TOKEN perl -pe 's/\Q$ENV{TOKEN}\E/<redacted>/g; s/\Q$ENV{ADMIN}\E/<redacted>/g; s/apiv3_[A-Za-z0-9+\/_=-]{12,}/<redacted>/g'; }
 
 database() { # create|delete
 	if [[ $1 == create ]]; then
 		curl -sS -o /dev/null -w '%{http_code}' -X POST "$INFLUXDB_HOST/api/v3/configure/database" \
-			-H "Authorization: Bearer $INFLUXDB_TOKEN" -H 'Content-Type: application/json' --data "{\"db\":\"$DB\"}"
+			-H "Authorization: Bearer $INFLUXDB_ADMIN_TOKEN" -H 'Content-Type: application/json' --data "{\"db\":\"$DB\"}"
 	else
 		curl -sS -o /dev/null -w '%{http_code}' -X DELETE "$INFLUXDB_HOST/api/v3/configure/database?db=$DB&hard_delete_at=now" \
-			-H "Authorization: Bearer $INFLUXDB_TOKEN"
+			-H "Authorization: Bearer $INFLUXDB_ADMIN_TOKEN"
 	fi
 }
 

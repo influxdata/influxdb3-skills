@@ -176,9 +176,9 @@ func writePoint(host, scopedToken, db, line string) (int, error) {
 func main() {
 	_ = godotenv.Load()
 	host := os.Getenv("INFLUXDB_HOST")
-	admin := os.Getenv("INFLUXDB_TOKEN")
+	admin := os.Getenv("INFLUXDB_ADMIN_TOKEN")
 	if host == "" || admin == "" {
-		fmt.Fprintln(os.Stderr, "INFLUXDB_HOST and INFLUXDB_TOKEN are required")
+		fmt.Fprintln(os.Stderr, "INFLUXDB_HOST and INFLUXDB_ADMIN_TOKEN are required")
 		os.Exit(1)
 	}
 

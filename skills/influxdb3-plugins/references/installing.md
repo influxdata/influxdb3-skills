@@ -51,7 +51,7 @@ On Core and Enterprise 3.12.1, raw octet-stream PUT is not the upload contract.
 jq -n --arg name my_plugin.py --rawfile source /absolute/local/path/my_plugin.py \
   '{plugin_name: $name, content: $source}' | \
   curl --fail-with-body -X POST "$INFLUXDB_HOST/api/v3/plugins/files" \
-    --header "Authorization: Bearer $INFLUXDB_TOKEN" \
+    --header "Authorization: Bearer $INFLUXDB_ADMIN_TOKEN" \
     --header "Content-Type: application/json" \
     --data-binary @-
 ```

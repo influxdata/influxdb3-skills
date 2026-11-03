@@ -26,6 +26,8 @@ Claim IDs (`claim-YYYYMMDD-NNNN`) refer to InfluxData's internal verification le
 - State in the skill body that `/ping` requires a token by default, how `--disable-authz` opts routes out, and the naming and reserved-word rules. Agents rarely opened the references that held them.
 - Distinguish InfluxDB 3 Cloud (hosted Enterprise) from the other Cloud products, and say `/api/v3/*` fails on InfluxDB Cloud Serverless and InfluxDB Cloud Dedicated.
 - Stop naming plugin placement flags in the scope note, which agents repeated as facts, and say single-node deployments don't have the routing problem.
+- Say that `INFLUXDB_TOKEN` and `INFLUXDB_ADMIN_TOKEN` are the skill's names, and that the `influxdb3` CLI reads `INFLUXDB3_AUTH_TOKEN` when `--token` is absent. The docs use only `INFLUXDB3_AUTH_TOKEN` and placeholders, so the skill states the difference instead of renaming. The admin lifecycle examples, the example runner, and CI now read the admin token from `INFLUXDB_ADMIN_TOKEN`.
+- Name `<PLUGIN_DIR>/.venv` and the system-Python warning at the package install step, where agents read them.
 - Put the single-node scope note at the top of the plugin "Trigger doesn't fire" steps, and remove the step that described trigger pinning on clusters. Agents repeated that step as placement guidance.
 - Correct the embedded venv path to `<PLUGIN_DIR>/.venv`, observed on Core 3.12.1 and 3.12.2.
 - Note that Core 3.12.2 returns 429 instead of 500 for most out-of-memory queries, per its release notes.

@@ -9,9 +9,9 @@
 import 'dotenv/config';
 
 const host = process.env.INFLUXDB_HOST;
-const adminToken = process.env.INFLUXDB_TOKEN;
+const adminToken = process.env.INFLUXDB_ADMIN_TOKEN;
 if (!host || !adminToken) {
-  throw new Error('INFLUXDB_HOST and INFLUXDB_TOKEN are required');
+  throw new Error('INFLUXDB_HOST and INFLUXDB_ADMIN_TOKEN are required');
 }
 
 const ts = Math.floor(Date.now() / 1000);
