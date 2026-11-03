@@ -8,7 +8,7 @@
 #   8. delete DB                        9. delete rotated token
 #   10. final orphan check
 #
-# Reads INFLUXDB_HOST and INFLUXDB_ADMIN_TOKEN, INFLUXDB_TOKEN from env.
+# Reads INFLUXDB_HOST and INFLUXDB_TOKEN (admin) from env.
 # Generates the test DB name at runtime so multiple runs don't collide.
 #
 # Note: requires InfluxDB 3 Enterprise or InfluxDB 3 Cloud: step 3 creates a
