@@ -1,10 +1,10 @@
 # Installing InfluxDB 3 (Core & Enterprise)
 
-For users who installed the `influxdb3-skills` plugin but don't have a server yet. Covers Core and Enterprise on macOS / Linux. Two paths are spelled out here: the official install script (first-time / single-machine) and Docker (isolation). Other methods are listed under "Other install methods".
+Covers Core and Enterprise on macOS and Linux. Two paths are spelled out here: the official install script (first-time / single-machine) and Docker (isolation). Other methods are listed under "Other install methods".
 
 > **Cloud Serverless and Cloud Dedicated** are managed services — they're not installed locally. Sign up at https://www.influxdata.com/products/influxdb-overview/ for those flavors. Once you have credentials, return to `references/connecting.md`. The agent doesn't create accounts on your behalf.
 
-> **Already have an instance running?** Skip to `SKILL.md` §2 (Setup checklist).
+> **Already have an instance running?** Skip to [`SKILL.md` §2](../SKILL.md#2-setup-checklist) (Setup checklist).
 
 ## Decision: Core or Enterprise?
 
@@ -13,7 +13,6 @@ For users who installed the `influxdb3-skills` plugin but don't have a server ye
 | License | Free, open source | Commercial — needs license activation |
 | Single-node | ✅ | ✅ |
 | Multi-node clustering | ❌ | ✅ |
-| Last-value & distinct-value caches | ✅ | ✅ |
 | HA / read replicas | ❌ | ✅ |
 | Object store backends | local, S3, Azure, GCS | local, S3, Azure, GCS |
 | When to pick | Trying it out, dev/test, small production | Production that needs HA or multiple nodes |
@@ -22,7 +21,7 @@ If you're not sure, start with Core. You can move to Enterprise later — the da
 
 ## Install path A: Official install script (fastest)
 
-The script auto-detects your OS, downloads the right binary, and puts it under `~/.influxdb/`.
+The script detects your OS and installs the latest release, not a pinned version. Use Docker or a package to pin a version.
 
 **Core:**
 ```bash
@@ -36,14 +35,11 @@ curl -O https://www.influxdata.com/d/install_influxdb3.sh
 sh install_influxdb3.sh enterprise
 ```
 
-After install, `~/.influxdb/influxdb3` is the binary. You may want to symlink it onto your PATH:
-```bash
-sudo ln -s ~/.influxdb/influxdb3 /usr/local/bin/influxdb3
-```
+The script prints where it installed the `influxdb3` binary. Add that directory to your `PATH`.
 
 ## Install path B: Docker
 
-Image: `influxdb:3-core` or `influxdb:3-enterprise` (AMD64 and ARM64). Pin a version with a tag such as `influxdb:3.12-core`.
+Image: `influxdb:3-core` or `influxdb:3-enterprise` (AMD64 and ARM64). Pin a version with a tag such as `influxdb:3.12.1-core`.
 
 Best when you want isolation, easy version pinning, or are testing alongside an existing install.
 
@@ -80,13 +76,13 @@ docker run -d \
     --license-type home
 ```
 
-The interactive license prompt doesn't work in containers, so always pass the email (`--license-email` or the `INFLUXDB3_LICENSE_EMAIL` env var) and a type. The server then waits for you to click the verification link in the email. Watch progress with `docker logs -f influxdb3-enterprise`. After verification the license is cached in the data volume and later boots need no interaction.
+The interactive license prompt doesn't work in containers, so always pass the email and type. Watch for the verification step with `docker logs -f influxdb3-enterprise`. See [Enterprise license activation](#first-boot-starting-the-server) below.
 
 ## Other install methods
 
 Not covered step by step here. Follow the docs for these:
 
-- **Linux DEB / RPM packages** (`apt-get install influxdb3-core` or `influxdb3-enterprise`): docs recommend these for non-Docker production because the systemd unit adds sandboxing. Settings live in `/etc/influxdb3/influxdb3-<core|enterprise>.conf` (TOML), which the package presets with `object-store`, `data-dir`, `plugin-dir` and `node-id`.
+- **Linux DEB / RPM packages** (`apt-get install influxdb3-core` or `influxdb3-enterprise`): for production, the docs recommend these packages, for their systemd sandboxing, or Docker with your own container security settings. Settings live in `/etc/influxdb3/influxdb3-<core|enterprise>.conf` (TOML), which the package presets with `object-store`, `data-dir`, `plugin-dir` and `node-id`.
 - **Binary tarballs** for Linux (AMD64, ARM64), macOS (Apple silicon) and Windows (AMD64).
 - **Docker Compose**, and Kubernetes for Enterprise.
 
@@ -133,11 +129,11 @@ If you already have a license file, pass `--license-file <path>` and skip `--lic
 
 Each flag has an environment variable: `INFLUXDB3_LICENSE_EMAIL`, `INFLUXDB3_LICENSE_TYPE`, `INFLUXDB3_LICENSE_FILE` (v3.11+). Other `serve` flags follow the same pattern, for example `INFLUXDB3_OBJECT_STORE`, `INFLUXDB3_DATA_DIR`, and `INFLUXDB3_PLUGIN_DIR`.
 
-> **Don't run a bare `serve`.** On a new/fresh cluster (no cached license), give the complete start command with `--license-email you@example.com` and `--license-type home` as marked placeholders, and ask the developer for their real email and type before you run it for them. Never run it with the placeholder email. A license-less non-interactive start **fails fast** with `No interactive TTY detected. Cannot prompt for email.` — it does not hang; supplying `--license-email` is what avoids the prompt. Note: `--object-store memory` can't cache the license, so prefer a file store (below).
+> **Don't run a bare `serve`.** On a new cluster with no cached license, give the complete start command with `--license-email you@example.com` and `--license-type home` as marked placeholders, and ask the developer for their real email and type before you run it. Never run it with the placeholder email. Without `--license-email`, a non-interactive start fails with `No interactive TTY detected. Cannot prompt for email.` `--object-store memory` can't cache the license, so use a file store.
 
 ## Object store: required; use `file`, and avoid `memory` for anything you run more than once
 
-`--object-store` (env `INFLUXDB3_OBJECT_STORE`) selects where the catalog and Parquet data live. It's **required and has no default** (3.2.1+), so every `serve` command must set it. Don't rely on `serve --help` text or older guides that name a default. Supported backends:
+`--object-store` (env `INFLUXDB3_OBJECT_STORE`) selects where the catalog and Parquet data live. It's **required and has no default** (3.2.1+), so every `serve` command must set it. Don't rely on `serve --help` text or older guides that name a default. For local work, use `--object-store file --data-dir <path>`. Supported backends:
 
 | `--object-store` | Data | When to use |
 |---|---|---|
@@ -152,24 +148,27 @@ Each flag has an environment variable: `INFLUXDB3_LICENSE_EMAIL`, `INFLUXDB3_LIC
 
 The very first token is created without authentication (this only works once, and only against an instance that has no admin tokens yet).
 
-> **Caution:** until the first admin token exists, the token endpoint accepts unauthenticated requests and the server listens on all interfaces (`--http-bind` defaults to `0.0.0.0:8181`). Create the token before exposing the port. On a reachable network, start with `--http-bind 127.0.0.1:8181` (Docker: publish `-p 127.0.0.1:8181:8181`), create the token, then restart on the address you want. Or start with a preconfigured admin token (`doc-urls.md` → "Preconfigured admin token").
+> **Caution:** until the first admin token exists, the token endpoint accepts unauthenticated requests and the server listens on all interfaces (`--http-bind` defaults to `0.0.0.0:8181`). Create the token before exposing the port. On a reachable network, start with `--http-bind 127.0.0.1:8181` (Docker: publish `-p 127.0.0.1:8181:8181`), create the token, then restart on the address you want. Or start with a preconfigured admin token ([`doc-urls.md` → "Preconfigured admin token"](doc-urls.md)).
 
 ```bash
 influxdb3 create token --admin
 ```
 
-The token is shown once in the response, so copy it right away. Add `.env` to `.gitignore`, then save the values to `.env`:
+The token is shown once in the response, so copy it right away. Add `.env` to `.gitignore`, then save the values to `.env` and load them:
 ```bash
 grep -qxF '.env' .gitignore 2>/dev/null || echo '.env' >> .gitignore
 echo "INFLUXDB_HOST=http://localhost:8181" >> .env
-echo "INFLUXDB_TOKEN=<paste-the-token-here>" >> .env
+echo "INFLUXDB_ADMIN_TOKEN=<paste-the-token-here>" >> .env
+set -a; . ./.env; set +a
 ```
+
+Store tokens in environment variables, not in code. This is an admin token, so don't use it in application code. Create a separate token for the application and save it as `INFLUXDB_TOKEN` (`references/tokens.md`).
 
 ## Verify it works
 
 ```bash
 influxdb3 --version
-curl -sS -i -H "Authorization: Bearer $INFLUXDB_TOKEN" http://localhost:8181/ping
+curl -sS -i -H "Authorization: Bearer $INFLUXDB_ADMIN_TOKEN" "$INFLUXDB_HOST/ping"
 # expect: HTTP/1.1 200 OK with x-influxdb-build and x-influxdb-version headers
 ```
 
@@ -177,15 +176,15 @@ If you see `HTTP/1.1 200 OK` with `x-influxdb-build: Core` (or `Enterprise`), yo
 
 To tell which edition and version an existing instance runs, use the docs' identify-version pages: https://docs.influxdata.com/influxdb3/core/admin/identify-version/ (same content under `/influxdb3/enterprise/`). `references/flavor-detection.md` covers the full procedure.
 
-> **Quirk:** `HEAD /ping` returns 404 — only `GET /ping` works. See `references/quirks.md` entry 1.
+> **Quirk:** `HEAD /ping` returns 404 — only `GET /ping` works. See [`references/quirks.md` entry 1](quirks.md#1-head-ping-returns-404-only-get-ping-works).
 
 ## Next steps
 
 You now have a running, authenticated InfluxDB 3 instance. Pick your path:
 
-- Want to write data and query it? → `SKILL.md` §2 (Setup checklist) → §4–§6 (Connect, Write, Query)
+- Want to write data and query it? → [`SKILL.md` §2](../SKILL.md#2-setup-checklist) (Setup checklist) → [§4](../SKILL.md#4-connecting-and-authenticating)–[§6](../SKILL.md#6-querying-data) (Connect, Write, Query)
 - Want to provision a database now? → `references/databases.md`
-- Want to develop a Processing Engine plugin? → sibling skill `influxdb3-plugins` (you'll need to ensure `--plugin-dir` is set, which the commands above already do)
+- Want to develop a Processing Engine plugin? → sibling skill `influxdb3-plugins`. The server needs `--plugin-dir`, which the commands above set.
 
 ## Where to fetch more
 

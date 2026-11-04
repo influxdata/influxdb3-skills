@@ -4,7 +4,7 @@
 
 InfluxDB 3 supports SQL (Apache DataFusion under the hood) and InfluxQL. Use the language the developer asks for. When they don't say, generate SQL.
 
-InfluxDB 3 doesn't run Flux. Migration from Flux is out of scope; see SKILL.md §9.
+InfluxDB 3 doesn't run Flux. Migration from Flux is out of scope; see [SKILL.md §9](../SKILL.md#9-not-covered).
 
 ## Time idioms
 
@@ -36,12 +36,12 @@ Never string-concatenate user input into a query — this is a **SQL injection**
 
 | Language | Example reference |
 |---|---|
-| Python | `references/clients/python.md` → "Parameterized SQL query" |
-| JavaScript | `references/clients/javascript.md` → "Parameterized SQL query" |
-| Go | `references/clients/go.md` → "Parameterized SQL query" |
-| Java | `references/clients/java.md` → "Parameterized SQL query" |
-| C# | `references/clients/csharp.md` → "Parameterized SQL query" |
-| Raw HTTP | `references/clients/http.md` → "Parameterizing user input" |
+| Python | [`references/clients/python.md` → "Parameterized SQL query"](clients/python.md#parameterized-sql-query) |
+| JavaScript | [`references/clients/javascript.md` → "Parameterized SQL query"](clients/javascript.md#parameterized-sql-query) |
+| Go | [`references/clients/go.md` → "Parameterized SQL query"](clients/go.md#parameterized-sql-query) |
+| Java | [`references/clients/java.md` → "Parameterized SQL query"](clients/java.md#parameterized-sql-query) |
+| C# | [`references/clients/csharp.md` → "Parameterized SQL query"](clients/csharp.md#parameterized-sql-query) |
+| Raw HTTP | [`references/clients/http.md` → "Parameterizing user input"](clients/http.md#parameterizing-user-input) |
 
 ## Pagination
 
@@ -96,4 +96,4 @@ Select system-table columns by name rather than parsing `SELECT *` positionally,
 
 ## Where to fetch more
 
-`references/doc-urls.md` → "SQL reference" or "InfluxQL reference".
+[`references/doc-urls.md` → "SQL reference"](doc-urls.md) or "InfluxQL reference".

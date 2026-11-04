@@ -82,7 +82,7 @@ influxdb3 update database -d <name> -r none --token "$INFLUXDB_ADMIN_TOKEN"
 influxdb3 delete database <name> -y --token "$INFLUXDB_ADMIN_TOKEN"
 ```
 
-The CLI **prompts for confirmation** (3.10+); pass `-y`/`--yes` for scripting (without it, a non-interactive run fails with `Cannot proceed without confirmation`, exit 1). The HTTP API `DELETE /api/v3/configure/database?db=<name>` never prompts. See `references/quirks.md` entry 7. Advanced options:
+The CLI **prompts for confirmation** (3.10+); pass `-y`/`--yes` for scripting (without it, a non-interactive run fails with `Cannot proceed without confirmation`, exit 1). The HTTP API `DELETE /api/v3/configure/database?db=<name>` never prompts. See [`references/quirks.md` entry 7](quirks.md#7-delete-database-uses--y--yes-to-skip-the-prompt--there-is-no---force). Advanced options:
 
 ```bash
 # Soft-delete: keep data and resources, mark for hard-delete later
@@ -132,7 +132,7 @@ With the default config, InfluxDB 3 Core and Enterprise silently auto-create a d
    influxdb3 delete database <typo_name> -y --token "$INFLUXDB_ADMIN_TOKEN"
    ```
 
-For prevention guidance, see the setup checklist in `SKILL.md` §2 and `references/connecting.md` → "The silent auto-create footgun".
+For prevention guidance, see the setup checklist in [`SKILL.md` §2](../SKILL.md#2-setup-checklist) and [`references/connecting.md` → "The silent auto-create footgun"](connecting.md#the-silent-auto-create-footgun).
 
 ## Reserved or problematic names
 
@@ -142,4 +142,4 @@ For prevention guidance, see the setup checklist in `SKILL.md` §2 and `referenc
 
 ## Where to fetch more
 
-`references/doc-urls.md` → "Enterprise CLI reference" for the database commands.
+[`references/doc-urls.md` → "Enterprise CLI reference"](doc-urls.md) for the database commands.

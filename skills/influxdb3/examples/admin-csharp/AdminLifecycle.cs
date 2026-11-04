@@ -112,8 +112,8 @@ public static class AdminLifecycle
         Env.Load();
         var host = Environment.GetEnvironmentVariable("INFLUXDB_HOST")
             ?? throw new InvalidOperationException("INFLUXDB_HOST required");
-        _adminToken = Environment.GetEnvironmentVariable("INFLUXDB_TOKEN")
-            ?? throw new InvalidOperationException("INFLUXDB_TOKEN required");
+        _adminToken = Environment.GetEnvironmentVariable("INFLUXDB_ADMIN_TOKEN")
+            ?? throw new InvalidOperationException("INFLUXDB_ADMIN_TOKEN required");
         _http = new HttpClient { BaseAddress = new Uri(host), Timeout = TimeSpan.FromSeconds(10) };
 
         var ts = DateTimeOffset.UtcNow.ToUnixTimeSeconds();

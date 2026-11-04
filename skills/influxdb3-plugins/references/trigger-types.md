@@ -154,4 +154,4 @@ def process_scheduled_call(influxdb3_local, call_time, args=None):
 
 ## Where to fetch more
 
-`references/doc-urls.md` → "Processing engine and Python plugins" → trigger-spec syntax section.
+[`references/doc-urls.md` → "Processing engine and Python plugins"](doc-urls.md) → trigger-spec syntax section.

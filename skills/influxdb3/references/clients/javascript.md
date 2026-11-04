@@ -32,7 +32,7 @@ const points = Array.from({ length: 1000 }, () =>
 await client.write(points);
 ```
 
-`@influxdata/influxdb3-client` 2.3.0+ writes through `/api/v2/write` by default, so one invalid line rejects the whole batch. For partial writes or `noSync` on InfluxDB 3 Core or Enterprise, set `useV2Api: false`. See `references/writing.md` → "Official clients write through `/api/v2/write` by default".
+`@influxdata/influxdb3-client` 2.3.0+ writes through `/api/v2/write` by default, so one invalid line rejects the whole batch. For partial writes or `noSync` on InfluxDB 3 Core or Enterprise, set `useV2Api: false`. See [`references/writing.md` → "Official clients write through `/api/v2/write` by default"](../writing.md#official-clients-write-through-apiv2write-by-default).
 
 ## Parameterized SQL query
 
@@ -53,4 +53,4 @@ Catch and inspect `error.statusCode`. Treat 429 / 5xx as retriable; 400 / 401 / 
 
 ## Where to fetch more
 
-`references/doc-urls.md` → "JavaScript / TypeScript".
+[`references/doc-urls.md` → "JavaScript / TypeScript"](../doc-urls.md).

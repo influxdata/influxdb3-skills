@@ -26,7 +26,7 @@ Most code is portable across flavors when host and token are env-driven; this re
 ## Notable per-flavor gotchas
 
 ### Core
-Single-node, open source. Admin tokens only: no resource tokens and no RBAC (`references/tokens.md` → "InfluxDB 3 Core: admin tokens only"). `--object-store` is required with no default (3.2.1+).
+Single-node, open source. Admin tokens only: no resource tokens and no RBAC ([`references/tokens.md` → "InfluxDB 3 Core: admin tokens only"](tokens.md#influxdb-3-core-admin-tokens-only)). `--object-store` is required with no default (3.2.1+).
 
 ### Enterprise
 Single node or multi-node cluster, with replication. Adds resource tokens with per-database and system permissions.

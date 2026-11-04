@@ -1,10 +1,10 @@
-# Token Management
+# Token management
 
 ## Three kinds of tokens
 
 | Token type | When created | Used for | Stored where |
 |---|---|---|---|
-| **Operator token** (`_admin`) | The first `influxdb3 create token --admin` on a new Core or Enterprise server; for other products, as that product's docs describe | Admin operations: creating databases and other tokens. It can't be deleted; regenerate it to rotate it | Printed once at creation, or the product's UI |
+| **Operator token** (`_admin`) | The first `influxdb3 create token --admin` on a new Core or Enterprise server; for other products, as that product's docs describe | Admin operations: creating databases and other tokens. It can't be deleted; regenerate it to rotate it | Shown once at creation. Store it in `INFLUXDB_ADMIN_TOKEN` or a secret manager |
 | **Named admin token** | `influxdb3 create token --admin --name <name>` | Admin automation, and application code on Core | The consumer's secret manager or env var |
 | **Scoped resource token** *(Enterprise and InfluxDB 3 Cloud only)* | Created via `--permission` referencing a specific database | Application code: writing data, querying | The application's `INFLUXDB_TOKEN` env var, or its secret manager |
 
@@ -21,7 +21,7 @@
   Run Core in a trusted context, and treat any Core token as full admin.
   One leaked token compromises the whole instance.
 - Give each Core application its own named admin token, not the operator token:
-  `influxdb3 create token --admin --name <app> --token <admin-token>`, with optional `--expiry`.
+  `influxdb3 create token --admin --name <app> --token "$INFLUXDB_ADMIN_TOKEN"`, with optional `--expiry`.
   You can then delete or replace one application's token without regenerating the operator token, which deactivates the old one for every client that uses it.
 
 ## CLI
@@ -32,8 +32,8 @@
 # Create a new named admin token
 influxdb3 create token --admin --name <name> --token "$INFLUXDB_ADMIN_TOKEN"
 
-# Regenerate the operator token (rotate the bootstrap admin).
-# The old operator token stops working immediately (401).
+# Regenerate the operator token (rotate the bootstrap admin). Pass the current
+# operator token. The old operator token stops working immediately (401).
 influxdb3 create token --admin --regenerate --token "$INFLUXDB_ADMIN_TOKEN"
 
 # With expiry
@@ -42,9 +42,9 @@ influxdb3 create token --admin --name <name> --expiry 90d --token "$INFLUXDB_ADM
 
 The new token's secret value is printed to stdout **once** when created — capture it immediately. The server stores only a hash; if you lose the plaintext, you must create a new token.
 
-> **Scripting token capture? Use `--format json`** — the default text output contains ANSI color codes that corrupt a grepped token. Parse the `token` field instead:
+> **Scripting token capture? Use `--format json`** — the default text output contains ANSI color codes that corrupt a grepped token. Parse the `token` field instead. Without `--token`, this works only for the first (bootstrap) admin token on a new server:
 > ```bash
-> TOKEN=$(influxdb3 create token --admin --format json | jq -r .token)
+> INFLUXDB_ADMIN_TOKEN=$(influxdb3 create token --admin --format json | jq -r .token)
 > ```
 
 ### Create a scoped resource token
@@ -72,7 +72,7 @@ influxdb3 create token \
   --token "$INFLUXDB_ADMIN_TOKEN"
 ```
 
-Resource type: `db` or `system`. Action: `read` or `write`. `*` is allowed for `RESOURCE_NAMES` (e.g., `db:*:read,write` to grant cross-database access — use sparingly).
+Resource type: `db` or `system`. Action for `db`: `read` or `write`. `system` permissions are read-only. `*` is allowed for `RESOURCE_NAMES` (e.g., `db:*:read,write` to grant cross-database access — use sparingly).
 
 ### List tokens
 
@@ -87,9 +87,9 @@ The CLI internally queries `system.tokens` under `_internal`. Equivalent SQL:
 SELECT * FROM system.tokens;
 ```
 
-> **Filtering by name? Bind it, don't interpolate.** Token names are user-chosen, so `WHERE name = '<name>'` built by string-concatenation is a SQL-injection vector. Pass the name as a bound parameter (`WHERE name = $name` with a `params`/`query_parameters` object) — see `references/querying.md` → "Parameterize user input" and the `examples/admin-*/` lifecycle scripts.
+> **Filtering by name? Bind it, don't interpolate.** Token names are user-chosen, so `WHERE name = '<name>'` built by string-concatenation is a SQL-injection vector. Pass the name as a bound parameter (`WHERE name = $name` with a `params`/`query_parameters` object) — see [`references/querying.md` → "Parameterize user input"](querying.md#parameterize-user-input--always) and the `examples/admin-*/` lifecycle scripts.
 
-> The `permissions` column is a JSON-encoded string. See `references/admin-http-api.md` → "Schema of `system.tokens`".
+> The `permissions` column is a JSON-encoded string. See [`references/admin-http-api.md` → "List tokens"](admin-http-api.md#list-tokens--use-sql-on-systemtokens).
 
 ### Delete a token
 
@@ -105,7 +105,7 @@ Format: `<resource_type>:<resource_names>:<actions>` where:
 
 - `<resource_type>` is `db` or `system`
 - `<resource_names>` is a comma-separated list of names, or `*` for all
-- `<actions>` is `read`, `write`, or `read,write`
+- `<actions>` is `read`, `write`, or `read,write` for `db`, and `read` for `system`
 
 Examples:
 
@@ -114,7 +114,7 @@ db:sensors:read,write       Full access to one DB
 db:sensors:read             Read-only access to one DB
 db:sensors,metrics:read     Read-only across two DBs
 db:*:read                   Read-only across ALL DBs (use sparingly)
-system:*:read               Read system tables (e.g., system.tokens, system.queries)
+system:health:read          Read the /health endpoint (system permissions cover system endpoints, read-only)
 ```
 
 For HTTP-API token creation, the equivalent **structured form** is:
@@ -167,10 +167,10 @@ For InfluxDB 3 Cloud and InfluxDB Clustered, see their docs. Route to that produ
 
 | Anti-pattern | Why | Do this instead |
 |---|---|---|
-| Inline the admin token in a CI script | Anyone with read access to the repo or CI logs has full control of your InfluxDB instance | Read from `INFLUXDB_TOKEN` env or secret manager |
-| Use the admin token at the data plane (writes, queries) | One leak = total compromise; admin scope is far broader than the app needs | Create a scoped resource token; use that. On Core, you can't; see "InfluxDB 3 Core: admin tokens only." |
+| Inline the admin token in a CI script | Anyone with read access to the repo or CI logs has full control of your InfluxDB instance | Read from `INFLUXDB_ADMIN_TOKEN` env or a secret manager |
+| Use the admin token at the data plane (writes, queries) | One leak = total compromise; admin scope is far broader than the app needs | Create a scoped resource token; use that. On Core, create a separate named admin token for the app ("InfluxDB 3 Core: admin tokens only"). |
 | Per-end-user tokens in a multi-tenant SaaS | InfluxDB tokens are per-application, not per-user — creating thousands of tokens explodes operationally | Authenticate the end user in your app, then proxy the InfluxDB call with one app-scoped token |
 
 ## Where to fetch more
 
-`references/doc-urls.md` → "Enterprise CLI reference" for the token commands.
+[`references/doc-urls.md` → "Enterprise CLI reference"](doc-urls.md) for the token commands.

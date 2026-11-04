@@ -102,9 +102,9 @@ public class AdminLifecycle {
     public static void main(String[] args) throws Exception {
         Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
         host = dotenv.get("INFLUXDB_HOST", System.getenv("INFLUXDB_HOST"));
-        adminToken = dotenv.get("INFLUXDB_TOKEN", System.getenv("INFLUXDB_TOKEN"));
+        adminToken = dotenv.get("INFLUXDB_ADMIN_TOKEN", System.getenv("INFLUXDB_ADMIN_TOKEN"));
         if (host == null || adminToken == null) {
-            System.err.println("INFLUXDB_HOST and INFLUXDB_TOKEN are required");
+            System.err.println("INFLUXDB_HOST and INFLUXDB_ADMIN_TOKEN are required");
             System.exit(1);
         }
         httpc = HttpClient.newHttpClient();

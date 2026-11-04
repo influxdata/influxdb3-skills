@@ -30,7 +30,7 @@ If you see both `sensor_data` and `senor_data` (or similar), one is the typo.
 
 Generated production code should also include this kind of startup check, or explicit database creation as part of the deployment pipeline.
 
-For deeper recovery (if you've already misrouted production data), see `references/troubleshooting.md` → "Silent auto-create misroute".
+For deeper recovery (if you've already misrouted production data), see [`references/troubleshooting.md` → "Silent auto-create misroute"](../../../references/troubleshooting.md#silent-auto-create-misroute).
 
 ## Run
 
