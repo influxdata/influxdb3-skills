@@ -52,6 +52,16 @@ Claim IDs (`claim-YYYYMMDD-NNNN`) refer to InfluxData's internal verification le
 - Split eval cases that asked for several tasks or questions at once into one case per task. A compound case failed on any single miss, which hid which behavior the agent got wrong.
 - Give each eval criterion one check. Split criteria that bundled several checks, merge criteria that repeated each other, make vague criteria concrete, and drop criteria the prompt didn't ask for. The admin-token step after a Docker install and the reserved-word warning moved to their own cases.
 - Keep one copy of repeated rules (auto-create, retry and rewrite safety, `memory` object store, `gh:` trust boundary, redaction) and point to it elsewhere. Remove test-log narration, internal-source references, and filler.
+- Rewrite the CLI token quirk around passing `--token`. "Set both env vars" put the admin token in `INFLUXDB3_AUTH_TOKEN`, which the CLI then used for every command, and the fix named `INFLUXDB_ADMIN_TOKEN` without saying to set it.
+- Make the 401 checklist cover the admin token. It checked only `INFLUXDB_TOKEN`, so a 401 from an admin command went undiagnosed. The database-list `curl` now uses the admin token.
+- Correct lost-admin-token recovery. Regenerating the operator token isn't needed when another admin token works, and the docs' `--admin-token-recovery-http-bind` method replaces "follow the docs".
+- State where trigger logs live: the trigger's database or `_internal`, per the query-system-data docs. Query `system.processing_engine_triggers` in `_internal` with the admin token, as the system tables live there, and define `system.plugin_files.plugin_name` as the trigger name.
+- Lead the plugin error section with checking the server log. Uncaught exceptions can skip `system.processing_engine_logs`, and that rule was buried in test notes.
+- Rewrite the overwrite quirk from the line protocol docs: overwrites aren't deterministic, so write each change as a new point. The Core 3.12.1 duplicate-row observation stays.
+- Generalize the plugin import quirk beyond pandas and name `--virtual-env-location` for a custom venv.
+- State the cron trigger format from the `influxdb` source and its `cron` 0.15.0 parser: UTC schedules, 6 fields with an optional year, 5-field expressions rejected, and numeric weekdays starting at `1` = Sunday. The docs' `0-7` numbering makes `1-5` look like Monday through Friday, but it runs Sunday through Thursday, so the skill recommends day names.
+- Explain venv reuse after restart from the startup source: the server reuses `<PLUGIN_DIR>/.venv` or the `--virtual-env-location` path, so a changed path or an unpersisted container volume gives an empty venv.
+- Pass `--token` to `install package` and `enable trigger` like every other admin command, give the default request size for 413, condense the Enterprise 403 test notes, and add missing rows to the symptom tables.
 
 ### Live-verified behavior corrections
 

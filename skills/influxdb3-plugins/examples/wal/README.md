@@ -7,8 +7,8 @@
 ## Wire it up
 
 ```bash
-# Upload + create trigger (assumes INFLUXDB_HOST/INFLUXDB_TOKEN/INFLUXDB_DATABASE are set in your shell;
-# token must be an admin token)
+# Upload + create trigger (assumes INFLUXDB_HOST, INFLUXDB_ADMIN_TOKEN, INFLUXDB_TOKEN,
+# and INFLUXDB_DATABASE are set in your shell)
 influxdb3 create trigger \
   --database "$INFLUXDB_DATABASE" \
   --token "$INFLUXDB_ADMIN_TOKEN" \

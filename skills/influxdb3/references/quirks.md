@@ -28,7 +28,7 @@ Since 3.10 you can opt out of authorization for these routes with `--disable-aut
 
 ## 2. Silent auto-create on first write
 
-**What you'll see:** A write to a database name that doesn't exist returns 200/204 success. The data lands in a brand-new database with that exact (possibly typo'd) name. The DB you intended to write to keeps growing nothing.
+**What you'll see:** A write to a database name that doesn't exist returns 200/204 success. The data lands in a brand-new database with that exact (possibly typo'd) name.
 
 **Why:** Default config auto-creates databases on first write. The auto-create is a UX feature for getting started fast; it becomes a footgun when env vars typo or scripts drift.
 
@@ -74,15 +74,26 @@ for row in system_tokens_rows:
 
 ---
 
-## 5. `INFLUXDB_TOKEN` (skill convention) vs `INFLUXDB3_AUTH_TOKEN` (CLI env var)
+## 5. The `influxdb3` CLI doesn't read `INFLUXDB_TOKEN`
 
-**What you'll see:** A script sets `INFLUXDB_TOKEN` in env, then runs `influxdb3 ...` and gets `Failed to create token, error: ApiError { code: 401, message: "the request was not authenticated" }`.
+**What you'll see:** A script exports `INFLUXDB_TOKEN`, runs an `influxdb3` command without `--token`, and gets a 401 (`the request was not authenticated`).
 
-**Why:** Two different conventions:
-- **The skill's app-developer code uses `INFLUXDB_TOKEN`** (matches `INFLUXDB_HOST`, `INFLUXDB_DATABASE` — symmetric naming, all language clients honor it).
-- **The `influxdb3` CLI reads `INFLUXDB3_AUTH_TOKEN`** (different name, prefixed with `INFLUXDB3_`).
+**Why:** When `--token` is absent, the CLI reads only `INFLUXDB3_AUTH_TOKEN`.
+`INFLUXDB_TOKEN` and `INFLUXDB_ADMIN_TOKEN` are this skill's names, and no InfluxDB tool reads them on its own.
+This is the same on Core and Enterprise.
 
-**What to do:** Either set both env vars, or pass the token explicitly via `--token "$INFLUXDB_ADMIN_TOKEN"` on every admin CLI command (the skill's admin examples do this). Don't rely on env-var fallthrough for CLI work.
+**What to do:** Export each token once, then pass the one each command needs with `--token`:
+
+```sh
+export INFLUXDB_ADMIN_TOKEN=...  # admin: databases, tokens, plugins
+export INFLUXDB_TOKEN=...        # application: write and query
+influxdb3 create database sensors --token "$INFLUXDB_ADMIN_TOKEN"
+influxdb3 query --database sensors --token "$INFLUXDB_TOKEN" "SELECT 1"
+```
+
+Don't put the admin token in `INFLUXDB3_AUTH_TOKEN`.
+The CLI would use it for every command that omits `--token`, including writes and queries.
+On Core, which has only admin tokens, `INFLUXDB_TOKEN` holds a separate named admin token for the application.
 
 ---
 
@@ -116,13 +127,16 @@ for row in system_tokens_rows:
 
 ---
 
-## 9. Plugin venv is bundled, system pip will fail
+## 9. Plugins can't import packages installed with the host's `pip`
 
-**What you'll see:** Plugin code that imports `pandas` raises `ImportError`, even though `pip install pandas` was run on the host.
+**What you'll see:** A plugin that imports a third-party package (for example, `pandas` or `requests`) raises `ImportError`, even though `pip install <pkg>` succeeded on the host.
 
-**Why:** When the server starts with `--plugin-dir`, it creates a Python virtual environment at `<PLUGIN_DIR>/.venv` using the **bundled Python interpreter** that ships with the `influxdb3` binary. Plugins run inside *that* venv, not the system Python.
+**Why:** Plugins run in `<PLUGIN_DIR>/.venv`, an embedded virtual environment that the server creates from the Python interpreter bundled with `influxdb3`.
+Packages installed into the host's Python, or into any other venv, aren't visible to plugins.
 
-**What to do:** Install packages with `influxdb3 install package <pkg>`. If you need a custom venv, chain off the bundled interpreter: `<PLUGIN_DIR>/.venv/bin/python -m venv <new-venv>`. Never `python -m venv` against system Python and expect plugins to use it.
+**What to do:** Install the package into the embedded environment with `influxdb3 install package <pkg>`.
+See the influxdb3-plugins skill's `dependencies.md` for the HTTP API and version pinning.
+To use a different venv, create it with the bundled interpreter, not the system Python, and start the server with `--virtual-env-location <path>`.
 
 ---
 
@@ -135,7 +149,8 @@ for row in system_tokens_rows:
 The physical timestamp column is named `time`, and `event_time` is a virtual alias for it (3.11.0+).
 `event_time` works on every version, so the examples use it.
 
-**What to do:** Use `event_time`, `trigger_name`, `log_level`, and `log_text`. Reference: `skills/influxdb3-plugins/references/testing.md` → "Reading plugin logs".
+**What to do:** Use `event_time`, `trigger_name`, `log_level`, and `log_text`.
+Run the query against the trigger's database for that trigger's logs, or against `_internal` for logs from every trigger on the server. Reference: `skills/influxdb3-plugins/references/testing.md` → "Reading plugin logs".
 
 ```sql
 SELECT event_time, log_level, log_text FROM system.processing_engine_logs
@@ -179,19 +194,22 @@ ORDER BY event_time DESC LIMIT 50;
 
 ---
 
-## 13. Rewriting a point is not an unconditional deduplication guarantee
+## 13. Overwriting a point isn't deterministic
 
-Core 3.12.1 testbench queries returned two identical rows after the same table, tags, timestamp, and value were written again.
-One observation followed a fresh 3.12.1 initialization, so the evidence is not limited to upgraded databases.
-Persistence timing and query plans were not captured; the cause and full conditions remain unresolved.
-Enterprise 3.12.1 retained the expected counts in a separate repeated-seed observation, which does not establish a universal guarantee either.
+**What you'll see:** After you write a point again with the same table, tag set, and timestamp, a query returns the old value, the new value, or two rows.
 
-The [3.12.1 notes](https://docs.influxdata.com/influxdb3/enterprise/release-notes/#v3121) document specific overwrite fixes on the Parquet and upgraded storage engines.
-Those fixes and the narrower duplicate-row observations are separate evidence.
+**Why:** A point's identity is its table, tag set, and timestamp.
+InfluxDB merges the field sets of duplicate writes, but it doesn't guarantee which value it keeps when they set the same field.
+The result depends on write rate, buffer and snapshot timing, and compaction, so waiting between writes doesn't make it reliable.
+On Core 3.12.1, testing also returned two identical rows after the same point was written again.
 
-Retriable status codes mean a bounded retry may help, not that repeating a write is safe.
-Do not promise that resending the same point is always safe or that a deterministic timestamp alone makes a plugin idempotent.
-Keep tag-based source identity, resend only rejected lines after a partial write, and verify retry or repeated-run behavior on the target edition and version.
+**What to do:**
+
+- Write each change as a new point with its real event timestamp, and query for the most recent point.
+- Don't add a field such as `version` to make points unique. Fields aren't part of a point's identity.
+- After a partial write, resend only the rejected lines. Don't treat resending a point as a safe way to deduplicate.
+
+See [Overwrites are not deterministic](https://docs.influxdata.com/influxdb3/enterprise/reference/line-protocol/#overwrites-are-not-deterministic).
 
 ## Where to fetch more
 
