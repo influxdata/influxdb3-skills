@@ -17,8 +17,8 @@ If you need a custom virtual environment, chain it off the bundled interpreter:
 CLI (preferred):
 
 ```bash
-influxdb3 install package pandas
-influxdb3 install package requests numpy        # multiple at once
+influxdb3 install package pandas --token "$INFLUXDB_ADMIN_TOKEN"
+influxdb3 install package requests numpy --token "$INFLUXDB_ADMIN_TOKEN"  # multiple at once
 ```
 
 The package lands in `<PLUGIN_DIR>/.venv`, the venv the plugins run in. Don't create a separate venv with system Python (`python -m venv`) for plugins.
@@ -26,7 +26,7 @@ The package lands in `<PLUGIN_DIR>/.venv`, the venv the plugins run in. Don't cr
 Docker:
 
 ```bash
-docker exec -it <container_name> influxdb3 install package pandas
+docker exec -it <container_name> influxdb3 install package pandas --token "$INFLUXDB_ADMIN_TOKEN"
 ```
 
 HTTP API:

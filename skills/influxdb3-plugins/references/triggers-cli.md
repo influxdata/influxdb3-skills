@@ -69,8 +69,8 @@ Look for tables matching `trigger`, `plugin`, or `engine`. Known-good ones on 3.
 
 - `system.processing_engine_triggers` — one row per trigger (`trigger_name`, `plugin_filename`, `trigger_specification`, `disabled`, `error_behavior`).
 - `system.processing_engine_trigger_arguments` — trigger arguments.
-- `system.plugin_files` — installed plugin file metadata (`plugin_name`, `file_name`, `file_path`, `size_bytes`, `last_modified`).
-- `system.processing_engine_logs` — runtime log output from every trigger (`event_time`, `trigger_name`, `log_level`, `log_text`). Queryable from any database context.
+- `system.plugin_files` — installed plugin file metadata (`plugin_name`, `file_name`, `file_path`, `size_bytes`, `last_modified`). `plugin_name` is the name of a trigger that uses the plugin.
+- `system.processing_engine_logs` — runtime log output from every trigger (`event_time`, `trigger_name`, `log_level`, `log_text`). Query the trigger's database for one trigger's logs, or `_internal` for every trigger.
 
 ```bash
 # List installed plugin files

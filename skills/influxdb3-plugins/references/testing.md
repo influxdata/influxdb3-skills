@@ -92,7 +92,8 @@ In Core and Enterprise 3.12.1, `update trigger` reads the local file specified b
 
 ## Reading plugin logs
 
-The `system.processing_engine_logs` table holds plugin output for every trigger in the database.
+The `system.processing_engine_logs` table holds plugin output.
+Run the query against the trigger's database for that trigger's logs, or against `_internal` for logs from every trigger on the server.
 
 ```bash
 influxdb3 query \

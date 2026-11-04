@@ -67,7 +67,7 @@ def process_scheduled_call(influxdb3_local, call_time, args=None):
 ### Trigger specs
 
 - `every:<duration>` — `every:30s`, `every:5m`, `every:1h`. The duration is the cadence.
-- `cron:<expression>` — extended cron with seconds: 6 fields (`sec min hour dom mon dow`). Example: `cron:0 0 8 * * *` for 8 AM daily.
+- `cron:<expression>` — extended cron with seconds: 6 fields (`sec min hour dom mon dow`), plus an optional 7th year field. A 5-field expression is rejected. Schedules run in UTC, so a fixed expression doesn't follow local daylight saving time. Write the day of week as names (`MON-FRI`); numeric days start at `1` = Sunday, so `1-5` means Sunday through Thursday. Example: `cron:0 0 8 * * *` for 08:00 UTC daily.
 
 ### Use cases
 
