@@ -24,7 +24,7 @@ When the skill content does not cover a developer's question — or when the ans
 
 ## Topics this skill defers
 
-Use these URLs in the deferral replies that SKILL.md §9 describes. Link the page for the developer's product: replace `core` with `enterprise` for InfluxDB 3 Enterprise.
+Use these URLs in the deferral replies that [SKILL.md §9](../SKILL.md#9-not-covered) describes. Link the page for the developer's product: replace `core` with `enterprise` for InfluxDB 3 Enterprise.
 
 | Topic | URL |
 |---|---|
@@ -40,7 +40,7 @@ Use these URLs in the deferral replies that SKILL.md §9 describes. Link the pag
 | SQL reference | https://docs.influxdata.com/influxdb3/core/reference/sql/ | v3 SQL syntax details and supported functions |
 | InfluxQL reference | https://docs.influxdata.com/influxdb3/core/reference/influxql/ | When the developer uses InfluxQL |
 | HTTP API (`/api/v3/*`) | https://docs.influxdata.com/influxdb3/core/reference/api/ | Endpoint paths, request/response shapes |
-| `/ping` endpoint | https://docs.influxdata.com/influxdb3/core/reference/api/#ping | Flavor detection details |
+| `/ping` endpoint | https://docs.influxdata.com/influxdb3/core/admin/identify-version/ | Flavor detection details |
 
 ## Official client libraries (GitHub)
 

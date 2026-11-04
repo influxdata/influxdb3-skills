@@ -2,7 +2,7 @@
 
 The `influxdb3` CLI is the primary way to create, update, list (via system tables), enable/disable, and delete triggers. For HTTP equivalents, fetch the API reference.
 
-All commands accept `--token <admin-token>` (or `INFLUXDB3_AUTH_TOKEN` env var) and `-H/--host <url>` (or `INFLUXDB3_HOST_URL` env var). Trigger creation, update, and deletion require an **admin token**.
+All commands accept `--token` and `-H/--host <url>` (or `INFLUXDB3_HOST_URL` env var). Trigger creation, update, and deletion require an **admin token**. Pass it as `--token "$INFLUXDB_ADMIN_TOKEN"`, not through `INFLUXDB3_AUTH_TOKEN`, so it doesn't reach every CLI command (`influxdb3` skill → [`references/quirks.md` entry 5](../../influxdb3/references/quirks.md#5-the-influxdb3-cli-doesnt-read-influxdb_token)).
 
 ## `influxdb3 create trigger`
 
@@ -15,12 +15,12 @@ Create a new trigger that connects a plugin to a database event. Positional argu
 | `--trigger-spec <spec>` | yes | When to fire: `table:<name>`, `all_tables`, `every:<duration>`, `cron:<expr>` (6-field with seconds), or `request:<path>`. |
 | `--path <path>` | yes | Plugin filename (relative to `--plugin-dir`), absolute path with `--upload`, or `gh:` prefix for upstream plugins. |
 | `--upload` | no | Upload the local file/dir to the server. Required when `--path` is absolute. |
-| `--trigger-arguments k=v,k2=v2` | no | Comma-separated key=value pairs passed to the plugin as `args`. All values arrive as strings. Parse structured configuration explicitly in plugin code; see `references/plugin-structure.md` → "Plugin configuration via TOML". |
+| `--trigger-arguments k=v,k2=v2` | no | Comma-separated key=value pairs passed to the plugin as `args`. All values arrive as strings. Parse structured configuration explicitly in plugin code; see [`references/plugin-structure.md` → "Plugin configuration via TOML"](plugin-structure.md#plugin-configuration-via-toml). |
 | `--run-asynchronous` | no | Allow multiple instances of this trigger to run concurrently. Default is synchronous. |
 | `--error-behavior <log\|retry\|disable>` | no | What happens when the plugin raises. Default `log`. |
 | `--disabled` | no | Create the trigger in disabled state. |
 | `--node-spec <spec>` | no | Cluster placement (default `all`). This skill doesn't cover multi-node placement. |
-| `--token <admin-token>` | yes | Admin token (or `INFLUXDB3_AUTH_TOKEN` env). |
+| `--token <admin-token>` | yes | Admin token. |
 
 Example:
 

@@ -1,6 +1,6 @@
-# Writing Data to InfluxDB 3
+# Writing data to InfluxDB 3
 
-## Line protocol — one paragraph
+## Line protocol
 
 Line protocol is a plain-text format: one line per point. Format:
 
@@ -14,19 +14,25 @@ Example:
 sensor,host=server01,region=us-west temperature=72.4,humidity=45.1 1714400000
 ```
 
-Spaces separate the three sections. Commas separate tags within section 1 and fields within section 2. Timestamp is optional; the server stamps "now" if omitted (use this only for live writes — backfills must include explicit timestamps).
+Spaces separate the three sections. Commas separate tags within section 1 and fields within section 2. The timestamp is optional. Without it, the server assigns the time it received the point, not the time the event happened (see "Timestamps" below).
 
 Quoting: string field values are wrapped in double quotes (`status="ok"`), tag values are not. Escape commas, equals, and spaces in tag/field keys and tag values with `\`; escape double quotes and backslashes inside string field values with `\`.
 
-**Constructing line protocol from untrusted values is injection-prone — a newline is a record separator.** If you hand-build line protocol by interpolating a tag or field value that contains a literal newline (`\n`) or carriage return (`\r`), everything after it is parsed as a *second point* — a value like `"ok\nmalicious,host=x value=1"` forges an extra record. Line protocol has no escape for `\n`/`\r`, so a value that may contain them cannot be safely written raw. Prefer an official client's point builder, which escapes the structural characters it can; for values that might contain `\n`/`\r`, **reject or strip them before writing** rather than relying on escaping. This matters most on `/api/v3/write_lp` with `accept_partial=true`, where a `400` on a later line doesn't undo an already-stored forged point.
+**Building line protocol from untrusted values is injection-prone, because a newline separates records.**
+If you interpolate a tag or field value that contains a newline (`\n`) or carriage return (`\r`), everything after it is parsed as a second point.
+For example, a value like `"ok\nmalicious,host=x value=1"` forges an extra record.
+Line protocol has no escape for `\n` or `\r`, so a value that may contain them can't be written raw.
+Prefer an official client's point builder, which escapes the structural characters it can.
+For values that might contain `\n` or `\r`, **reject or strip them before writing** instead of relying on escaping.
+This matters most on `/api/v3/write_lp` with `accept_partial=true`, where a 400 on a later line doesn't undo a forged point that was already stored.
 
-Full spec: see `references/doc-urls.md` → "Line protocol".
+Full spec: see [`references/doc-urls.md` → "Line protocol"](doc-urls.md).
 
 ## Batching rule
 
-**Batch ≥ 1,000 points or flush every 1 second**, whichever comes first. Avoid one-write-per-point loops; they add a request per point and can exhaust HTTP connections.
+**Batch up to 10,000 lines or 10 MB per request**, whichever comes first; the docs name this as the optimal batch size. For live streams, also flush on a timer (for example, every second) so points don't wait for a full batch. Avoid one-write-per-point loops; they add a request per point and can exhaust HTTP connections.
 
-For real-time streams in Python, use the client's batching mode (`references/clients/python.md` → "Automatic batching"). For other clients, build fixed-size batches unless the client's docs describe a batching helper. For bulk loads, build a list of N points (start with 1,000–10,000) and write the list in one call.
+For real-time streams in Python, use the client's batching mode ([`references/clients/python.md` → "Automatic batching"](clients/python.md#automatic-batching)). For other clients, build fixed-size batches unless the client's docs describe a batching helper. For bulk loads, build lists of up to 10,000 points and write each list in one call.
 
 ## Error handling
 
@@ -36,13 +42,13 @@ For real-time streams in Python, use the client's batching mode (`references/cli
 | 400 | Line protocol parse error or schema-type conflict | **No** — fix the rejected lines and resend (see below for which lines) |
 | 401 | Auth failed | **No** — fix the token |
 | 403 | Token is valid but lacks write permission for the database | **No** — use a token with `write` on that database |
-| 404 | Database not found | **No** — create the DB or fix the env var |
+| 404 | Resource not found | **No** — check the endpoint and database name. With default settings, a write to a misspelled database creates it instead of returning 404; see [`references/troubleshooting.md` → "Silent auto-create misroute"](troubleshooting.md#silent-auto-create-misroute) |
 | 413 | Payload too large | **No** — reduce batch size |
 | 429 | Rate limited | **Yes** — exponential backoff with jitter |
 | 5xx | Server side | **Yes** — backoff with jitter |
 | No response (connection reset or refused) | The node is stopped or unreachable | **Yes** — back off, or send to another node |
 
-Retriable means a bounded retry may help, not that repeating a write is safe; see `references/quirks.md` entry 13.
+Retriable means a bounded retry may help, not that repeating a write is safe; see [`references/quirks.md` entry 13](quirks.md#13-overwriting-a-point-isnt-deterministic).
 
 Before Core and Enterprise 3.10.0, `/api/v2/write` returned 401, not 403, for a valid token that lacks permission.
 Handle both codes as "fix the token."
@@ -98,7 +104,7 @@ If the user runs an earlier version, validate tag keys client-side before writin
 Scripts that parse the output for `success` break.
 Add `--quiet` (`-q`) to suppress all output, and don't parse the report.
 
-For symptom-by-symptom diagnosis, see `references/troubleshooting.md` → "Write failures".
+For symptom-by-symptom diagnosis, see [`references/troubleshooting.md` → "Write failures"](troubleshooting.md#write-failures).
 
 ## Type stickiness
 
@@ -112,16 +118,15 @@ Route declaration or schema-mode administration to the [Enterprise database docs
 
 ## Maximum timestamp on 3.12.1
 
+Validate timestamps in the application, because the server doesn't reliably reject one past the documented maximum.
 The [3.12.1 notes](https://docs.influxdata.com/influxdb3/enterprise/release-notes/#v3121) document rejection of timestamps after `2262-04-11T23:39:59.999999999Z`.
-The exact-boundary probe accepted that timestamp and rejected the next nanosecond with 400 on Core 3.12.1.
-The tested Enterprise 3.12.1 node accepted the later timestamp instead, contrary to that general release-note statement.
-The cause and conditions of the difference are unresolved; don't promise a universal Enterprise 400 at that boundary.
-Validate timestamps in application input and verify the exact target behavior when depending on this limit.
+In testing, Core 3.12.1 rejected the next nanosecond with 400, but an Enterprise 3.12.1 node accepted it, and the cause is unknown.
+Don't promise a 400 at that boundary on Enterprise.
 
-## Backfilling vs. live writes
+## Timestamps
 
-- **Live writes:** omit the timestamp; the server stamps "now".
-- **Backfills:** always include explicit timestamps. Use second precision (`?precision=second`) by default unless you genuinely need sub-second resolution — it makes line protocol smaller. Storage precision is the same either way.
+- **Write the event's own timestamp** from the source, for live writes and backfills alike. A point without a timestamp gets the server's receive time, so a retried write lands as a second point instead of replacing the first. Omit the timestamp only when receive time is what you want, and keep hosts synchronized with NTP.
+- **Use second precision (`?precision=second`) unless you need finer.** It makes line protocol smaller, and storage precision is the same either way. If a series can have more than one point in the same second, use finer precision; at second precision those points share a timestamp and merge (`references/schema-design.md`).
 
 ## When to use raw HTTP vs the client
 

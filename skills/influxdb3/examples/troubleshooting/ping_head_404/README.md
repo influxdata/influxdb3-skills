@@ -15,7 +15,7 @@ curl -sS -I -H "Authorization: Bearer $INFLUXDB_TOKEN" "$INFLUXDB_HOST/ping" --m
 curl -sS -i -H "Authorization: Bearer $INFLUXDB_TOKEN" "$INFLUXDB_HOST/ping" --max-time 5   # GET  — returns 200
 ```
 
-If the HEAD returns 404 and the GET returns 200, you've hit this quirk. (Include the token; without it the GET returns 401, not 200. See `references/quirks.md` entry 1.)
+If the HEAD returns 404 and the GET returns 200, you've hit this quirk. (Include the token; without it the GET returns 401, not 200. See [`references/quirks.md` entry 1](../../../references/quirks.md#1-head-ping-returns-404-only-get-ping-works).)
 
 ## Fix
 
@@ -33,5 +33,5 @@ bash fixed.sh     # status 200, prints flavor + version
 
 ## Where to fetch more
 
-- `quirks.md` entry 1
+- [`quirks.md` entry 1](../../../references/quirks.md#1-head-ping-returns-404-only-get-ping-works)
 - `references/flavor-detection.md` (uses GET /ping internally)

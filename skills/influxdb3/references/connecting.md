@@ -29,14 +29,14 @@ These steps happen ONCE, on the server side, before any application code:
 2. **Start the server** — `influxdb3 serve --object-store=...` (see `references/installing.md`).
 3. **Create the operator/admin token.** For a brand-new server, this is a bootstrap step that does NOT require an existing token:
    - CLI: `influxdb3 create token --admin --host http://localhost:8181`
-   - Save the token output — it's shown ONCE. Use it for steps 4–5 (server admin), not as your application's token.
+   - The token is shown once. Save it as `INFLUXDB_ADMIN_TOKEN` and use it for steps 4–5 (server admin), not as your application's token.
 4. **Create the database** using the admin token:
-   - CLI: `influxdb3 create database <name> --token <admin-token> --host http://localhost:8181`
-   - Or HTTP: `POST /api/v3/configure/database` with `Authorization: Bearer <admin-token>` and body `{"db":"<name>"}`.
+   - CLI: `influxdb3 create database <name> --token "$INFLUXDB_ADMIN_TOKEN" --host http://localhost:8181`
+   - Or HTTP: `POST /api/v3/configure/database` with `Authorization: Bearer $INFLUXDB_ADMIN_TOKEN` and body `{"db":"<name>"}`.
    - Full reference and HTTP API equivalents: `references/databases.md`.
 5. **(Recommended)** Create a token for the application instead of reusing the operator token:
-   - Enterprise: `influxdb3 create token --permission "db:<name>:read,write" --name <app> --token <admin-token>`
-   - Core has admin tokens only: `influxdb3 create token --admin --name <app> --token <admin-token>` (`references/tokens.md` → "InfluxDB 3 Core: admin tokens only")
+   - Enterprise: `influxdb3 create token --permission "db:<name>:read,write" --name <app> --token "$INFLUXDB_ADMIN_TOKEN"`
+   - Core has admin tokens only: `influxdb3 create token --admin --name <app> --token "$INFLUXDB_ADMIN_TOKEN"` ([`references/tokens.md` → "InfluxDB 3 Core: admin tokens only"](tokens.md#influxdb-3-core-admin-tokens-only))
    - This is the token the application reads from `INFLUXDB_TOKEN`.
    - Full reference, including the safe rotation pattern: `references/tokens.md`.
 
@@ -89,21 +89,21 @@ HTTP:
 
 ```bash
 curl -sS "$INFLUXDB_HOST/api/v3/configure/database?format=json" \
-  -H "Authorization: Bearer $INFLUXDB_TOKEN" | jq -r '.[] | ."iox::database"'
+  -H "Authorization: Bearer $INFLUXDB_ADMIN_TOKEN" | jq -r '.[] | ."iox::database"'
 ```
 
 If the target name isn't in the list, **create it before writing**:
 
 ```bash
 curl -sS -X POST "$INFLUXDB_HOST/api/v3/configure/database" \
-  -H "Authorization: Bearer $INFLUXDB_TOKEN" \
+  -H "Authorization: Bearer $INFLUXDB_ADMIN_TOKEN" \
   -H "Content-Type: application/json" \
   -d "{\"db\": \"$INFLUXDB_DATABASE\"}"
 ```
 
-If a typo has already auto-created a wrong-named DB, see `references/databases.md` → "Recovering from the silent auto-create footgun" for the recovery flow.
+If a typo has already auto-created a wrong-named DB, see [`references/databases.md` → "Recovering from the silent auto-create footgun"](databases.md#recovering-from-the-silent-auto-create-footgun) for the recovery flow.
 
-For symptom-by-symptom diagnostic + recovery flow, see `references/troubleshooting.md` → "Silent auto-create misroute".
+For symptom-by-symptom diagnostic + recovery flow, see [`references/troubleshooting.md` → "Silent auto-create misroute"](troubleshooting.md#silent-auto-create-misroute).
 
 ### When generating new application code
 

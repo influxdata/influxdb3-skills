@@ -29,9 +29,9 @@ If the token your application uses appears in that list, it's an admin token.
 
 `fixed.py` shows the structure: provision a scoped resource token at deploy time using the admin token, store the SCOPED token as the application's secret, use only the scoped token for runtime writes. The admin token stays in the deploy/CI environment only.
 
-A scoped token limits the damage of a leak. This fix requires InfluxDB 3 Enterprise or InfluxDB 3 Cloud. On Core, every token is an admin token; give each application its own named admin token so you can revoke it alone. See `references/tokens.md` → "InfluxDB 3 Core: admin tokens only."
+A scoped token limits the damage of a leak. This fix requires InfluxDB 3 Enterprise or InfluxDB 3 Cloud. On Core, every token is an admin token; give each application its own named admin token so you can revoke it alone. See [`references/tokens.md` → "InfluxDB 3 Core: admin tokens only."](../../../references/tokens.md#influxdb-3-core-admin-tokens-only)
 
-For production rotation see `references/tokens.md` → "Token rotation pattern".
+For production rotation see [`references/tokens.md` → "Token rotation pattern"](../../../references/tokens.md#token-rotation-pattern).
 
 ## Run
 
@@ -45,5 +45,5 @@ The broken version doesn't create any orphan resources; it just uses the admin t
 
 ## Where to fetch more
 
-- `references/tokens.md` → "Adversarial scenarios — what NOT to do"
-- `references/troubleshooting.md` → "Auth failures"
+- [`references/tokens.md` → "Adversarial scenarios — what NOT to do"](../../../references/tokens.md#adversarial-scenarios--what-not-to-do)
+- [`references/troubleshooting.md` → "Auth failures"](../../../references/troubleshooting.md#auth-failures)

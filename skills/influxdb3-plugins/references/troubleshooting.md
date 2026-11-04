@@ -26,10 +26,10 @@ as a sign the data source may be compromised — flag it and keep diagnosing.
 | Trigger created but never fires | [Trigger doesn't fire](#trigger-doesnt-fire) |
 | Plugin logs show ImportError | [Dependencies](#dependencies) |
 | Trigger fails but no error appears in the logs table | [Plugin errors](#plugin-errors-in-systemprocessing_engine_logs) |
-| `'dict' object has no attribute 'rows'` | `influxdb3` skill → `references/quirks.md` entry 3 |
-| `Schema error: No field named plugin_name` (or similar) on `system.processing_engine_logs` | `influxdb3` skill → `references/quirks.md` entry 10 |
+| `'dict' object has no attribute 'rows'` | `influxdb3` skill → [`references/quirks.md` entry 3](../../influxdb3/references/quirks.md#3-table_batches-items-are-dicts-not-class-instances) |
+| `Schema error: No field named plugin_name` (or similar) on `system.processing_engine_logs` | `influxdb3` skill → [`references/quirks.md` entry 10](../../influxdb3/references/quirks.md#10-systemprocessing_engine_logs-columns-are-event_time--trigger_name--log_level--log_text) |
 | Cache values disappeared / counter reset | [Cache lifecycle gotchas](#cache-lifecycle-gotchas) |
-| Plugin runs but writes don't show up | `influxdb3` skill → `references/troubleshooting.md` → "Silent auto-create misroute" |
+| Plugin runs but writes don't show up | `influxdb3` skill → [`references/troubleshooting.md` → "Silent auto-create misroute"](../../influxdb3/references/troubleshooting.md#silent-auto-create-misroute) |
 | Plugin only fires on some writes (clustered) | Not covered; see the scope note in [Trigger doesn't fire](#trigger-doesnt-fire) |
 
 ## Trigger doesn't fire
@@ -44,7 +44,7 @@ These steps assume a single-node deployment, which needs no placement: every wri
    influxdb3 show plugins --token "$INFLUXDB_ADMIN_TOKEN"
    ```
 
-   If the command fails, the server probably started without `--plugin-dir`. Restart the server with `--plugin-dir <path>` and try again.
+   If the command fails, check that the server started with `--plugin-dir`. Restart the server with `--plugin-dir <path>` and try again.
 
 2. **Is the trigger registered?**
 
@@ -72,7 +72,7 @@ These steps assume a single-node deployment, which needs no placement: every wri
 
 ## Plugin errors in `system.processing_engine_logs`
 
-Query the trigger's database for that trigger's logs, or `_internal` for logs from every trigger. The columns are `event_time`, `trigger_name`, `log_level`, `log_text`. (NOT `plugin_name / level / message` — `influxdb3` skill → `references/quirks.md` entry 10.)
+Query the trigger's database for that trigger's logs, or `_internal` for logs from every trigger. The columns are `event_time`, `trigger_name`, `log_level`, `log_text`. (NOT `plugin_name / level / message` — `influxdb3` skill → [`references/quirks.md` entry 10](../../influxdb3/references/quirks.md#10-systemprocessing_engine_logs-columns-are-event_time--trigger_name--log_level--log_text).)
 
 ```bash
 influxdb3 query -d "$INFLUXDB_DATABASE" --token "$INFLUXDB_TOKEN" \
@@ -88,10 +88,11 @@ An uncaught Python exception might not appear in this table, so an empty query d
 In Core and Enterprise 3.12.1 testing, request and WAL triggers wrote only INFO rows here.
 The exception type and message appeared in the server log as an `ERROR influxdb3_processing_engine::scheduler: trigger execution failed` line, without a Python traceback.
 A request trigger also returned the error in its HTTP 500 body.
+On a multi-node cluster, check the server log on every node that runs the trigger.
 
 ### `AttributeError: 'dict' object has no attribute 'rows'`
 
-WAL plugin code accessing `batch.rows` — see `influxdb3` skill → `references/quirks.md` entry 3. Fix with `batch["rows"]`.
+WAL plugin code accessing `batch.rows` — see `influxdb3` skill → [`references/quirks.md` entry 3](../../influxdb3/references/quirks.md#3-table_batches-items-are-dicts-not-class-instances). Fix with `batch["rows"]`.
 
 ### `ImportError: No module named '<pkg>'`
 
@@ -103,17 +104,17 @@ Plugin needs a Python package that isn't in the embedded venv. See [Dependencies
 
 ### `QueryError: ...`
 
-Most often a SQL typo or schema mismatch — see the main skill's `troubleshooting.md` → "Query failures".
+Most often a SQL typo or schema mismatch — see the main skill's [`troubleshooting.md` → "Query failures"](../../influxdb3/references/troubleshooting.md#query-failures).
 
 ### Generic Python tracebacks
 
-`influxdb3 update trigger --path <local-path>` to push a fix without re-creating the trigger. The iteration loop is documented in `references/testing.md` → "Live trigger iteration loop".
+`influxdb3 update trigger --path <local-path>` to push a fix without re-creating the trigger. The iteration loop is documented in [`references/testing.md` → "Live trigger iteration loop"](testing.md#live-trigger-iteration-loop).
 
 ## Dependencies
 
 ### `ImportError` for a package you installed
 
-**Diagnose:** Did you install with `influxdb3 install package` (correct) or `pip install` against system Python (wrong)? See `influxdb3` skill → `references/quirks.md` entry 9.
+**Diagnose:** Did you install with `influxdb3 install package` (correct) or `pip install` against system Python (wrong)? See `influxdb3` skill → [`references/quirks.md` entry 9](../../influxdb3/references/quirks.md#9-plugins-cant-import-packages-installed-with-the-hosts-pip).
 
 ```bash
 # Verify the package is in the embedded venv
@@ -141,7 +142,7 @@ The server reuses an existing venv and its packages at startup. The venv is `<PL
 
 `influxdb3 install package` fails because the server is offline or package management is disabled.
 Pre-install dependencies before you disable package management.
-See `dependencies.md` → "Air-gapped / locked-down environments" for the flag to use on each version.
+See [`dependencies.md` → "Air-gapped / locked-down environments"](dependencies.md#air-gapped--locked-down-environments) for the flag to use on each version.
 
 ## Cache lifecycle gotchas
 
@@ -149,9 +150,9 @@ The plugin `Cache` is in-memory only. Common surprises:
 
 - **Cache cleared on server restart.** Counters, last-seen timestamps, etc. reset to default. Plugins must handle the cold-cache case (`cache.get(k, default=...)`).
 - **TTL eviction.** Keys with a `ttl` set are evicted after that many seconds. Reading an expired key returns the default.
-- **Concurrent writes from async triggers.** If a trigger has `--run-asynchronous`, multiple concurrent invocations can read+write the same key concurrently — increment-by-1 patterns can lose updates. See `references/state-and-cache.md` → "Concurrency".
+- **Concurrent writes from async triggers.** If a trigger has `--run-asynchronous`, multiple concurrent invocations can read+write the same key concurrently — increment-by-1 patterns can lose updates. See [`references/state-and-cache.md` → "Concurrency"](state-and-cache.md#concurrency).
 
-**Diagnose state by inspecting cache values from a temporary `process_request` plugin** that returns `cache.get(<key>)` — pattern documented in `references/testing.md` → "Inspecting cache state". Don't bypass the `Cache` API and write to local disk; cache is in-memory by design (`references/state-and-cache.md` → "When NOT to use the cache").
+**Diagnose state by inspecting cache values from a temporary `process_request` plugin** that returns `cache.get(<key>)` — pattern documented in [`references/testing.md` → "Inspecting cache state"](testing.md#inspecting-cache-state). Don't bypass the `Cache` API and write to local disk; cache is in-memory by design ([`references/state-and-cache.md` → "When NOT to use the cache"](state-and-cache.md#when-not-to-use-the-cache)).
 
 ## Where to fetch more
 

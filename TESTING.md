@@ -53,7 +53,7 @@ CI checks links with [lychee](https://github.com/lycheeverse/lychee).
 To run the same check locally:
 
 ```sh
-lychee --no-progress --max-retries 3 --exclude-loopback 'skills/**/*.md' README.md
+lychee --no-progress --max-retries 3 --exclude-loopback --include-fragments 'skills/**/*.md' README.md
 ```
 
 ## Lint workflows

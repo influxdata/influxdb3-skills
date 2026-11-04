@@ -103,4 +103,4 @@ Two ways to handle this:
 ## Where to fetch more
 
 `references/runtime-api.md` for the `Cache` method signatures.
-`references/doc-urls.md` → "Extend plugins" for the upstream cache documentation.
+[`references/doc-urls.md` → "Extend plugins"](doc-urls.md) for the upstream cache documentation.

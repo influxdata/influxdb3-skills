@@ -32,7 +32,7 @@ Since 3.10 you can opt out of authorization for these routes with `--disable-aut
 
 **Why:** Default config auto-creates databases on first write. The auto-create is a UX feature for getting started fast; it becomes a footgun when env vars typo or scripts drift.
 
-**What to do:** Verify the database exists before the first write. Diagnostic + recovery flow in `references/troubleshooting.md` → "Silent auto-create misroute". Generated code should check at startup that the database exists and stop if it doesn't.
+**What to do:** Verify the database exists before the first write. Diagnostic + recovery flow in [`references/troubleshooting.md` → "Silent auto-create misroute"](troubleshooting.md#silent-auto-create-misroute). Generated code should check at startup that the database exists and stop if it doesn't.
 
 ---
 
@@ -101,7 +101,7 @@ On Core, which has only admin tokens, `INFLUXDB_TOKEN` holds a separate named ad
 
 **What you'll see:** On Core, a resource-token create request returns 404, or `influxdb3 create token --permission` is rejected.
 
-**Why:** Core has admin tokens only. See `references/tokens.md` → "InfluxDB 3 Core: admin tokens only."
+**Why:** Core has admin tokens only. See [`references/tokens.md` → "InfluxDB 3 Core: admin tokens only."](tokens.md#influxdb-3-core-admin-tokens-only)
 
 **What to do:** Detect the flavor (`references/flavor-detection.md`) before generating admin code. The `examples/admin-*` scripts require Enterprise or InfluxDB 3 Cloud.
 
@@ -150,7 +150,7 @@ The physical timestamp column is named `time`, and `event_time` is a virtual ali
 `event_time` works on every version, so the examples use it.
 
 **What to do:** Use `event_time`, `trigger_name`, `log_level`, and `log_text`.
-Run the query against the trigger's database for that trigger's logs, or against `_internal` for logs from every trigger on the server. Reference: `skills/influxdb3-plugins/references/testing.md` → "Reading plugin logs".
+Run the query against the trigger's database for that trigger's logs, or against `_internal` for logs from every trigger on the server. Reference: [`skills/influxdb3-plugins/references/testing.md` → "Reading plugin logs"](../../influxdb3-plugins/references/testing.md#reading-plugin-logs).
 
 ```sql
 SELECT event_time, log_level, log_text FROM system.processing_engine_logs
@@ -164,7 +164,7 @@ ORDER BY event_time DESC LIMIT 50;
 
 **What you'll see:** A batch with one bad line returns `400 Bad Request`, but the other lines are stored.
 
-**What to do:** Resend only the lines listed in the response `data` array. Details, including the compatibility endpoints: `references/writing.md` → "A 400 can mean a partial write".
+**What to do:** Resend only the lines listed in the response `data` array. Details, including the compatibility endpoints: [`references/writing.md` → "A 400 can mean a partial write"](writing.md#a-400-can-mean-a-partial-write).
 
 ---
 
@@ -176,7 +176,7 @@ ORDER BY event_time DESC LIMIT 50;
 - **Short form** — `"db:<name>:<actions>"`. Used by the CLI's `--permission` flag and stored in `system.tokens.permissions`.
 - **Structured form** — `{"resource_type": "db", "resource_names": ["<name>"], "actions": ["read", "write"]}`. Required by the create-token HTTP body.
 
-**What to do:** Use the right encoding for the surface. Reference: `references/admin-http-api.md` → "Permission strings (CLI vs HTTP)".
+**What to do:** Use the right encoding for the surface. Reference: [`references/admin-http-api.md` → "Short-form vs structured permissions"](admin-http-api.md#short-form-vs-structured-permissions).
 
 ```json
 {

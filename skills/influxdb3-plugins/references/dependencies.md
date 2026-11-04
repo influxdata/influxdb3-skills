@@ -102,4 +102,4 @@ When package installation is blocked:
 
 ## Where to fetch more
 
-`references/doc-urls.md` → "Processing engine and Python plugins" → "Manage plugin dependencies" section.
+[`references/doc-urls.md` → "Processing engine and Python plugins"](doc-urls.md) → "Manage plugin dependencies" section.

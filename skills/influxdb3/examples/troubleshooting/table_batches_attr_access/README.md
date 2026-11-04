@@ -97,6 +97,6 @@ influxdb3 delete trigger --database "$INFLUXDB_DATABASE" --force --token "$INFLU
 
 ## Where to fetch more
 
-- `quirks.md` entry 3 (canonical home for this quirk)
-- `skills/influxdb3-plugins/references/runtime-api.md` → "table_batches shape"
-- `skills/influxdb3-plugins/references/troubleshooting.md` → "Plugin errors in `system.processing_engine_logs`"
+- [`quirks.md` entry 3](../../../references/quirks.md#3-table_batches-items-are-dicts-not-class-instances) (canonical home for this quirk)
+- [`skills/influxdb3-plugins/references/runtime-api.md` → "table_batches shape"](../../../../influxdb3-plugins/references/runtime-api.md#table_batches-shape-wal-plugins-only)
+- [`skills/influxdb3-plugins/references/troubleshooting.md` → "Plugin errors in `system.processing_engine_logs`"](../../../../influxdb3-plugins/references/troubleshooting.md#plugin-errors-in-systemprocessing_engine_logs)

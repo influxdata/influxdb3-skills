@@ -57,7 +57,7 @@ CLI equivalent: `influxdb3 update database --database <name> --retention-period 
 ## Token operations
 
 > **Resource (scoped) tokens are Enterprise and InfluxDB 3 Cloud only.**
-> Core has no resource tokens; see `references/tokens.md` → "InfluxDB 3 Core: admin tokens only."
+> Core has no resource tokens; see [`references/tokens.md` → "InfluxDB 3 Core: admin tokens only."](tokens.md#influxdb-3-core-admin-tokens-only)
 > Admin-token and delete endpoints are identical across Core and Enterprise.
 
 ### Create resource (scoped) token
@@ -112,7 +112,7 @@ Content-Type: application/json
 ```
 
 `expiry_secs` is optional; omit it for no expiry. The response (201) returns the token string once. A duplicate name returns 409.
-CLI equivalent: `influxdb3 create token --admin --name <name> --token <admin-token>`, with optional `--expiry` (for example, `10d` or `1y`).
+CLI equivalent: `influxdb3 create token --admin --name <name> --token "$INFLUXDB_ADMIN_TOKEN"`, with optional `--expiry` (for example, `10d` or `1y`).
 
 ### Create the operator token
 
@@ -149,7 +149,7 @@ Content-Type: application/json
 {"db": "_internal", "q": "SELECT * FROM system.tokens"}
 ```
 
-To filter by a specific token name, **bind the name as a parameter — never string-concatenate it into `q`.** Token names are user-chosen, so an interpolated name is a SQL-injection vector (`references/querying.md` → "Parameterize user input"):
+To filter by a specific token name, **bind the name as a parameter — never string-concatenate it into `q`.** Token names are user-chosen, so an interpolated name is a SQL-injection vector ([`references/querying.md` → "Parameterize user input"](querying.md#parameterize-user-input--always)):
 
 ```
 {"db": "_internal",
@@ -206,4 +206,4 @@ For InfluxDB Cloud Serverless and InfluxDB Cloud Dedicated, route that product's
 
 ## Where to fetch more
 
-`references/doc-urls.md` → "Enterprise HTTP API reference" for the canonical endpoint list, which may change faster than this skill.
+[`references/doc-urls.md` → "Enterprise HTTP API reference"](doc-urls.md) for the canonical endpoint list, which may change faster than this skill.

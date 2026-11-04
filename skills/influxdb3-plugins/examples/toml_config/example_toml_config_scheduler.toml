@@ -1,7 +1,7 @@
 # Example TOML config consumed by example_toml_config.py.
 #
-# Deployment encodes this file in config_toml_b64. The plugin explicitly
-# decodes it and parses TOML; the engine passes the argument as a string.
+# Copy this file into PLUGIN_DIR. The trigger passes its name in
+# config_file_path, and the plugin reads and parses it.
 
 # Threshold for alerting (the TOML parser returns an int)
 threshold = 75

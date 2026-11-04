@@ -44,9 +44,9 @@ Retry 429 and 5xx responses with exponential backoff and jitter.
 Surface 400, 401, 403, and 404 without retrying.
 The C# client doesn't expose the Python client's automatic `batch_size` or `flush_interval` settings.
 
-See `references/writing.md` → "Error handling" for the status-code meanings.
+See [`references/writing.md` → "Error handling"](../writing.md#error-handling) for the status-code meanings.
 
-`InfluxDB3.Client` 1.9.0+ writes through `/api/v2/write` by default, so one invalid line rejects the whole batch. For partial writes or `NoSync` on InfluxDB 3 Core or Enterprise, set the `UseV2Api` write option to `false`. See `references/writing.md` → "Official clients write through `/api/v2/write` by default".
+`InfluxDB3.Client` 1.9.0+ writes through `/api/v2/write` by default, so one invalid line rejects the whole batch. For partial writes or `NoSync` on InfluxDB 3 Core or Enterprise, set the `UseV2Api` write option to `false`. See [`references/writing.md` → "Official clients write through `/api/v2/write` by default"](../writing.md#official-clients-write-through-apiv2write-by-default).
 
 ## Parameterized SQL query
 
@@ -62,4 +62,4 @@ await foreach (var row in rows) {
 
 ## Where to fetch more
 
-`references/doc-urls.md` → "C#".
+[`references/doc-urls.md` → "C#"](../doc-urls.md).

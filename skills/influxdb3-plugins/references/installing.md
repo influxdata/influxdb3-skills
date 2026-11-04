@@ -137,7 +137,8 @@ The server enforces:
 - **Symlink escape protection** — symlinks that resolve outside `--plugin-dir` are rejected.
 - **Admin-only deploys** — non-admin tokens cannot upload, update, or create triggers.
 
-**Never inline a token in generated commands or scripts.** Tokens come from `INFLUXDB_TOKEN` env or `args` passed to the plugin (per `references/connecting.md` in the `influxdb3` skill).
+**Never inline a token in generated commands or scripts.** Admin commands read `INFLUXDB_ADMIN_TOKEN`, and application code reads `INFLUXDB_TOKEN` (`references/connecting.md` in the `influxdb3` skill).
+Trigger arguments are stored in the catalog and readable in `system.processing_engine_trigger_arguments`, so anyone who can query system tables can read a secret passed as a trigger argument.
 
 **What the server does *not* protect against** (admin-token-gated, but code-execution-equivalent once reached — an admin token on InfluxDB is effectively arbitrary code in the server process):
 - **`gh:` / `--plugin-repo`** fetch and run remote code with no integrity check (above).
@@ -152,4 +153,4 @@ For deployments where a compromised or hostile plugin is in scope, the control t
 
 ## Where to fetch more
 
-`references/doc-urls.md` → "Processing engine and Python plugins" → setup, upload, security sections.
+[`references/doc-urls.md` → "Processing engine and Python plugins"](doc-urls.md) → setup, upload, security sections.

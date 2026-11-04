@@ -71,4 +71,4 @@ curl -sS -X POST "$INFLUXDB_HOST/api/v3/query_sql" \
 
 ## Where to fetch more
 
-`references/doc-urls.md` → "HTTP API (`/api/v3/*`)".
+[`references/doc-urls.md` → "HTTP API (`/api/v3/*`)"](../doc-urls.md).

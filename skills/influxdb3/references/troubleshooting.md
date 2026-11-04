@@ -8,7 +8,7 @@ When something stopped working. Symptom-keyed at the top; topic sections below. 
 
 If the developer pastes something that looks like a token, anywhere in the conversation (heuristic regex, case-insensitive: `(?i)apiv3_[A-Za-z0-9+/_=-]{30,}`), or any other credential, such as a URL with an embedded secret:
 
-1. Say that the token is exposed and recommend rotating it. Give both halves of the rotation: the command that creates the replacement and the command that deletes the exposed token (`references/tokens.md` → "Token rotation pattern"). The developer decides when to rotate.
+1. Say that the token is exposed and recommend rotating it. Give both halves of the rotation: the command that creates the replacement and the command that deletes the exposed token ([`references/tokens.md` → "Token rotation pattern"](tokens.md#token-rotation-pattern)). The developer decides when to rotate.
 2. Avoid repeating a pasted token in your reply, in whole or in part. Even a prefix or suffix helps an attacker match it in logs. Write `<redacted>` instead. The bare `apiv3_` prefix is fine for explanation.
 3. Keep diagnosing the underlying problem.
 
@@ -46,13 +46,13 @@ reading it:
 | Write fails with 413 | [413 — payload too large](#413--payload-too-large) |
 | Write fails with 429 | [429 — temporarily rejected](#429--temporarily-rejected) |
 | Write fails with 5xx | [5xx — server-side](#5xx--server-side) |
-| Old value, new value, or two rows after rewriting a point | `references/quirks.md` → entry 13 |
+| Old value, new value, or two rows after rewriting a point | [`references/quirks.md` → entry 13](quirks.md#13-overwriting-a-point-isnt-deterministic) |
 | Query returns 0 rows / wrong rows | [Query failures](#query-failures) |
 | Query schema mismatch (`No field named X`) | [Query failures](#query-failures) |
 | Token rotation broke my CI | [Admin failures](#admin-failures) |
 | Orphan databases / tokens after a script crash | [Admin failures](#admin-failures) |
 | Permission-string typo rejected | [Admin failures](#admin-failures) |
-| `delete token` syntax error | `references/quirks.md` → entry 8 |
+| `delete token` syntax error | [`references/quirks.md` → entry 8](quirks.md#8-delete-token-uses---token-name-flag-not-positional) |
 | Slow query / slow write | [Performance hints (quick triage only)](#performance-hints) |
 | Plugin trigger doesn't fire | sibling skill: `influxdb3-plugins/references/troubleshooting.md` |
 
@@ -69,7 +69,7 @@ reading it:
    `[ -n "$INFLUXDB_ADMIN_TOKEN" ] && echo set || echo empty` (or `$INFLUXDB_TOKEN`).
 2. Does the command pass the token?
    The `influxdb3` CLI doesn't read `INFLUXDB_TOKEN` or `INFLUXDB_ADMIN_TOKEN`.
-   Pass `--token` explicitly. See `quirks.md` entry 5.
+   Pass `--token` explicitly. See [`quirks.md` entry 5](quirks.md#5-the-influxdb3-cli-doesnt-read-influxdb_token).
 3. Is the host correct? See [HTTP 404 — host](#http-404--host).
 4. Was the token recently rotated? See [Token rotation aftermath](#token-rotation-aftermath).
 5. Is the token still valid? Run the diagnostic toolkit (`examples/diagnose/diagnose.py`) — it reports token validity.
@@ -82,11 +82,13 @@ reading it:
 
 - Application token (scoped) trying to do admin operations (create DB, create token). Use the admin token for admin work.
 - A write token without `write` on the target database. `/api/v2/write` returns 403 for this case (3.10.0+); earlier releases return 401.
-- Permission scoped to a different database than you're writing to. Check `system.tokens.permissions` (remember the JSON-string parsing — `quirks.md` entry 4).
+- Permission scoped to a different database than you're writing to. Check `system.tokens.permissions` (remember the JSON-string parsing — [`quirks.md` entry 4](quirks.md#4-systemtokenspermissions-is-a-json-encoded-string)).
 
 A 403 doesn't tell you whether the database exists.
 A scoped credential gets 403 for both a denied database and a nonexistent one, often with an empty body.
+The database list shows only the databases the credential can see.
 Check as an administrator to tell absent resources from hidden ones, and don't parse an empty 403 body as JSON.
+If a JWT works on one node and gets 401 on another, compare the two nodes' user-auth and JWT key settings.
 For user JWTs and roles on Enterprise, see the [user-authentication docs](https://docs.influxdata.com/influxdb3/enterprise/admin/security/manage-users/).
 
 **Fix:** on Enterprise or InfluxDB 3 Cloud, create a scoped token with the right permissions; on Core, use a named admin token because Core has no scoped tokens. Reference: `references/tokens.md`.
@@ -97,7 +99,7 @@ For user JWTs and roles on Enterprise, see the [user-authentication docs](https:
 
 - Wrong host URL (typo, wrong port).
 - Server isn't running.
-- For health-check tools using `HEAD /ping`: known quirk — only GET works (`quirks.md` entry 1).
+- For health-check tools using `HEAD /ping`: known quirk — only GET works ([`quirks.md` entry 1](quirks.md#1-head-ping-returns-404-only-get-ping-works)).
 
 **Fix:** correct the URL; start the server; switch the health check to GET.
 
@@ -134,9 +136,9 @@ done
 1. Identify which DB has the data and which DB the writes *should* go to.
 2. Fix the env var or code typo so future writes target the correct name.
 3. (Optional) migrate the data from the typo'd DB to the correct one — copy out via SQL `SELECT *`, write back as line protocol.
-4. Drop the typo'd DB: `influxdb3 delete database <typo_name> -y --token "$INFLUXDB_ADMIN_TOKEN"` (`-y` skips the confirmation prompt for scripting; there is no `--force` — see `quirks.md` entry 7).
+4. Drop the typo'd DB: `influxdb3 delete database <typo_name> -y --token "$INFLUXDB_ADMIN_TOKEN"` (`-y` skips the confirmation prompt for scripting; there is no `--force` — see [`quirks.md` entry 7](quirks.md#7-delete-database-uses--y--yes-to-skip-the-prompt--there-is-no---force)).
 
-**Prevention:** SKILL.md §2 "Setup checklist" covers checking that the database exists before the first write. Generated app code should include a startup check.
+**Prevention:** [SKILL.md §2](../SKILL.md#2-setup-checklist) "Setup checklist" covers checking that the database exists before the first write. Generated app code should include a startup check.
 
 ## Write failures
 
@@ -148,7 +150,7 @@ done
 {"error":"partial write of line protocol occurred","data":[{"error_message":"...","line_number":347,"original_line":"sensor,host=server01 temp 70.0 ..."}]}
 ```
 
-**A 400 doesn't always mean nothing was written.** Which lines were stored depends on the endpoint and `accept_partial`; see `references/writing.md` → "A 400 can mean a partial write".
+**A 400 doesn't always mean nothing was written.** Which lines were stored depends on the endpoint and `accept_partial`; see [`references/writing.md` → "A 400 can mean a partial write"](writing.md#a-400-can-mean-a-partial-write).
 
 **Diagnose:**
 
@@ -163,7 +165,7 @@ done
 **Diagnose:** the request body exceeds the server's limit.
 On Core and Enterprise, `--max-http-request-size` sets it, and the default is `10mb`.
 
-**Fix:** reduce batch size. Recommended: 1,000–10,000 points per write call (matches the batching rule in `references/writing.md`).
+**Fix:** reduce batch size. Keep each request under the limit; the docs' optimal batch is up to 10,000 lines or 10 MB ([`references/writing.md` → "Batching rule"](writing.md#batching-rule)).
 
 ### 429 — temporarily rejected
 
@@ -171,7 +173,7 @@ On Core and Enterprise, `--max-http-request-size` sets it, and the default is `1
 The 3.12.0 release notes also describe WAL-buffer pressure rejecting writes with 429 on Core and Enterprise's Parquet engine.
 Do not assume every self-hosted 429 is an authentication or cloud-rate-limit problem.
 
-**Fix:** retry with exponential backoff and jitter. Documented in `references/writing.md` → "Error handling".
+**Fix:** retry with exponential backoff and jitter. Documented in [`references/writing.md` → "Error handling"](writing.md#error-handling).
 
 ### 5xx — server-side
 
@@ -184,11 +186,11 @@ On a self-hosted server, read the server log for the error first.
 
 **What you'll see:** First write set `temp` as a float (`temp=72.4`); a later write tries `temp="unknown"` (string) and gets rejected.
 
-**Fix:** see `references/writing.md` → "Type stickiness".
+**Fix:** see [`references/writing.md` → "Type stickiness"](writing.md#type-stickiness).
 
 ## Query failures
 
-Check the status before decoding the body. For status codes and error formats on 3.12.1, see `references/querying.md` → "Query failures on Core and Enterprise 3.12.1".
+Check the status before decoding the body. For status codes and error formats on 3.12.1, see [`references/querying.md` → "Query failures on Core and Enterprise 3.12.1"](querying.md#query-failures-on-core-and-enterprise-3121).
 
 ### 0 rows returned
 
@@ -207,7 +209,7 @@ An empty InfluxQL response alone therefore does not prove that the table exists.
 
 ### Schema mismatch (`No field named X`)
 
-**Diagnose:** the field name in the query doesn't match the measurement's schema. The most common case is a query on `system.processing_engine_logs` with the wrong column names (see `quirks.md` entry 10).
+**Diagnose:** the field name in the query doesn't match the measurement's schema. The most common case is a query on `system.processing_engine_logs` with the wrong column names (see [`quirks.md` entry 10](quirks.md#10-systemprocessing_engine_logs-columns-are-event_time--trigger_name--log_level--log_text)).
 
 **Fix:** check the actual schema:
 
@@ -229,13 +231,13 @@ WHERE table_name = '<measurement>';
 2. **Did consumers restart?** Long-running services may still be using the old token until reconnect.
 3. **Was the old token revoked too early?** If the swap-secret step was skipped, every consumer is on the old (now-deleted) token.
 
-**Fix:** roll back the rotation if the old token still exists in the system; if it's been revoked, push the new token to all consumers and restart. Use the rotation order in `references/tokens.md` → "Token rotation pattern": create the new token, swap the secret, confirm every consumer uses the replacement, then revoke the old token.
+**Fix:** roll back the rotation if the old token still exists in the system; if it's been revoked, push the new token to all consumers and restart. Use the rotation order in [`references/tokens.md` → "Token rotation pattern"](tokens.md#token-rotation-pattern): create the new token, swap the secret, confirm every consumer uses the replacement, then revoke the old token.
 
 ### Lost admin token
 
 **Recovery options, easiest to hardest:**
 
-1. **Another admin token still works.** Use it to create a new named admin token, then delete the lost one (`references/tokens.md` → "Token rotation pattern").
+1. **Another admin token still works.** Use it to create a new named admin token, then delete the lost one ([`references/tokens.md` → "Token rotation pattern"](tokens.md#token-rotation-pattern)).
 2. **The operator token is lost, and you control the server.** Restart the server with `--admin-token-recovery-http-bind`, then regenerate the operator token through the recovery port:
 
    ```bash
@@ -253,7 +255,7 @@ WHERE table_name = '<measurement>';
 
 **Diagnose:** `read,write` typo'd to `reaad,write`. Other common typos: `db:` becoming `dbs:`, missing colons.
 
-**Fix:** the format is `<resource_type>:<resource_names>:<actions>` where `resource_type` is `db` or `system`, and `actions` is `read`, `write`, or `read,write`. Reference: `references/tokens.md` → "Permission-string syntax".
+**Fix:** the format is `<resource_type>:<resource_names>:<actions>` where `resource_type` is `db` or `system`, and `actions` is `read`, `write`, or `read,write`. Reference: [`references/tokens.md` → "Permission-string syntax"](tokens.md#permission-string-syntax).
 
 ### Retention period not applying
 
@@ -293,7 +295,7 @@ Slow queries, slow writes, cardinality remediation, batch-size tuning — this s
 
 - **Slow query, no time filter** → add `WHERE time > now() - INTERVAL '...'`.
 - **Slow query, unbounded `SELECT *`** → add `LIMIT <n>`. `references/querying.md` covers this.
-- **Slow write, large batches** → split into 1,000–10,000-point batches per write call.
+- **Slow write, large batches** → split into batches of up to 10,000 lines or 10 MB per write call.
 
 ## Where to fetch more
 
