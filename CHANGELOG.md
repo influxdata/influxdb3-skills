@@ -107,6 +107,7 @@ Claim IDs (`claim-YYYYMMDD-NNNN`) refer to InfluxData's internal verification le
 - Tell agents to lead with the identity-layer recommendation when asked for per-user tokens. Agents gave the per-customer token body first and the recommendation last.
 - Open the description with "Load it before answering any InfluxDB 3 … question, even one you think you know". Haiku answered nine cases from memory in every traced run, including prompts that name InfluxDB 3 Core. The topic list now names batching, timestamps, partial writes, and naming, which those prompts ask about.
 - Drop the `accept_partial=false` criterion from `write-partial-400`. The prompt doesn't ask about it, and correct answers failed on it.
+- Gate releases on Sonnet answers instead of Opus, with Opus still judging. A three-run suite costs about $25 on Sonnet and $56 on Opus, and a skill that passes on Sonnet can be recommended to developers who use it. Opus and Haiku runs are comparisons.
 
 ### Removed
 
