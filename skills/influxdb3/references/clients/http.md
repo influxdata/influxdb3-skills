@@ -2,7 +2,6 @@
 
 For any language without a first-class client, or when a developer explicitly wants to skip the client library, use the v3 HTTP API directly.
 The `/api/v3` endpoints exist only on InfluxDB 3 Core, InfluxDB 3 Enterprise, and InfluxDB 3 Cloud.
-For InfluxDB Cloud Serverless and InfluxDB Cloud Dedicated, see `references/flavors.md`.
 
 ## Endpoints
 

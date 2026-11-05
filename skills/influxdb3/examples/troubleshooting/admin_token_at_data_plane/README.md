@@ -45,5 +45,5 @@ The broken version doesn't create any orphan resources; it just uses the admin t
 
 ## Where to fetch more
 
-- [`references/tokens.md` → "Adversarial scenarios — what NOT to do"](../../../references/tokens.md#adversarial-scenarios--what-not-to-do)
+- [`SKILL.md` → "Tokens"](../../../SKILL.md#11-tokens)
 - [`references/troubleshooting.md` → "Auth failures"](../../../references/troubleshooting.md#auth-failures)

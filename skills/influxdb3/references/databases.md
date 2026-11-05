@@ -13,8 +13,7 @@ A database goes through: **create → use → (optionally) update retention → 
 ### Create, write, and drop: which token does what
 
 Follow this pattern whenever a task both manages a database and writes to it, including a one-off demo or sample script.
-Recommend sending the write with the app token. If the developer chooses the admin token, state the risk and use it.
-Use two env vars so the admin token never reaches the write path: `INFLUXDB_ADMIN_TOKEN` for lifecycle operations and `INFLUXDB_TOKEN` for the application's writes.
+Use `INFLUXDB_ADMIN_TOKEN` for lifecycle operations and `INFLUXDB_TOKEN` for the application's writes.
 
 ```bash
 # 1. Create the database (admin token)
@@ -51,8 +50,6 @@ influxdb3 create database <name> --token "$INFLUXDB_ADMIN_TOKEN"
 # With retention period (human-readable duration: "30d", "24h", "1y")
 influxdb3 create database <name> --retention-period 30d --token "$INFLUXDB_ADMIN_TOKEN"
 ```
-
-> The CLI also reads `INFLUXDB3_AUTH_TOKEN` from env. These examples pass `--token "$INFLUXDB_ADMIN_TOKEN"` explicitly to keep the admin token separate from the application's `INFLUXDB_TOKEN`.
 
 ### List
 
@@ -108,14 +105,6 @@ See `references/admin-http-api.md` for the full endpoint reference. Quick summar
 | Create | `POST /api/v3/configure/database` body `{"db": "<name>"}` |
 | Delete | `DELETE /api/v3/configure/database?db=<name>` |
 
-
-## Per-flavor differences
-
-| Flavor | Database creation |
-|---|---|
-| Core, Enterprise (self-hosted) | CLI or HTTP API as above |
-| Cloud Serverless | Cloud console; or management API (different endpoint — see `doc-urls.md`) |
-| Cloud Dedicated | Cloud console; or management API |
 
 ## Recovering from the silent auto-create footgun
 

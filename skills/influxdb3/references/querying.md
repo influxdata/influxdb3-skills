@@ -72,23 +72,21 @@ LIMIT 1000 OFFSET 5000
 
 When the developer asks for InfluxQL, use the `/api/v3/query_influxql` endpoint or the client's InfluxQL mode.
 
-## Query failures on Core and Enterprise 3.12.1
+## Query failures
 
 Check the HTTP status before decoding a result as JSON.
 A requested result format does not determine the error body's format.
 
-| Observation | Interpretation and action |
+| Response | What to do |
 |---|---|
 | SQL unknown table returns 400 with a plain-text planning error | Check the table and database; fix the query rather than retrying it. |
-| InfluxQL unknown table returns 200 with `[]` | An empty InfluxQL result does not prove that the table exists. Empty SQL and InfluxQL JSON results are also `[]`. |
 | Admin query against an unknown database returns 404 | Check the database name and provision it through the setup workflow if needed. |
-| Scoped Enterprise query returns 403 with an empty body | The tested credential receives the same response for a denied database and a nonexistent database. Check access and visible databases; don't infer existence from the response. |
-| Query-memory exhaustion before the first row returns 429; Core 3.12.1 returned 500, and the [3.12.2 notes](https://docs.influxdata.com/influxdb3/core/release-notes/) say Core now returns 429 except for some cases, such as running out of memory while deduplicating | The tested errors were plain text across JSON, JSONL, CSV, pretty, and Parquet requests, without `Retry-After`. Use bounded exponential backoff with jitter for transient resource failures. If repeated, report the resource error and route performance work to the tuning docs. |
-| Enterprise data query returns 405 on an ingest-only node | Use an endpoint that runs query mode. Retrying the same data query on the same node does not fix routing. Success of general system-table queries on such a node has not been verified. |
+| Scoped Enterprise query returns 403 with an empty body | A denied database and a nonexistent database get the same response. Check access and visible databases; don't infer existence from the response. |
+| Query-memory exhaustion before the first row returns 429. Earlier Core releases returned 500; the [3.12.2 notes](https://docs.influxdata.com/influxdb3/core/release-notes/) say Core now returns 429 except for some cases, such as running out of memory while deduplicating | The response has no `Retry-After` header. Use bounded exponential backoff with jitter for transient resource failures. If repeated, report the resource error and route performance work to the tuning docs. |
+| Enterprise data query returns 405 on an ingest-only node | Use an endpoint that runs query mode. Retrying the same data query on the same node does not fix routing. |
 
 Not every 500 means resource exhaustion.
 The [3.12.1 release notes](https://docs.influxdata.com/influxdb3/enterprise/release-notes/#v3121) describe returning the error status before any rows, but a stream can still end early after rows start, so detect incomplete responses.
-The live memory-pool probes exercised failures before the first row, not failures partway through a result.
 
 The [3.12.0 notes](https://docs.influxdata.com/influxdb3/enterprise/release-notes/#v3120) also describe a finite query-concurrency limit.
 Excess queries wait for a slot, so set a client timeout instead of assuming every overload fails immediately.

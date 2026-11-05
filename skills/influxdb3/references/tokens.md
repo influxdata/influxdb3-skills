@@ -152,24 +152,13 @@ What goes wrong in other orders:
 - Create without swapping: consumers keep using the old token, so nothing was rotated, and the old token stays valid.
 - Swap-without-restart: long-running connections may keep using the old token until they reconnect.
 
-## Token sources by product
+For InfluxDB 3 Cloud tokens, see its docs through `references/doc-urls.md`.
 
-| Flavor | Admin token source | Scoped token creation |
-|---|---|---|
-| Core | `influxdb3 create token --admin` after the server starts | None. See "InfluxDB 3 Core: admin tokens only." |
-| Enterprise | Same as Core | CLI or HTTP as above |
-| InfluxDB Cloud Serverless | InfluxDB Cloud Serverless UI → Tokens | InfluxDB Cloud Serverless UI → Tokens, or management API |
-| InfluxDB Cloud Dedicated | InfluxDB Cloud Dedicated console → Tokens | InfluxDB Cloud Dedicated console, or management API |
+## Multi-tenant applications
 
-For InfluxDB 3 Cloud and InfluxDB Clustered, see their docs. Route to that product's docs through `references/doc-urls.md`.
-
-## Adversarial scenarios — what NOT to do
-
-| Anti-pattern | Why | Do this instead |
-|---|---|---|
-| Inline the admin token in a CI script | Anyone with read access to the repo or CI logs has full control of your InfluxDB instance | Read from `INFLUXDB_ADMIN_TOKEN` env or a secret manager |
-| Use the admin token at the data plane (writes, queries) | One leak = total compromise; admin scope is far broader than the app needs | Create a scoped resource token; use that. On Core, create a separate named admin token for the app ("InfluxDB 3 Core: admin tokens only"). |
-| Per-end-user tokens in a multi-tenant SaaS | InfluxDB tokens are per-application, not per-user — creating thousands of tokens explodes operationally | Authenticate the end user in your app, then proxy the InfluxDB call with one app-scoped token |
+InfluxDB tokens are per application, not per end user.
+Thousands of per-user tokens are hard to operate.
+Authenticate the end user in your application, then make the InfluxDB call with one application token.
 
 ## Where to fetch more
 

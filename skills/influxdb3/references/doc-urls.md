@@ -14,10 +14,10 @@ When the skill content does not cover a developer's question — or when the ans
 | Enterprise release notes | https://docs.influxdata.com/influxdb3/enterprise/release-notes/ | Enterprise-specific changes plus inherited Core updates |
 | Enterprise databases | https://docs.influxdata.com/influxdb3/enterprise/admin/databases/ | Existing explicit schemas and separately scoped declaration work |
 | Enterprise users | https://docs.influxdata.com/influxdb3/enterprise/admin/security/manage-users/ | User authentication and role administration beyond token workflows |
-| Cloud Serverless | https://docs.influxdata.com/influxdb3/cloud-serverless/ | Cloud-Serverless–specific endpoints, auth, write path quirks |
-| Cloud Dedicated | https://docs.influxdata.com/influxdb3/cloud-dedicated/ | Dedicated cluster setup, custom hosts |
 | InfluxDB 3 Cloud | https://docs.influxdata.com/influxdb3/cloud/ | Hosted Enterprise: confirm API and token behavior |
-| Cloud Serverless regions | https://docs.influxdata.com/influxdb3/cloud-serverless/reference/regions/ | Region host URLs |
+| InfluxDB Cloud Serverless | https://docs.influxdata.com/influxdb3/cloud-serverless/ | Not covered by this skill. Route every question here. |
+| InfluxDB Cloud Dedicated | https://docs.influxdata.com/influxdb3/cloud-dedicated/ | Not covered by this skill. Route every question here. |
+| InfluxDB Clustered | https://docs.influxdata.com/influxdb3/clustered/ | Not covered by this skill. Route every question here. |
 | Enterprise CLI reference | https://docs.influxdata.com/influxdb3/enterprise/reference/cli/influxdb3/create/ | `create database`, `create token`, and other CLI commands |
 | Enterprise HTTP API reference | https://docs.influxdata.com/influxdb3/enterprise/api/v3/ | Canonical `/api/v3/*` endpoints and bodies |
 | Preconfigured admin token | https://docs.influxdata.com/influxdb3/enterprise/admin/tokens/admin/preconfigured/ | Start the server with an admin token file |

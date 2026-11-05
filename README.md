@@ -101,7 +101,7 @@ Generated code covers Python, JavaScript and TypeScript, Go, Java, C#, and raw H
 - **Provision databases:** create, list, update the retention period, and delete, with the CLI or the HTTP API.
 - **Manage tokens:** admin tokens and scoped resource tokens (`db:<name>:read,write`), listing with `system.tokens`, and safe rotation.
   Rotation creates the new token, swaps the secret, and then revokes the old token, never in another order.
-- **Automate admin work:** complete lifecycle examples in Python, JavaScript and TypeScript, Go, Java, C#, and raw HTTP.
+- **Automate admin work:** complete lifecycle examples in Python and raw HTTP (`curl`).
 - **Troubleshoot:** a symptom-keyed guide for auth failures, writes misrouted by silent database auto-creation, write and query failures, admin failures, and plugin runtime issues.
   If you paste a token, the agent doesn't repeat any part of it.
 - **Run a diagnostic:** a Python script that produces a one-page health report.

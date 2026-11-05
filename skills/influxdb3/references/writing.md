@@ -64,7 +64,7 @@ Resend only the corrected rejected lines, not the whole batch.
 With `accept_partial=false`, one invalid line rejects the whole batch.
 
 The `/api/v2/write` and `/write` compatibility endpoints behave differently.
-On Core and Enterprise 3.11.5 and 3.12.1, one invalid line in the batch returns 400, and none of the lines are written.
+There, one invalid line in the batch returns 400, and none of the lines are written.
 Fix the invalid line and resend the whole batch.
 The v1 compatibility route is `/write`, not `/api/v1/write`.
 
@@ -84,7 +84,6 @@ So by default, one invalid line rejects the whole batch, and `accept_partial` ha
 The Python and JavaScript clients also read the `INFLUX_WRITE_USE_V2_API` environment variable.
 `no_sync` (`noSync`, `NoSync`) requires the V3 endpoint in every client.
 For InfluxDB 3 Core and Enterprise, opt into the V3 endpoint when you need partial writes or `no_sync`.
-Keep the default for InfluxDB Cloud Serverless, InfluxDB Cloud Dedicated, and InfluxDB Clustered.
 Check the client's README for the exact option syntax in the version the user runs.
 
 Match on the status code and the `data` array, not on the error message text.
@@ -116,17 +115,15 @@ In an existing Enterprise explicit-schema database, undeclared tables and column
 Check the schema before retrying a schema-related 400.
 Route declaration or schema-mode administration to the [Enterprise database docs](https://docs.influxdata.com/influxdb3/enterprise/admin/databases/) instead of creating declarations in the application's write path or disabling enforcement.
 
-## Maximum timestamp on 3.12.1
+## Maximum timestamp
 
-Validate timestamps in the application, because the server doesn't reliably reject one past the documented maximum.
 The [3.12.1 notes](https://docs.influxdata.com/influxdb3/enterprise/release-notes/#v3121) document rejection of timestamps after `2262-04-11T23:39:59.999999999Z`.
-In testing, Core 3.12.1 rejected the next nanosecond with 400, but an Enterprise 3.12.1 node accepted it, and the cause is unknown.
-Don't promise a 400 at that boundary on Enterprise.
+Validate timestamps in the application before you write them.
 
 ## Timestamps
 
 - **Write the event's own timestamp** from the source, for live writes and backfills alike. A point without a timestamp gets the server's receive time, so a retried write lands as a second point instead of replacing the first. Omit the timestamp only when receive time is what you want, and keep hosts synchronized with NTP.
-- **Use second precision (`?precision=second`) unless you need finer.** It makes line protocol smaller, and storage precision is the same either way. If a series can have more than one point in the same second, use finer precision; at second precision those points share a timestamp and merge (`references/schema-design.md`).
+- **Use second precision (`?precision=second`) by default.** It makes line protocol smaller, and storage precision is the same either way. If a series can have more than one point in the same second, use finer precision; at second precision those points share a timestamp and merge (`references/schema-design.md`).
 
 ## When to use raw HTTP vs the client
 

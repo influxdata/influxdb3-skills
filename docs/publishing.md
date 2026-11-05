@@ -63,7 +63,7 @@ Internal commits and process-only repository changes do not each require a versi
 3. **Re-run runnable examples** against a live InfluxDB 3 Core or Enterprise instance:
 
    ```bash
-   for d in skills/influxdb3/examples/{python,javascript,go,java,csharp,http}; do
+   for d in skills/influxdb3/examples/{python,http}; do
      echo "==> $d"
      # See README or hello.* in this folder for run instructions
    done
@@ -162,7 +162,7 @@ When releasing a version that includes `influxdb3` skill admin changes:
 
    Both lists must be empty before the release lifecycle re-runs. If anything's left over, manually `influxdb3 delete database <name>` and `influxdb3 delete token --token-name <name>` to clean up.
 
-3. **Re-run the six admin lifecycle examples** against the live instance: `examples/admin-http`, `examples/admin-python`, `examples/admin-javascript`, `examples/admin-go`, `examples/admin-java`, `examples/admin-csharp`. Each must reach "Done. Lifecycle completed cleanly."
+3. **Re-run the two admin lifecycle examples** against the live instance: `examples/admin-http` and `examples/admin-python`. Each must reach "Done. Lifecycle completed cleanly."
 
 4. **Post-release orphan check** (mandatory): same as step 2; both lists must again be empty. Failures here block the tag.
 
