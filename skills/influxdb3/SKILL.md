@@ -1,21 +1,21 @@
 ---
 name: influxdb3
 description: >-
-  Use for any task that touches InfluxDB 3 Core, InfluxDB 3 Enterprise, or
+  Use for any task touching InfluxDB 3 Core, InfluxDB 3 Enterprise, or
   InfluxDB 3 Cloud: code that connects, writes line protocol, runs SQL or
-  InfluxQL queries, or designs schemas; provisioning databases, retention periods,
-  and tokens (creating, rotating, or regenerating admin, operator, and
-  scoped tokens such as db:<dbname>:read,write) with the influxdb3 CLI or
-  /api/v3/configure API; and troubleshooting "why isn't this working"
-  symptoms: 401, 403, or 404 errors, line protocol parse errors, queries
-  that return no rows, silent auto-create misroutes, token rotation
-  issues, an unreachable instance, or a request for a mock-data stub.
-  Triggers on the official InfluxDB 3 clients (influxdb3-python,
-  @influxdata/influxdb3-client, influxdb3-go, influxdb3-java,
-  InfluxDB3.Client) and on INFLUXDB_HOST, INFLUXDB_TOKEN, or
-  INFLUXDB_DATABASE. For InfluxDB Cloud Serverless, InfluxDB Cloud
-  Dedicated, or InfluxDB Clustered, it routes to that product's docs.
-  For Processing Engine plugin code, use influxdb3-plugins.
+  InfluxQL queries, or designs schemas; provisioning databases, retention
+  periods, and tokens (creating, rotating, or regenerating admin,
+  operator, and scoped db:<dbname>:read,write tokens) with the influxdb3
+  CLI or /api/v3/configure API; and troubleshooting "why isn't this
+  working" symptoms: 401, 403, or 404 errors, line protocol parse errors,
+  queries that return no rows, silent auto-create misroutes, token
+  rotation issues, an unreachable instance, or a mock-data stub. Triggers
+  on the official InfluxDB 3 client libraries, such as influxdb3-python,
+  and on INFLUXDB_HOST, INFLUXDB_TOKEN, or INFLUXDB_DATABASE. For a bare
+  "InfluxDB Cloud" or another InfluxDB product (Cloud Serverless, Cloud
+  Dedicated, Clustered, Cloud (TSM), Cloud 1, OSS v1 or v2, Enterprise
+  v1), it identifies the product and routes to its docs. For Processing
+  Engine plugin code, use influxdb3-plugins.
 metadata:
   version: "0.7.3"
   docs_checked: "2026-10-24"
@@ -39,8 +39,9 @@ It covers Python, JavaScript/TypeScript, Go, Java, C#, and raw HTTP.
 | InfluxDB Cloud Serverless, InfluxDB Cloud Dedicated, InfluxDB Clustered | Not covered. They have no `/api/v3` endpoints, and their tokens and databases work differently. Route to the product's docs in [`references/doc-urls.md`](references/doc-urls.md), and don't apply this skill's commands or endpoints. |
 
 **Use the full product name.**
-"Cloud" alone can mean several products.
-If the developer says only "Cloud," ask which product they use.
+"Cloud" or "InfluxDB Cloud" alone can mean InfluxDB 3 Cloud, InfluxDB Cloud Serverless, InfluxDB Cloud Dedicated, or InfluxDB Cloud (TSM).
+If the developer doesn't name the product, ask which one they use before giving product-specific steps.
+A host URL or `/ping` headers can identify it ([`flavor-detection.md` → "Identify the product"](references/flavor-detection.md#identify-the-product)).
 
 ### Other InfluxDB products
 
