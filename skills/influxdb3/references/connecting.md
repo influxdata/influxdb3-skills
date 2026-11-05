@@ -1,21 +1,21 @@
 # Connecting & Authenticating to InfluxDB 3
 
-## The Five Rules
+## Configuration rules
 
-1. **Never inline a token.** Tokens live in env vars or `.env` files. Generated code reads them from `os.environ` / `process.env` / etc. — it never has a literal token string.
-2. **Always use env vars in production code.** `INFLUXDB_HOST`, `INFLUXDB_TOKEN`, `INFLUXDB_DATABASE` are the canonical names; reuse them across languages so a developer can switch languages without re-configuring.
-3. **Use `.env` for local development.** `.env` is loaded by a language-specific dotenv library at startup. **Never commit `.env`.**
-4. **Add `.env` to `.gitignore` first.** Before generating any code that creates or reads a `.env` file, check that `.gitignore` exists and contains `.env`, and add the entry if it doesn't. If the developer wants to skip or defer this, warn that one commit of `.env` publishes the token, then follow their choice.
-5. **Ship `.env.example` instead.** A committed file with the required keys and stub values, so a new developer cloning the repo knows what to set.
+Token rules are in `SKILL.md` §11.
+
+1. **Read settings from env vars in production code.** `INFLUXDB_HOST`, `INFLUXDB_TOKEN`, and `INFLUXDB_DATABASE` are the canonical names. Reuse them across languages so a developer can switch languages without reconfiguring.
+2. **Use `.env` for local development.** `.env` is loaded by a language-specific dotenv library at startup. **Never commit `.env`.**
+3. **Add `.env` to `.gitignore` first.** Before generating any code that creates or reads a `.env` file, check that `.gitignore` exists and contains `.env`, and add the entry if it doesn't. If the developer wants to skip or defer this, warn that one commit of `.env` publishes the token, then follow their choice.
+4. **Ship `.env.example` instead.** A committed file with the required keys and stub values, so a new developer cloning the repo knows what to set.
 
 ## Canonical env vars
 
 | Variable | Required | Notes |
 |---|---|---|
-| `INFLUXDB_HOST` | yes | Full URL including scheme and port; e.g., `http://localhost:8181` for Core or `https://us-east-1-1.aws.cloud2.influxdata.com` for Cloud Serverless |
-| `INFLUXDB_TOKEN` | yes | Database-scoped token, or a named admin token on Core; never inline |
-| `INFLUXDB_DATABASE` | yes | The database (Core/Enterprise) or bucket (InfluxDB Cloud Serverless) name |
-| `INFLUXDB_ORG` | no | Only needed for v2-style endpoints (Cloud Serverless write path); leave unset elsewhere |
+| `INFLUXDB_HOST` | yes | Full URL including scheme and port, for example `http://localhost:8181` |
+| `INFLUXDB_TOKEN` | yes | Database-scoped token, or a named admin token on Core |
+| `INFLUXDB_DATABASE` | yes | The database name |
 
 ## First-time setup checklist
 
@@ -25,7 +25,7 @@ When the developer is starting fresh in a project (no `.env`, no client imports)
 
 These steps happen ONCE, on the server side, before any application code:
 
-1. **Pick the flavor** — Core or Enterprise (self-hosted), or skip to InfluxDB Cloud Serverless / InfluxDB Cloud Dedicated below. For InfluxDB 3 Cloud and InfluxDB Clustered, follow their docs. See `references/flavors.md`.
+1. **Pick the flavor** — Core or Enterprise (self-hosted). For InfluxDB 3 Cloud, see below. See `references/flavors.md`.
 2. **Start the server** — `influxdb3 serve --object-store=...` (see `references/installing.md`).
 3. **Create the operator/admin token.** For a brand-new server, this is a bootstrap step that does NOT require an existing token:
    - CLI: `influxdb3 create token --admin --host http://localhost:8181`
@@ -40,19 +40,15 @@ These steps happen ONCE, on the server side, before any application code:
    - This is the token the application reads from `INFLUXDB_TOKEN`.
    - Full reference, including the safe rotation pattern: `references/tokens.md`.
 
-### Bootstrapping (Cloud Serverless / Cloud Dedicated)
+### Bootstrapping (InfluxDB 3 Cloud)
 
-The server already exists and the bootstrap admin already happened on InfluxData's side:
-
-1. **Pick the flavor** and confirm the host pattern (`<region>.<provider>.cloud2.influxdata.com` for Serverless; customer-specific hostname for Dedicated). See `references/flavors.md`.
-2. **Create the database/bucket** in the product's UI or management API (instructions vary per flavor — see `references/doc-urls.md`).
-3. **Create a database-scoped token** in the product's UI or management API.
+InfluxData runs the server. Create the database and a database-scoped token as the InfluxDB 3 Cloud docs describe ([`references/doc-urls.md`](doc-urls.md)).
 
 ### Per-project setup (any flavor — happens in the developer's workspace)
 
 Once the server side is bootstrapped and you have `host`, `database`, and `token` values to use:
 
-4. **Verify `.gitignore` excludes `.env`** — `grep -q '^\.env$' .gitignore || echo '.env' >> .gitignore`. See rule 4.
+4. **Verify `.gitignore` excludes `.env`** — `grep -q '^\.env$' .gitignore || echo '.env' >> .gitignore`. See rule 3.
 5. **Create `.env.example`** with the canonical keys you need and stub values. Commit it.
 6. **Create `.env`** by copying `.env.example` and filling in the real values. Confirm `git status` does NOT show `.env`.
 7. **Pick the client library** — see the language router; generate the hello-world; run it.
@@ -113,5 +109,5 @@ If the developer is starting fresh and you don't have evidence the database alre
 
 If they want a config file or hard-coded constants for "just a quick test":
 
-- Don't hard-code the token in code you write. Suggest exporting `INFLUXDB_TOKEN=...` in their shell for the duration of the test.
-- If they want a `.env`, follow rule 4.
+- Suggest exporting `INFLUXDB_TOKEN=...` in their shell for the duration of the test.
+- If they want a `.env`, follow rule 3.

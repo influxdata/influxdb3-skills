@@ -26,7 +26,7 @@ Common flags:
 | Flag | Purpose |
 |---|---|
 | `-d`, `--database <name>` | Required. Target database. |
-| `--token <auth>` | Admin token (or via `INFLUXDB3_AUTH_TOKEN` env). |
+| `--token <auth>` | Admin token. |
 | `--lp <input_lp>` | Synthetic line protocol fed to `process_writes`. |
 | `--file <input_file>` | Alternative to `--lp` — read LP from a file already on the server at `<plugin-dir>/<name>_test/<input-file>`. |
 | `--input-arguments <k=v,k2=v2>` | Passed to the plugin as `args`. |
@@ -88,7 +88,7 @@ influxdb3 update trigger \
   --path "/absolute/path/my_plugin.py"
 ```
 
-In Core and Enterprise 3.12.1, `update trigger` reads the local file specified by `--path` without `--upload`. The command preserves the trigger spec, arguments, and error-behavior while replacing the plugin code.
+`update trigger` reads the local file specified by `--path` without `--upload`. The command preserves the trigger spec, arguments, and error-behavior while replacing the plugin code.
 
 ## Reading plugin logs
 

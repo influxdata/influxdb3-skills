@@ -2,27 +2,14 @@
 
 Most code can stay flavor-agnostic by reading host and token from env vars. When the generated code genuinely needs flavor-specific logic (different write endpoints, different retention-period endpoints, etc.), use the `/ping` probe to detect the flavor.
 
-This logic follows the detection that InfluxDB 3 Explorer uses to distinguish each product.
-
----
-
-## Products Explorer Recognizes
-
-| Internal Key | Display Name | Notes |
-|---|---|---|
-| `CORE` | InfluxDB 3 Core | Self-hosted, free, single-node |
-| `ENTERPRISE` | InfluxDB 3 Enterprise | Self-hosted, licensed, multi-node |
-| `CLOUD_SERVERLESS` | InfluxDB Cloud Serverless | InfluxData-hosted, multi-tenant |
-| `CLOUD_DEDICATED` | InfluxDB Cloud Dedicated | InfluxData-hosted, single-tenant |
-| `CLUSTERED` | InfluxDB Clustered | Self-hosted, Kubernetes, multi-node |
-
-> Note: Explorer does **not** attempt to detect InfluxDB OSS 1.x or 2.x in this flow. Those product lines use different endpoints and are outside Explorer's scope.
+This logic follows the first steps of the detection that InfluxDB 3 Explorer uses.
+Those steps identify Core and Enterprise. Explorer's later steps identify products this skill doesn't cover, so they're left out here.
 
 ---
 
 ## Decision Flow
 
-Explorer runs up to six sequential checks. The first check that matches wins; later checks are skipped.
+Run these checks in order. The first check that matches wins; later checks are skipped.
 If no check matches, don't guess. Have the code return an unknown result, and ask the developer which product they target or read it from configuration (see "Fallback to Asking").
 
 ```
@@ -36,7 +23,7 @@ If no check matches, don't guess. Have the code return an unknown result, and as
    Check response header: x-influxdb-build
    ├─ contains "Enterprise" (case-insensitive) → ENTERPRISE  ✓  stop
    ├─ contains "Core"       (case-insensitive) → CORE        ✓  stop
-   ├─ contains "cloud"      (case-insensitive) → not Core/Enterprise; fall through
+   ├─ contains "cloud"      (case-insensitive) → not Core or Enterprise; go to step 4
    ├─ header absent, token gave 401            → abort: InvalidTokenCore
    ├─ header absent, token gave 403            → continue to step 3 (resource token)
    └─ header absent, token gave 200            → continue to step 3 (no build header)
@@ -46,33 +33,18 @@ If no check matches, don't guess. Have the code return an unknown result, and as
 
 3. If step 2 produced no build header (resource token or no header):
    GET <host>/api/v3/configure/retention_period  (Core strategy, with token)
-   ├─ 404 Not Found  → CORE       ✓  stop  (Core 3.12.1 returns 404)
+   ├─ 404 Not Found  → CORE       ✓  stop
    ├─ 403 Forbidden  → ENTERPRISE ✓  stop  (endpoint exists but token lacks permission)
    ├─ 200 (success)  → abort: UnableToDetermineCore (unexpected)
    └─ other          → abort: UnexpectedStatusCodeCore
    Fallback: if step 3 itself errors, re-examine x-influxdb-build from step 1 ping.
 
-4. GET <serverless-databases-endpoint>  (Cloud Serverless strategy, with token)
-   ├─ 200 → CLOUD_SERVERLESS  ✓  stop
-   ├─ 401 → abort: InvalidTokenServerless
-   ├─ 403 → abort: InvalidTokenServerless
-   └─ other → not Serverless; fall through
-
-5. URL pattern check (Cloud Dedicated)
-   Does the host URL contain "influxdb.io"?
-   ├─ NO  → skip to step 6
-   └─ YES → validate all supplied database names via query
-             ├─ all valid → CLOUD_DEDICATED  ✓  stop
-             └─ any invalid → abort: DatabaseValidationFailed
-
-6. Clustered: validate all supplied database names via query
-   ├─ at least one valid → CLUSTERED  ✓  stop
-   └─ none valid        → abort: NoValidDatabasesClustered
-
-If all six checks fail → abort: UnableToDetect
+4. Not Core or Enterprise (the build header contains "cloud", or step 3 didn't match):
+   Stop. Ask which product the developer uses.
+   Route InfluxDB Cloud Serverless, InfluxDB Cloud Dedicated, and InfluxDB Clustered to their docs.
 ```
 
-**Priority order summary:** Core/Enterprise (build header) → Core/Enterprise (retention probe) → Cloud Serverless → Cloud Dedicated (URL + DB) → Clustered (DB).
+**Priority order summary:** build header, then the retention-period probe, then ask.
 
 ---
 
@@ -84,7 +56,7 @@ If all six checks fail → abort: UnableToDetect
 |---|---|
 | Contains `"Enterprise"` | InfluxDB 3 Enterprise |
 | Contains `"Core"` | InfluxDB 3 Core |
-| Contains `"cloud"` | Not Core/Enterprise; move to Serverless check |
+| Contains `"cloud"` | Not Core or Enterprise; stop and ask (step 4) |
 | Absent | Move to retention-period probe (step 3) |
 
 **Where:** HTTP response header on `GET /ping` (with token).  
@@ -99,22 +71,6 @@ If all six checks fail → abort: UnableToDetect
 
 **Rationale:** Core does not implement the retention-period configuration endpoint (returns 404); Enterprise exposes it but resource tokens lack access (returns 403).
 
-### Step 4: Cloud Serverless — Database List Endpoint
-
-Successfully listing databases using the Cloud Serverless API base URL identifies the server as Cloud Serverless. A 401 or 403 from this endpoint means the token is wrong for Serverless (abort); any other error means it is not Serverless.
-
-### Step 5: Cloud Dedicated — URL Pattern
-
-| Host URL substring | Detected flavor |
-|---|---|
-| Contains `"influxdb.io"` | InfluxDB Cloud Dedicated (if DBs validate) |
-
-**Rationale:** Explorer treats hosts that contain `influxdb.io` as Cloud Dedicated. Database names must be supplied and verified before the label is assigned.
-
-### Step 6: Clustered — Fallback
-
-If the host URL does not match the Cloud Dedicated pattern but database names are provided and at least one validates successfully, the server is labeled InfluxDB Clustered.
-
 ---
 
 ## Additional Headers Captured (Informational)
@@ -124,7 +80,7 @@ These headers are extracted from the `/ping` response and surfaced in Explorer's
 | Header | Description |
 |---|---|
 | `x-influxdb-version` | Server version string, e.g. `"3.12.1"` |
-| `cluster-uuid` | Cluster identifier (Enterprise/Clustered only) |
+| `cluster-uuid` | Cluster identifier (Enterprise only) |
 
 The `/ping` JSON body also includes `version`.
 
@@ -132,5 +88,5 @@ The `/ping` JSON body also includes `version`.
 
 ## Fallback to Asking
 
-When detection returns `None` / `null`, ask which product the developer targets: Core, Enterprise, InfluxDB 3 Cloud, Cloud Serverless, Cloud Dedicated, or Clustered. For Cloud Dedicated and Clustered you will also need one or more database names to validate the connection.
+When detection returns `None` / `null`, ask which product the developer targets: Core, Enterprise, InfluxDB 3 Cloud, or another product. Route other products to their docs.
 

@@ -2,7 +2,7 @@
 
 The `influxdb3` CLI is the primary way to create, update, list (via system tables), enable/disable, and delete triggers. For HTTP equivalents, fetch the API reference.
 
-All commands accept `--token` and `-H/--host <url>` (or `INFLUXDB3_HOST_URL` env var). Trigger creation, update, and deletion require an **admin token**. Pass it as `--token "$INFLUXDB_ADMIN_TOKEN"`, not through `INFLUXDB3_AUTH_TOKEN`, so it doesn't reach every CLI command (`influxdb3` skill → [`references/quirks.md` entry 5](../../influxdb3/references/quirks.md#5-the-influxdb3-cli-doesnt-read-influxdb_token)).
+All commands accept `--token` and `-H/--host <url>` (or `INFLUXDB3_HOST_URL` env var). Trigger creation, update, and deletion require an **admin token**. Pass it as `--token "$INFLUXDB_ADMIN_TOKEN"`.
 
 ## `influxdb3 create trigger`
 
@@ -40,7 +40,7 @@ influxdb3 create trigger \
 
 ## `influxdb3 update trigger`
 
-Replace the plugin code for an existing trigger. Trigger configuration (spec, arguments, error-behavior) is preserved. In Core and Enterprise 3.12.1, the CLI reads the local file named by `--path`; `update trigger` does not accept `--upload`.
+Replace the plugin code for an existing trigger. Trigger configuration (spec, arguments, error-behavior) is preserved. The CLI reads the local file named by `--path`; `update trigger` does not accept `--upload`.
 
 | Flag | Required | Description |
 |---|---|---|
@@ -65,7 +65,7 @@ There is **no `influxdb3 show triggers`** subcommand. List triggers via SQL on t
 influxdb3 query -d _internal --token "$INFLUXDB_ADMIN_TOKEN" "SHOW TABLES"
 ```
 
-Look for tables matching `trigger`, `plugin`, or `engine`. Known-good ones on 3.12.1:
+Look for tables matching `trigger`, `plugin`, or `engine`:
 
 - `system.processing_engine_triggers` — one row per trigger (`trigger_name`, `plugin_filename`, `trigger_specification`, `disabled`, `error_behavior`).
 - `system.processing_engine_trigger_arguments` — trigger arguments.
@@ -127,9 +127,8 @@ Remove the unused file server-side through deployment tooling after deleting the
 | Custom HTTP-trigger endpoint | `GET` or `POST /api/v3/engine/<request_path>` |
 
 All admin-required operations need `Authorization: Bearer <admin-token>`.
-Core and Enterprise 3.12.1 accept trigger creation with `trigger_settings` and `disabled` omitted.
-The omitted-settings probe observed an enabled trigger and error behavior `log`.
-It did not behavior-test concurrency defaults.
+Trigger creation accepts a body without `trigger_settings` and `disabled`.
+The trigger is then enabled, with error behavior `log`.
 In the HTTP body, `trigger_settings.error_behavior` takes the same lowercase values as the CLI flag: `log`, `retry`, and `disable`.
 For other settings and allowed values, fetch the API reference or ask the InfluxDB Documentation MCP server.
 Use `references/installing.md` for the upload example and the [API reference](https://docs.influxdata.com/influxdb3/enterprise/api/v3/) for complete contracts.

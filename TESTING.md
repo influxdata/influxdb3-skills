@@ -69,11 +69,13 @@ zizmor .github/workflows/
 ## Unit tests
 
 ```sh
-node --test evals/gate.test.mjs evals/check-release.test.mjs scripts/check-claim-policy.test.mjs
+node --test evals/gate.test.mjs evals/check-release.test.mjs scripts/check-claim-policy.test.mjs scripts/check-shared-blocks.test.mjs
 node scripts/check-claim-policy.mjs
+node scripts/check-shared-blocks.mjs
 ```
 
 `check-claim-policy.mjs` fails when `skills/**` contains a claim ID or when any tracked file names a docs-tooling research path.
+`check-shared-blocks.mjs` fails when the token rules block differs between the two `SKILL.md` files. Each skill loads on its own, so both carry the block between `<!-- token-rules:start -->` and `<!-- token-rules:end -->`. Edit both copies together.
 CI and the pre-commit hook run it.
 Cite claim IDs only in `CHANGELOG.md`, `docs/`, and eval evidence.
 
@@ -81,7 +83,7 @@ Cite claim IDs only in `CHANGELOG.md`, `docs/`, and eval evidence.
 
 `evals/run-examples.sh` runs application client examples, schema examples, and the diagnostic toolkit against a live instance.
 It copies the examples to a temporary directory, so dependency installs don't touch the repo, and it redacts tokens from its logs.
-It needs Python (with `uv`), Node.js, Go, Java, and .NET.
+It needs Python (with `uv`), `curl`, and Bash.
 
 To run it against a throwaway InfluxDB 3 Core container, as CI does:
 

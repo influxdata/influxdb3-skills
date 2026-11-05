@@ -2,7 +2,7 @@
 
 Behaviors that surprise developers. Each entry: **What you'll see → Why it's that way → What to do.** Each entry is verified against a release.
 
-> Quirks can differ on InfluxDB 3 Cloud, InfluxDB Cloud Serverless, InfluxDB Cloud Dedicated, and InfluxDB Clustered — see flavor-specific notes per entry.
+> These quirks are for InfluxDB 3 Core and Enterprise. They can differ on InfluxDB 3 Cloud.
 
 ---
 
@@ -18,11 +18,7 @@ Behaviors that surprise developers. Each entry: **What you'll see → Why it's t
 
 By default `/ping` (like `/health`) requires authentication, so an unauthenticated `GET` returns `401`. Send `Authorization: Bearer <token>` to get `200`. A `401` still proves the host and port are right and the server is up.
 
-On Enterprise 3.12.1, a scoped resource token or Member JWT can receive 403 with an empty body from `/ping` and `/health` while permitted data queries succeed.
-Use an admin token for the build/version probe, or check a known permitted query with the application credential.
-A health-route 403 alone does not mean the token is invalid or the server is down.
-
-Since 3.10 you can opt out of authorization for these routes with `--disable-authz` (env `INFLUXDB3_DISABLE_AUTHZ`). It takes a comma-separated list of `health`, `ping` and `metrics`. On such a server the token is optional. Source: the InfluxDB 3 API spec (`GetPing`) and the config options reference. The default 401 was observed on 3.10 and Core 3.12.1 instances; the opt-out flag has not been run against a live server.
+Since 3.10 you can opt out of authorization for these routes with `--disable-authz` (env `INFLUXDB3_DISABLE_AUTHZ`). It takes a comma-separated list of `health`, `ping` and `metrics`. On such a server the token is optional. Source: the InfluxDB 3 API spec (`GetPing`) and the config options reference.
 
 ---
 
@@ -82,7 +78,7 @@ for row in system_tokens_rows:
 `INFLUXDB_TOKEN` and `INFLUXDB_ADMIN_TOKEN` are this skill's names, and no InfluxDB tool reads them on its own.
 This is the same on Core and Enterprise.
 
-**What to do:** Export each token once, then pass the one each command needs with `--token`:
+**What to do:** Pass the token each command needs with `--token`, as the token rules in `SKILL.md` §11 describe:
 
 ```sh
 export INFLUXDB_ADMIN_TOKEN=...  # admin: databases, tokens, plugins
@@ -91,9 +87,6 @@ influxdb3 create database sensors --token "$INFLUXDB_ADMIN_TOKEN"
 influxdb3 query --database sensors --token "$INFLUXDB_TOKEN" "SELECT 1"
 ```
 
-Don't put the admin token in `INFLUXDB3_AUTH_TOKEN`.
-The CLI would use it for every command that omits `--token`, including writes and queries.
-On Core, which has only admin tokens, `INFLUXDB_TOKEN` holds a separate named admin token for the application.
 
 ---
 
@@ -103,7 +96,7 @@ On Core, which has only admin tokens, `INFLUXDB_TOKEN` holds a separate named ad
 
 **Why:** Core has admin tokens only. See [`references/tokens.md` → "InfluxDB 3 Core: admin tokens only."](tokens.md#influxdb-3-core-admin-tokens-only)
 
-**What to do:** Detect the flavor (`references/flavor-detection.md`) before generating admin code. The `examples/admin-*` scripts require Enterprise or InfluxDB 3 Cloud.
+**What to do:** Detect the flavor (`references/flavor-detection.md`) before generating admin code. The `examples/admin-http/` and `examples/admin-python/` scripts require Enterprise or InfluxDB 3 Cloud.
 
 ---
 
@@ -123,7 +116,7 @@ On Core, which has only admin tokens, `INFLUXDB_TOKEN` holds a separate named ad
 
 **Why:** Unlike `delete database` (positional `<NAME>`), `delete token` requires the `--token-name <NAME>` flag. The signature differs because there's also a `--token <admin-token>` flag for authentication; positional would be ambiguous.
 
-**What to do:** Use `influxdb3 delete token --token-name <name> -y --token "$INFLUXDB_ADMIN_TOKEN"`. Like `delete database`, it prompts for confirmation, and a script without a TTY fails with `Cannot proceed without confirmation` unless you pass `-y`/`--yes` (observed on 3.11.5). No `--force` here either.
+**What to do:** Use `influxdb3 delete token --token-name <name> -y --token "$INFLUXDB_ADMIN_TOKEN"`. Like `delete database`, it prompts for confirmation, and a script without a TTY fails with `Cannot proceed without confirmation` unless you pass `-y`/`--yes`. No `--force` here either.
 
 ---
 
@@ -201,7 +194,6 @@ ORDER BY event_time DESC LIMIT 50;
 **Why:** A point's identity is its table, tag set, and timestamp.
 InfluxDB merges the field sets of duplicate writes, but it doesn't guarantee which value it keeps when they set the same field.
 The result depends on write rate, buffer and snapshot timing, and compaction, so waiting between writes doesn't make it reliable.
-On Core 3.12.1, testing also returned two identical rows after the same point was written again.
 
 **What to do:**
 

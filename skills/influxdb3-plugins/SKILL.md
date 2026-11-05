@@ -76,7 +76,7 @@ Don't promise exactly-once or at-least-once delivery.
 For external side effects, use the receiving system's idempotency mechanism when available, and test repeated execution.
 The cache is per node and cleared on restart, so it can't deduplicate side effects across nodes or restarts.
 A marker write followed by an effect isn't atomic: concurrent runs or a crash between the two steps can duplicate or lose the effect.
-Rewriting the same point isn't a deduplication guarantee: Core 3.12.1 has returned duplicate rows after same-point rewrites (`influxdb3` → [`references/quirks.md` entry 13](../influxdb3/references/quirks.md#13-overwriting-a-point-isnt-deterministic)).
+Rewriting the same point isn't a deduplication guarantee, because overwrites aren't deterministic (`influxdb3` → [`references/quirks.md` entry 13](../influxdb3/references/quirks.md#13-overwriting-a-point-isnt-deterministic)).
 
 ## 5. Single-file vs multi-file plugins
 
@@ -95,7 +95,29 @@ Three paths:
 
 Full reference + HTTP API equivalents + security: `references/installing.md`.
 
-**Security:** plugin upload, update, and trigger creation require an admin token, and plugin files must stay inside `--plugin-dir`: the server rejects paths that contain `..` or start with `/`, and symlinks that resolve outside it. To reuse a file from elsewhere, copy it under `--plugin-dir` or upload it with `--upload`. Don't inline a token in generated commands or scripts. Details: [`references/installing.md` → "Security"](references/installing.md#security).
+**Security:** plugin upload, update, and trigger creation require an admin token, and plugin files must stay inside `--plugin-dir`: the server rejects paths that contain `..` or start with `/`, and symlinks that resolve outside it. To reuse a file from elsewhere, copy it under `--plugin-dir` or upload it with `--upload`. Details: [`references/installing.md` → "Security"](references/installing.md#security).
+
+### Tokens
+
+These rules apply to every answer that uses a token, including the commands in the references.
+
+<!-- token-rules:start -->
+- **Token variables.** `INFLUXDB_ADMIN_TOKEN` holds the admin token, and `INFLUXDB_TOKEN` holds the application token.
+  These are this skill's names, not product names.
+  The `influxdb3` CLI reads neither one: without `--token`, it reads `INFLUXDB3_AUTH_TOKEN`.
+  Pass `--token "$INFLUXDB_ADMIN_TOKEN"` on admin commands.
+  Don't put the admin token in `INFLUXDB3_AUTH_TOKEN`, because every command would then run as admin.
+- **Never write a token into code, commands, or config files,** even when asked.
+  Read it from an environment variable or a secret manager.
+  A token in source code leaks through commits, logs, and screenshots.
+  Treat a token the developer pastes as exposed: don't repeat it, and recommend rotating it.
+- **An admin token has full access to the instance, so a leak exposes everything.**
+  Give each application its own token.
+  On InfluxDB 3 Enterprise and InfluxDB 3 Cloud, use a resource token scoped to the database (`db:<name>:read,write`).
+  InfluxDB 3 Core has admin tokens only, with no resource tokens and no RBAC.
+  On Core, give each application its own named admin token, which you can revoke without regenerating the operator token.
+  If the developer chooses the admin token anyway, state the risk and use it.
+<!-- token-rules:end -->
 
 ## 6.5. Plugin code safety (unsandboxed — read before writing plugin code)
 

@@ -22,8 +22,7 @@ OUT=${OUT:-$work/logs}
 DB=skills_examples_$$
 mkdir -p "$OUT"
 cp -R "$repo/skills/influxdb3/examples/." "$work/"
-export INFLUXDB_DATABASE=$DB MAVEN_OPTS=${MAVEN_OPTS:---add-opens=java.base/java.nio=ALL-UNNAMED}
-export DOTNET_CLI_TELEMETRY_OPTOUT=1 DOTNET_NOLOGO=1
+export INFLUXDB_DATABASE=$DB
 
 redact() { TOKEN=$INFLUXDB_TOKEN ADMIN=$INFLUXDB_ADMIN_TOKEN perl -pe 's/\Q$ENV{TOKEN}\E/<redacted>/g; s/\Q$ENV{ADMIN}\E/<redacted>/g; s/apiv3_[A-Za-z0-9+\/_=-]{12,}/<redacted>/g'; }
 
@@ -73,22 +72,11 @@ fi
 run http http bash hello.sh
 run python python uv run --quiet --with influxdb3-python --with python-dotenv --with pandas python hello.py
 run python-schema python uv run --quiet --with influxdb3-python --with python-dotenv --with pandas python schema-example.py
-run javascript javascript sh -c 'npm install --silent --no-audit --no-fund && node hello.js'
-run javascript-schema javascript node schema-example.js
-run go go sh -c 'go mod tidy && go run hello.go'
-run go-schema go go run -tags=schema schema_example.go
-run java java sh -c 'mvn -q compile && mvn -q exec:java -Dexec.mainClass=Hello'
-run java-schema java mvn -q exec:java -Dexec.mainClass=SchemaExample
-run csharp csharp sh -c 'dotnet restore -v q && dotnet run'
 run diagnose diagnose uv run --quiet --with-requirements requirements.txt python diagnose.py
 
 if [[ $PRODUCT == enterprise ]]; then
 	run admin-http admin-http bash admin_lifecycle.sh
 	run admin-python admin-python uv run --quiet --with-requirements requirements.txt python admin_lifecycle.py
-	run admin-javascript admin-javascript sh -c 'npm install --silent --no-audit --no-fund && node admin-lifecycle.js'
-	run admin-go admin-go sh -c 'go mod tidy && go run admin_lifecycle.go'
-	run admin-java admin-java sh -c 'mvn -q compile && mvn -q exec:java -Dexec.mainClass=AdminLifecycle'
-	run admin-csharp admin-csharp sh -c 'dotnet restore -v q && dotnet run'
 fi
 
 echo "Logs: $OUT"

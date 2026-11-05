@@ -62,17 +62,6 @@ jobs:
         with:
           node-version: 22
           package-manager-cache: false
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version: stable
-          cache: false
-      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
-        with:
-          distribution: temurin
-          java-version: 17
-      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
-        with:
-          dotnet-version: 8.0.x
       - name: Start InfluxDB 3 Core
         run: |
           docker run -d --name core -p 8181:8181 "influxdb:${VERSION}-core" \

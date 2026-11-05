@@ -2,7 +2,7 @@
 
 Covers Core and Enterprise on macOS and Linux. Two paths are spelled out here: the official install script (first-time / single-machine) and Docker (isolation). Other methods are listed under "Other install methods".
 
-> **Cloud Serverless and Cloud Dedicated** are managed services — they're not installed locally. Sign up at https://www.influxdata.com/products/influxdb-overview/ for those flavors. Once you have credentials, return to `references/connecting.md`. The agent doesn't create accounts on your behalf.
+> **InfluxDB 3 Cloud** is a managed service, so it isn't installed locally. Sign up at https://www.influxdata.com/products/influxdb-overview/. Once you have credentials, return to `references/connecting.md`. Don't create accounts for the developer.
 
 > **Already have an instance running?** Skip to [`SKILL.md` §2](../SKILL.md#2-setup-checklist) (Setup checklist).
 
@@ -78,15 +78,18 @@ docker run -d \
 
 The interactive license prompt doesn't work in containers, so always pass the email and type. Watch for the verification step with `docker logs -f influxdb3-enterprise`. See [Enterprise license activation](#first-boot-starting-the-server) below.
 
+Next, create the admin token in the container and store it in an environment variable. See [Bootstrap](#bootstrap-create-the-operatoradmin-token).
+
 ## Other install methods
 
-Not covered step by step here. Follow the docs for these:
+For production, the docs recommend DEB/RPM packages, for their systemd sandboxing, or Docker with your own container security settings.
+For package steps, link the [Core install page](https://docs.influxdata.com/influxdb3/core/install/) or the [Enterprise install page](https://docs.influxdata.com/influxdb3/enterprise/install/).
 
-- **Linux DEB / RPM packages** (`apt-get install influxdb3-core` or `influxdb3-enterprise`): for production, the docs recommend these packages, for their systemd sandboxing, or Docker with your own container security settings. Settings live in `/etc/influxdb3/influxdb3-<core|enterprise>.conf` (TOML), which the package presets with `object-store`, `data-dir`, `plugin-dir` and `node-id`.
+This file doesn't cover these methods step by step:
+
+- **Linux DEB / RPM packages** (`apt-get install influxdb3-core` or `influxdb3-enterprise`). Settings live in `/etc/influxdb3/influxdb3-<core|enterprise>.conf` (TOML), which the package presets with `object-store`, `data-dir`, `plugin-dir` and `node-id`.
 - **Binary tarballs** for Linux (AMD64, ARM64), macOS (Apple silicon) and Windows (AMD64).
 - **Docker Compose**, and Kubernetes for Enterprise.
-
-Docs: https://docs.influxdata.com/influxdb3/core/install/ and https://docs.influxdata.com/influxdb3/enterprise/install/
 
 ## First boot: starting the server
 
@@ -152,6 +155,7 @@ The very first token is created without authentication (this only works once, an
 
 ```bash
 influxdb3 create token --admin
+# Docker: docker exec influxdb3-core influxdb3 create token --admin
 ```
 
 The token is shown once in the response, so copy it right away. Add `.env` to `.gitignore`, then save the values to `.env` and load them:
@@ -161,8 +165,6 @@ echo "INFLUXDB_HOST=http://localhost:8181" >> .env
 echo "INFLUXDB_ADMIN_TOKEN=<paste-the-token-here>" >> .env
 set -a; . ./.env; set +a
 ```
-
-Store tokens in environment variables, not in code. This is an admin token, so don't use it in application code. Create a separate token for the application and save it as `INFLUXDB_TOKEN` (`references/tokens.md`).
 
 ## Verify it works
 

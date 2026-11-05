@@ -1,8 +1,8 @@
 # Admin HTTP API — Endpoint Reference
 
-This is a summary of the InfluxDB 3 admin endpoints. The HTTP API reference is authoritative. Per-language admin examples (`examples/admin-<lang>/`) translate from this summary.
+This is a summary of the InfluxDB 3 admin endpoints. The HTTP API reference is authoritative. The admin examples (`examples/admin-http/` and `examples/admin-python/`) translate from this summary.
 
-> Cloud Serverless / Cloud Dedicated have separate management APIs — see `references/flavors.md` for the per-flavor map.
+> These endpoints exist only on InfluxDB 3 Core, InfluxDB 3 Enterprise, and InfluxDB 3 Cloud. See `references/flavors.md`.
 
 ## Auth
 
@@ -183,15 +183,13 @@ The structured form's `resource_type` enum is `"db"` or `"system"`; `actions` en
 
 ## Per-flavor differences
 
-| Operation | Core | Enterprise | Cloud Serverless | Cloud Dedicated |
-|---|---|---|---|---|
-| Database CRUD | `/api/v3/configure/database` | Same | Product UI or management API | Product UI or management API |
-| Resource token create | Not supported (`references/tokens.md`) | `/api/v3/enterprise/configure/token` | Product UI or management API | Product UI or management API |
-| Admin token create | `/api/v3/configure/token/named_admin` | Same | Product UI or management API | Product UI or management API |
-| Delete token | `/api/v3/configure/token?token_name=<name>` | Same | Product UI or management API | Product UI or management API |
-| List tokens | SQL on `system.tokens` (`_internal`) | Same | (different — see the product docs) | (different — see the product docs) |
-
-For InfluxDB Cloud Serverless and InfluxDB Cloud Dedicated, route that product's docs through `references/doc-urls.md`.
+| Operation | Core | Enterprise |
+|---|---|---|
+| Database CRUD | `/api/v3/configure/database` | Same |
+| Resource token create | Not supported (`references/tokens.md`) | `/api/v3/enterprise/configure/token` |
+| Admin token create | `/api/v3/configure/token/named_admin` | Same |
+| Delete token | `/api/v3/configure/token?token_name=<name>` | Same |
+| List tokens | SQL on `system.tokens` (`_internal`) | Same |
 
 ## Error codes
 
