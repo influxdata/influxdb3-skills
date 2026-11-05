@@ -109,18 +109,18 @@ Each case has a prompt and the criteria a judge grades the answer against.
 You can run it with Claude Code or Codex.
 `evals/README.md` has the pass bar, the model policy, and the change-control policy.
 
-Opus results gate the release, and Haiku and Sonnet results are comparisons. Opus judges every Claude run.
+Sonnet results gate the release, and Haiku and Opus results are comparisons. Opus judges every Claude run.
 To run the full Claude Code suite:
 
 ```sh
 mkdir -p evals/results
 node evals/build-claude-cases.mjs
-claude plugin eval ./ --eval-dir evals/claude-cases --keep-temp --model claude-opus-5-5 --judge-model claude-opus-5-5 --runs 3 --ablation none --trust-plugin --json > evals/results/claude-opus.json
-node evals/gate.mjs --claude evals/results/claude-opus.json --min-runs 3
-claude plugin eval ./ --eval-dir evals/claude-cases --keep-temp --model claude-haiku-5-5 --judge-model claude-opus-5-5 --runs 3 --ablation none --trust-plugin --json > evals/results/claude-haiku.json
-node evals/gate.mjs --claude evals/results/claude-haiku.json --min-runs 3
 claude plugin eval ./ --eval-dir evals/claude-cases --keep-temp --model claude-sonnet-5-5 --judge-model claude-opus-5-5 --runs 3 --ablation none --trust-plugin --json > evals/results/claude-sonnet.json
 node evals/gate.mjs --claude evals/results/claude-sonnet.json --min-runs 3
+claude plugin eval ./ --eval-dir evals/claude-cases --keep-temp --model claude-haiku-5-5 --judge-model claude-opus-5-5 --runs 3 --ablation none --trust-plugin --json > evals/results/claude-haiku.json
+node evals/gate.mjs --claude evals/results/claude-haiku.json --min-runs 3
+claude plugin eval ./ --eval-dir evals/claude-cases --keep-temp --model claude-opus-5-5 --judge-model claude-opus-5-5 --runs 3 --ablation none --trust-plugin --json > evals/results/claude-opus.json
+node evals/gate.mjs --claude evals/results/claude-opus.json --min-runs 3
 ```
 
 To run the full Codex suite:
@@ -135,7 +135,7 @@ To rerun one case while you iterate:
 ```sh
 # Claude Code
 node evals/build-claude-cases.mjs
-claude plugin eval ./ --eval-dir evals/claude-cases --keep-temp --case <id> --model claude-opus-5-5 --judge-model claude-opus-5-5 --runs 3 --ablation none --trust-plugin
+claude plugin eval ./ --eval-dir evals/claude-cases --keep-temp --case <id> --model claude-sonnet-5-5 --judge-model claude-opus-5-5 --runs 3 --ablation none --trust-plugin
 
 # Codex
 node evals/run-codex-evals.mjs --case <id> --runs 3 --model gpt-6-luna --judge-model gpt-6-luna

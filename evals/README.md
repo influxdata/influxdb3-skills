@@ -49,10 +49,11 @@ to `gpt-6-luna` for both answers and judging; use `--model <model>` and
 ### Claude Code
 
 See `TESTING.md` → "Run the evals" for the commands.
-Opus answers gate the release, and Opus judges.
+Sonnet answers gate the release, and Opus judges.
+Sonnet costs less than half as much per suite run as Opus, and a skill that passes on Sonnet can be recommended to developers who use it.
 Use full model IDs, not aliases: the CLI can remap an alias, and the result file doesn't record the resolved model.
-Haiku and Sonnet runs are comparisons: record their gate reports in `docs/eval-history.md`. They don't block a release.
-Haiku results don't block a release and don't go in the release manifest.
+Haiku and Opus runs are comparisons: record their gate reports in `docs/eval-history.md`.
+They don't block a release and don't go in the release manifest.
 
 The harness scores each prompt on triggering, routing, API correctness, and security. See `prompts.jsonl` for the per-prompt criteria.
 
