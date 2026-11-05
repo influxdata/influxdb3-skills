@@ -104,6 +104,9 @@ Claim IDs (`claim-YYYYMMDD-NNNN`) refer to InfluxData's internal verification le
 - Link every Markdown file reference in the skills, including references to the other skill, and add `scripts/check-file-links.mjs` to CI and the pre-commit hook. The earlier conversion linked only references that named a section, so 109 bare file mentions stayed unchecked. Cross-skill mentions now use one form, "`influxdb3` skill → `references/x.md`", which the check resolves against that skill.
 - Say in `SKILL.md` that a host ending in `enterprise.influxdb.io` is InfluxDB 3 Cloud. Agents read the host name as a self-hosted InfluxDB 3 Enterprise server.
 - Accept per-customer token code in `admin-defer-multitenant` when it follows the identity-layer recommendation and says each customer then needs its own database. The skill advises against per-user tokens but doesn't forbid them, and a database per customer is a valid design for hard isolation. `tokens.md` now states that resource tokens are scoped to whole databases.
+- Tell agents to lead with the identity-layer recommendation when asked for per-user tokens. Agents gave the per-customer token body first and the recommendation last.
+- Open the description with "Load it before answering any InfluxDB 3 … question, even one you think you know". Haiku answered nine cases from memory in every traced run, including prompts that name InfluxDB 3 Core. The topic list now names batching, timestamps, partial writes, and naming, which those prompts ask about.
+- Drop the `accept_partial=false` criterion from `write-partial-400`. The prompt doesn't ask about it, and correct answers failed on it.
 
 ### Removed
 

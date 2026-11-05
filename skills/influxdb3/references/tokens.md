@@ -160,6 +160,8 @@ InfluxDB tokens are per application, not per end user.
 Thousands of per-user tokens are hard to operate.
 Authenticate the end user in your application, then make the InfluxDB call with one application token.
 A resource token is scoped to whole databases, not to rows, so a token per customer isolates customers only if each customer has its own database.
+When a developer asks for a token per end user, lead with this recommendation.
+If they still need per-customer tokens, give the token code after it.
 
 ## Where to fetch more
 

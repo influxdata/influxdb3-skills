@@ -1,21 +1,22 @@
 ---
 name: influxdb3
 description: >-
-  Use for any task touching InfluxDB 3 Core, InfluxDB 3 Enterprise, or
-  InfluxDB 3 Cloud: code that connects, writes line protocol, runs SQL or
-  InfluxQL queries, or designs schemas; provisioning databases, retention
-  periods, and tokens (creating, rotating, or regenerating admin,
-  operator, and scoped db:<dbname>:read,write tokens) with the influxdb3
-  CLI or /api/v3/configure API; and troubleshooting "why isn't this
-  working" symptoms: 401, 403, or 404 errors, line protocol parse errors,
-  queries that return no rows, silent auto-create misroutes, token
-  rotation issues, an unreachable instance, or a mock-data stub. Triggers
-  on the official InfluxDB 3 client libraries, such as influxdb3-python,
-  and on INFLUXDB_HOST, INFLUXDB_TOKEN, or INFLUXDB_DATABASE. For a bare
-  "InfluxDB Cloud" or another InfluxDB product (Cloud Serverless, Cloud
-  Dedicated, Clustered, Cloud (TSM), Cloud 1, OSS v1 or v2, Enterprise
-  v1), it identifies the product and routes to its docs. For Processing
-  Engine plugin code, use influxdb3-plugins.
+  Load it before answering any InfluxDB 3 Core, InfluxDB 3 Enterprise, or
+  InfluxDB 3 Cloud question, even one you think you know: behavior,
+  defaults, and errors change between releases. Covers installing,
+  connecting, writing line protocol (batching, timestamps, partial
+  writes), SQL and InfluxQL queries, schema and naming, databases,
+  retention periods, and admin and scoped tokens (create, rotate,
+  regenerate) with the influxdb3 CLI or /api/v3 API, and troubleshooting
+  401, 403, or 404 errors, parse errors, queries that return no rows,
+  silent auto-create misroutes, token rotation, unreachable instances, and
+  mock-data stubs. Triggers on InfluxDB 3 client libraries, such as
+  influxdb3-python, and on INFLUXDB_HOST, INFLUXDB_TOKEN, or
+  INFLUXDB_DATABASE. For a bare "InfluxDB Cloud" or another InfluxDB
+  product (Cloud Serverless, Cloud Dedicated, Clustered, Cloud (TSM),
+  Cloud 1, OSS v1 or v2, Enterprise v1), it identifies the product and
+  routes to its docs. For Processing Engine plugin code, use
+  influxdb3-plugins.
 metadata:
   version: "0.7.3"
   docs_checked: "2026-10-24"
