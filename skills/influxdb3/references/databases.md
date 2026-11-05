@@ -2,9 +2,9 @@
 
 ## What this covers
 
-Provisioning and managing InfluxDB 3 databases via CLI and HTTP API. For application code that *uses* a database (writing data, querying), see `references/connecting.md`, `references/writing.md`, and `references/querying.md`.
+Provisioning and managing InfluxDB 3 databases via CLI and HTTP API. For application code that *uses* a database (writing data, querying), see [`references/connecting.md`](connecting.md), [`references/writing.md`](writing.md), and [`references/querying.md`](querying.md).
 
-> All operations here require an **admin token**. Use a scoped resource token for application code, and use the admin token only for these admin operations. Core has no scoped tokens. See `references/tokens.md`.
+> All operations here require an **admin token**. Use a scoped resource token for application code, and use the admin token only for these admin operations. Core has no scoped tokens. See [`references/tokens.md`](tokens.md).
 
 ## Lifecycle
 
@@ -97,7 +97,7 @@ influxdb3 delete database <name> -y --data-only --remove-tables --token "$INFLUX
 
 ## HTTP API
 
-See `references/admin-http-api.md` for the full endpoint reference. Quick summary:
+See [`references/admin-http-api.md`](admin-http-api.md) for the full endpoint reference. Quick summary:
 
 | Verb | Method + path |
 |---|---|

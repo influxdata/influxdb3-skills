@@ -2,7 +2,7 @@
 
 ## Configuration rules
 
-Token rules are in `SKILL.md` §11.
+Token rules are in [`SKILL.md`](../SKILL.md) §11.
 
 1. **Read settings from env vars in production code.** `INFLUXDB_HOST`, `INFLUXDB_TOKEN`, and `INFLUXDB_DATABASE` are the canonical names. Reuse them across languages so a developer can switch languages without reconfiguring.
 2. **Use `.env` for local development.** `.env` is loaded by a language-specific dotenv library at startup. **Never commit `.env`.**
@@ -25,20 +25,20 @@ When the developer is starting fresh in a project (no `.env`, no client imports)
 
 These steps happen ONCE, on the server side, before any application code:
 
-1. **Pick the flavor** — Core or Enterprise (self-hosted). For InfluxDB 3 Cloud, see below. See `references/flavors.md`.
-2. **Start the server** — `influxdb3 serve --object-store=...` (see `references/installing.md`).
+1. **Pick the flavor** — Core or Enterprise (self-hosted). For InfluxDB 3 Cloud, see below. See [`references/flavors.md`](flavors.md).
+2. **Start the server** — `influxdb3 serve --object-store=...` (see [`references/installing.md`](installing.md)).
 3. **Create the operator/admin token.** For a brand-new server, this is a bootstrap step that does NOT require an existing token:
    - CLI: `influxdb3 create token --admin --host http://localhost:8181`
    - The token is shown once. Save it as `INFLUXDB_ADMIN_TOKEN` and use it for steps 4–5 (server admin), not as your application's token.
 4. **Create the database** using the admin token:
    - CLI: `influxdb3 create database <name> --token "$INFLUXDB_ADMIN_TOKEN" --host http://localhost:8181`
    - Or HTTP: `POST /api/v3/configure/database` with `Authorization: Bearer $INFLUXDB_ADMIN_TOKEN` and body `{"db":"<name>"}`.
-   - Full reference and HTTP API equivalents: `references/databases.md`.
+   - Full reference and HTTP API equivalents: [`references/databases.md`](databases.md).
 5. **(Recommended)** Create a token for the application instead of reusing the operator token:
    - Enterprise: `influxdb3 create token --permission "db:<name>:read,write" --name <app> --token "$INFLUXDB_ADMIN_TOKEN"`
    - Core has admin tokens only: `influxdb3 create token --admin --name <app> --token "$INFLUXDB_ADMIN_TOKEN"` ([`references/tokens.md` → "InfluxDB 3 Core: admin tokens only"](tokens.md#influxdb-3-core-admin-tokens-only))
    - This is the token the application reads from `INFLUXDB_TOKEN`.
-   - Full reference, including the safe rotation pattern: `references/tokens.md`.
+   - Full reference, including the safe rotation pattern: [`references/tokens.md`](tokens.md).
 
 ### Bootstrapping (InfluxDB 3 Cloud)
 

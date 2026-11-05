@@ -131,7 +131,7 @@ The CLI's short-form string and the HTTP body's structured object encode the sam
 
 ## HTTP API
 
-See `references/admin-http-api.md` for full request/response shapes:
+See [`references/admin-http-api.md`](admin-http-api.md) for full request/response shapes:
 
 - Resource token create (Enterprise and InfluxDB 3 Cloud): `POST /api/v3/enterprise/configure/token`. Core has none; see "InfluxDB 3 Core: admin tokens only."
 - Named admin token create (both): `POST /api/v3/configure/token/named_admin` with body `{"token_name": "<name>"}`
@@ -152,13 +152,14 @@ What goes wrong in other orders:
 - Create without swapping: consumers keep using the old token, so nothing was rotated, and the old token stays valid.
 - Swap-without-restart: long-running connections may keep using the old token until they reconnect.
 
-For InfluxDB 3 Cloud tokens, see its docs through `references/doc-urls.md`.
+For InfluxDB 3 Cloud tokens, see its docs through [`references/doc-urls.md`](doc-urls.md).
 
 ## Multi-tenant applications
 
 InfluxDB tokens are per application, not per end user.
 Thousands of per-user tokens are hard to operate.
 Authenticate the end user in your application, then make the InfluxDB call with one application token.
+A resource token is scoped to whole databases, not to rows, so a token per customer isolates customers only if each customer has its own database.
 
 ## Where to fetch more
 

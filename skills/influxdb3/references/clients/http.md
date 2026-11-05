@@ -7,7 +7,7 @@ The `/api/v3` endpoints exist only on InfluxDB 3 Core, InfluxDB 3 Enterprise, an
 
 | Action | Method | Path | Notes |
 |---|---|---|---|
-| Health probe / flavor detection | `GET` | `/ping` | See `references/flavor-detection.md` |
+| Health probe / flavor detection | `GET` | `/ping` | See [`references/flavor-detection.md`](../flavor-detection.md) |
 | Write line protocol | `POST` | `/api/v3/write_lp?db=$INFLUXDB_DATABASE` | Body is line protocol; one line per point |
 | Query (SQL) | `POST` | `/api/v3/query_sql` | JSON body: `{"db": "...", "q": "..."}` |
 | Query (InfluxQL) | `POST` | `/api/v3/query_influxql` | Same shape |

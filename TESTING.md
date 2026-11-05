@@ -69,13 +69,15 @@ zizmor .github/workflows/
 ## Unit tests
 
 ```sh
-node --test evals/gate.test.mjs evals/check-release.test.mjs scripts/check-claim-policy.test.mjs scripts/check-shared-blocks.test.mjs
+node --test evals/gate.test.mjs evals/check-release.test.mjs scripts/check-claim-policy.test.mjs scripts/check-shared-blocks.test.mjs scripts/check-file-links.test.mjs
 node scripts/check-claim-policy.mjs
 node scripts/check-shared-blocks.mjs
+node scripts/check-file-links.mjs
 ```
 
 `check-claim-policy.mjs` fails when `skills/**` contains a claim ID or when any tracked file names a docs-tooling research path.
 `check-shared-blocks.mjs` fails when the token rules block differs between the two `SKILL.md` files. Each skill loads on its own, so both carry the block between `<!-- token-rules:start -->` and `<!-- token-rules:end -->`. Edit both copies together.
+`check-file-links.mjs` fails when a skill file names a Markdown file from either skill in backticks without linking it, so lychee checks every file reference. `--fix` rewrites them as relative links. Name a file in the other skill as "`influxdb3` skill → `references/x.md`" so the check resolves it against that skill.
 CI and the pre-commit hook run it.
 Cite claim IDs only in `CHANGELOG.md`, `docs/`, and eval evidence.
 

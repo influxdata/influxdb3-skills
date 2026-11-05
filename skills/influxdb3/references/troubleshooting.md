@@ -1,6 +1,6 @@
 # Troubleshooting apps and admin tasks
 
-When something stopped working. Symptom-keyed at the top; topic sections below. For non-obvious behaviors that aren't really "broken" (just confusingly designed), see `references/quirks.md`. For plugin-runtime troubleshooting, see the sibling skill at `skills/influxdb3-plugins/references/troubleshooting.md`.
+When something stopped working. Symptom-keyed at the top; topic sections below. For non-obvious behaviors that aren't really "broken" (just confusingly designed), see [`references/quirks.md`](quirks.md). For plugin-runtime troubleshooting, see the `influxdb3-plugins` skill → [`references/troubleshooting.md`](../../influxdb3-plugins/references/troubleshooting.md).
 
 ## Contents
 
@@ -65,7 +65,7 @@ reading it:
 | Permission-string typo rejected | [Admin failures](#admin-failures) |
 | `delete token` syntax error | [`references/quirks.md` → entry 8](quirks.md#8-delete-token-uses---token-name-flag-not-positional) |
 | Slow query / slow write | [Performance hints (quick triage only)](#performance-hints) |
-| Plugin trigger doesn't fire | sibling skill: `influxdb3-plugins/references/troubleshooting.md` |
+| Plugin trigger doesn't fire | `influxdb3-plugins` skill → [`references/troubleshooting.md`](../../influxdb3-plugins/references/troubleshooting.md) |
 
 ## Auth failures
 
@@ -102,7 +102,7 @@ Check as an administrator to tell absent resources from hidden ones, and don't p
 If a JWT works on one node and gets 401 on another, compare the two nodes' user-auth and JWT key settings.
 For user JWTs and roles on Enterprise, see the [user-authentication docs](https://docs.influxdata.com/influxdb3/enterprise/admin/security/manage-users/).
 
-**Fix:** on Enterprise or InfluxDB 3 Cloud, create a scoped token with the right permissions; on Core, use a named admin token because Core has no scoped tokens. Reference: `references/tokens.md`.
+**Fix:** on Enterprise or InfluxDB 3 Cloud, create a scoped token with the right permissions; on Core, use a named admin token because Core has no scoped tokens. Reference: [`references/tokens.md`](tokens.md).
 
 ### HTTP 404 — host
 
@@ -302,14 +302,14 @@ print([t['name'] for t in data if t['name'].startswith('<your-test-prefix>')])
 Slow queries, slow writes, cardinality remediation, batch-size tuning — this skill covers quick triage only:
 
 - **Slow query, no time filter** → add `WHERE time > now() - INTERVAL '...'`.
-- **Slow query, unbounded `SELECT *`** → add `LIMIT <n>`. `references/querying.md` covers this.
+- **Slow query, unbounded `SELECT *`** → add `LIMIT <n>`. [`references/querying.md`](querying.md) covers this.
 - **Slow write, large batches** → split into batches of up to 10,000 lines or 10 MB per write call.
 
 ## Where to fetch more
 
-- `references/quirks.md` for "this is just how it is" cases
-- `references/connecting.md` for the auth setup / .env / gitignore baseline
-- `references/tokens.md` for the rotation pattern
-- `references/databases.md` for DB lifecycle
-- `references/admin-http-api.md` for HTTP wire format
-- Sibling skill at `skills/influxdb3-plugins/references/troubleshooting.md` for plugin-runtime issues
+- [`references/quirks.md`](quirks.md) for "this is just how it is" cases
+- [`references/connecting.md`](connecting.md) for the auth setup / .env / gitignore baseline
+- [`references/tokens.md`](tokens.md) for the rotation pattern
+- [`references/databases.md`](databases.md) for DB lifecycle
+- [`references/admin-http-api.md`](admin-http-api.md) for HTTP wire format
+- Sibling skill at [`skills/influxdb3-plugins/references/troubleshooting.md`](../../influxdb3-plugins/references/troubleshooting.md) for plugin-runtime issues

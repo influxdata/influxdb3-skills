@@ -131,8 +131,8 @@ Trigger creation accepts a body without `trigger_settings` and `disabled`.
 The trigger is then enabled, with error behavior `log`.
 In the HTTP body, `trigger_settings.error_behavior` takes the same lowercase values as the CLI flag: `log`, `retry`, and `disable`.
 For other settings and allowed values, fetch the API reference or ask the InfluxDB Documentation MCP server.
-Use `references/installing.md` for the upload example and the [API reference](https://docs.influxdata.com/influxdb3/enterprise/api/v3/) for complete contracts.
+Use [`references/installing.md`](installing.md) for the upload example and the [API reference](https://docs.influxdata.com/influxdb3/enterprise/api/v3/) for complete contracts.
 
 ## Where to fetch more
 
-`references/doc-urls.md` → CLI reference for `influxdb3 create trigger` and the HTTP API reference.
+[`references/doc-urls.md`](doc-urls.md) → CLI reference for `influxdb3 create trigger` and the HTTP API reference.

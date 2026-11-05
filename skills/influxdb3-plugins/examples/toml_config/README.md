@@ -33,7 +33,7 @@ docker cp example_toml_config.py <container-name>:/plugins/example_toml_config.p
 docker cp example_toml_config_scheduler.toml <container-name>:/plugins/example_toml_config_scheduler.toml
 ```
 
-To upload the plugin over HTTP instead, see `references/installing.md`.
+To upload the plugin over HTTP instead, see [`references/installing.md`](../../references/installing.md).
 
 ### Create the trigger
 

@@ -2,7 +2,7 @@
 
 Plugins are stateless by default — each invocation starts fresh. To persist values across executions, use the in-memory `Cache` exposed via `influxdb3_local.cache`.
 
-The `Cache` API itself is documented in `references/runtime-api.md`. This page covers the patterns and gotchas.
+The `Cache` API itself is documented in [`references/runtime-api.md`](runtime-api.md). This page covers the patterns and gotchas.
 
 ## Two namespaces
 
@@ -102,5 +102,5 @@ Two ways to handle this:
 
 ## Where to fetch more
 
-`references/runtime-api.md` for the `Cache` method signatures.
+[`references/runtime-api.md`](runtime-api.md) for the `Cache` method signatures.
 [`references/doc-urls.md` → "Extend plugins"](doc-urls.md) for the upstream cache documentation.

@@ -10,7 +10,7 @@ Processing Engine plugins come in three flavors, each with its own entry-point f
 | Run code at intervals or specific times | Scheduled | `process_scheduled_call` | `every:<duration>` or `cron:<expr>` |
 | Expose a custom HTTP endpoint | HTTP request | `process_request` | `request:<path>` |
 
-All three trigger types share the same `influxdb3_local` runtime API (`references/runtime-api.md`) and the same `args: Mapping[str, str] | None` parameter (passed via `--trigger-arguments key=value,...`).
+All three trigger types share the same `influxdb3_local` runtime API ([`references/runtime-api.md`](runtime-api.md)) and the same `args: Mapping[str, str] | None` parameter (passed via `--trigger-arguments key=value,...`).
 
 ---
 

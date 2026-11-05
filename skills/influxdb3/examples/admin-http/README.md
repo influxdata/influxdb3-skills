@@ -2,7 +2,7 @@
 
 `admin_lifecycle.sh` exercises the full token + database lifecycle via the HTTP API. Reads `INFLUXDB_HOST` and `INFLUXDB_ADMIN_TOKEN` from env or `.env`.
 
-> **Requires InfluxDB 3 Enterprise or InfluxDB 3 Cloud.** The script creates scoped resource tokens via `/api/v3/enterprise/configure/token`. Core has no resource tokens, so it doesn't run on Core (`references/tokens.md`). Everything else (database CRUD, delete-token, list-tokens-via-SQL) is the same on Core and Enterprise.
+> **Requires InfluxDB 3 Enterprise or InfluxDB 3 Cloud.** The script creates scoped resource tokens via `/api/v3/enterprise/configure/token`. Core has no resource tokens, so it doesn't run on Core ([`references/tokens.md`](../../references/tokens.md)). Everything else (database CRUD, delete-token, list-tokens-via-SQL) is the same on Core and Enterprise.
 
 ## What it does
 
@@ -37,4 +37,4 @@ cp .env.example .env  # then edit with real values
 
 ## Where to fetch more
 
-`references/admin-http-api.md` for the full endpoint table and per-flavor map; `references/tokens.md` for the rotation pattern and permission-string syntax.
+[`references/admin-http-api.md`](../../references/admin-http-api.md) for the full endpoint table and per-flavor map; [`references/tokens.md`](../../references/tokens.md) for the rotation pattern and permission-string syntax.

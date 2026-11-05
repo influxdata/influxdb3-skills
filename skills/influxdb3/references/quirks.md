@@ -12,7 +12,7 @@ Behaviors that surprise developers. Each entry: **What you'll see → Why it's t
 
 **Why:** The `/ping` route is registered for GET only on Core and Enterprise.
 
-**What to do:** Use `GET` for `/ping` health checks. Documented in `references/flavor-detection.md`.
+**What to do:** Use `GET` for `/ping` health checks. Documented in [`references/flavor-detection.md`](flavor-detection.md).
 
 ### `/ping` also needs a token by default
 
@@ -78,7 +78,7 @@ for row in system_tokens_rows:
 `INFLUXDB_TOKEN` and `INFLUXDB_ADMIN_TOKEN` are this skill's names, and no InfluxDB tool reads them on its own.
 This is the same on Core and Enterprise.
 
-**What to do:** Pass the token each command needs with `--token`, as the token rules in `SKILL.md` §11 describe:
+**What to do:** Pass the token each command needs with `--token`, as the token rules in [`SKILL.md`](../SKILL.md) §11 describe:
 
 ```sh
 export INFLUXDB_ADMIN_TOKEN=...  # admin: databases, tokens, plugins
@@ -96,7 +96,7 @@ influxdb3 query --database sensors --token "$INFLUXDB_TOKEN" "SELECT 1"
 
 **Why:** Core has admin tokens only. See [`references/tokens.md` → "InfluxDB 3 Core: admin tokens only."](tokens.md#influxdb-3-core-admin-tokens-only)
 
-**What to do:** Detect the flavor (`references/flavor-detection.md`) before generating admin code. The `examples/admin-http/` and `examples/admin-python/` scripts require Enterprise or InfluxDB 3 Cloud.
+**What to do:** Detect the flavor ([`references/flavor-detection.md`](flavor-detection.md)) before generating admin code. The `examples/admin-http/` and `examples/admin-python/` scripts require Enterprise or InfluxDB 3 Cloud.
 
 ---
 
@@ -106,7 +106,7 @@ influxdb3 query --database sensors --token "$INFLUXDB_TOKEN" "SELECT 1"
 
 **Why:** The CLI prompts for confirmation (3.10+); the flag to skip it is `-y`/`--yes`, not `--force`. The HTTP API `DELETE /api/v3/configure/database?db=<name>` has **no** prompt and is unaffected.
 
-**What to do:** For scripting/automation, pass `-y` (or `--yes`): `influxdb3 delete database <name> -y --token "$INFLUXDB_ADMIN_TOKEN"`. Pattern documented in `references/databases.md`. Or call the HTTP API, which never prompts.
+**What to do:** For scripting/automation, pass `-y` (or `--yes`): `influxdb3 delete database <name> -y --token "$INFLUXDB_ADMIN_TOKEN"`. Pattern documented in [`references/databases.md`](databases.md). Or call the HTTP API, which never prompts.
 
 ---
 
@@ -128,7 +128,7 @@ influxdb3 query --database sensors --token "$INFLUXDB_TOKEN" "SELECT 1"
 Packages installed into the host's Python, or into any other venv, aren't visible to plugins.
 
 **What to do:** Install the package into the embedded environment with `influxdb3 install package <pkg>`.
-See the influxdb3-plugins skill's `dependencies.md` for the HTTP API and version pinning.
+See the `influxdb3-plugins` skill → [`references/dependencies.md`](../../influxdb3-plugins/references/dependencies.md) for the HTTP API and version pinning.
 To use a different venv, create it with the bundled interpreter, not the system Python, and start the server with `--virtual-env-location <path>`.
 
 ---
@@ -205,7 +205,7 @@ See [Overwrites are not deterministic](https://docs.influxdata.com/influxdb3/ent
 
 ## Where to fetch more
 
-- App-side troubleshooting: `references/troubleshooting.md`
-- Plugin-side troubleshooting: `skills/influxdb3-plugins/references/troubleshooting.md`
+- App-side troubleshooting: [`references/troubleshooting.md`](troubleshooting.md)
+- Plugin-side troubleshooting: [`skills/influxdb3-plugins/references/troubleshooting.md`](../../influxdb3-plugins/references/troubleshooting.md)
 - Diagnostic toolkit: `examples/diagnose/`
 - Broken→fix demo pairs: `examples/troubleshooting/`
