@@ -9,7 +9,7 @@ inside the server. Generated plugin code has to be held to that standard.
 
 These rules are about the code an agent *writes into a plugin*, not about the
 server's deploy-time permission checks (which are covered in
-`references/installing.md`).
+[`references/installing.md`](installing.md)).
 
 ## 1. No dynamic execution of untrusted data
 
@@ -50,7 +50,7 @@ def process_request(influxdb3_local, query_parameters, request_headers, request_
     return {"rows": rows}, 200
 ```
 
-The `query(sql, args=None)` binding path (`references/runtime-api.md`) is the
+The `query(sql, args=None)` binding path ([`references/runtime-api.md`](runtime-api.md)) is the
 same parameterization the sibling `influxdb3` skill requires for external
 queries. Use it for any value that originated outside the plugin.
 
@@ -101,17 +101,20 @@ def process_scheduled_call(influxdb3_local, call_time, args=None):
 ```
 
 Store the response, not the credential. The measurement is queryable by anyone
-who can read the database, so keep secrets out of it (§3).
+who can read the database, so keep secrets out of it ([§3](#3-never-read-log-or-return-secrets)).
+`args["api_token"]` is a trigger argument. Trigger arguments are readable in
+`system.processing_engine_trigger_arguments`, so anyone who can query system
+tables can read it.
 
 ## 5. Treat `query()` results and cache values as untrusted
 
 Rows returned by `query()` include user-written tag and field values, token
 names, and log text — all attacker-influenceable. Global-cache values
 (`use_global=True`) may have been written by a different trigger. Validate and
-type-check before acting on them; never feed them into the sinks in §1.
+type-check before acting on them; never feed them into the sinks in [§1](#1-no-dynamic-execution-of-untrusted-data).
 
 ## 6. Review third-party plugin code before deploying it
 
 `--path "gh:..."`, `--plugin-repo`, and `influxdb3 install package` all pull
-code that then runs unsandboxed (see `references/installing.md`). Read it first;
+code that then runs unsandboxed (see [`references/installing.md`](installing.md)). Read it first;
 the rules above apply to code you deploy as much as code you write.

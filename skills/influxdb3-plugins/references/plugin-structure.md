@@ -1,4 +1,4 @@
-# Plugin Structure
+# Plugin structure
 
 A plugin is a Python module — either a single `.py` file or a directory with `__init__.py` — that defines one of the three entry-point functions (`process_writes`, `process_scheduled_call`, or `process_request`).
 
@@ -17,7 +17,8 @@ When creating a trigger, `--path` is the filename:
 influxdb3 create trigger \
   --trigger-spec "every:1m" \
   --path "my_plugin.py" \
-  --database my_database \
+  --database "$INFLUXDB_DATABASE" \
+  --token "$INFLUXDB_ADMIN_TOKEN" \
   my_trigger
 ```
 
@@ -28,7 +29,8 @@ influxdb3 create trigger \
   --trigger-spec "every:1m" \
   --path "/absolute/local/path/my_plugin.py" \
   --upload \
-  --database my_database \
+  --database "$INFLUXDB_DATABASE" \
+  --token "$INFLUXDB_ADMIN_TOKEN" \
   my_trigger
 ```
 
@@ -64,7 +66,8 @@ When creating a trigger, `--path` is the directory name (when the plugin already
 influxdb3 create trigger \
   --trigger-spec "table:sensors" \
   --path "my_alert" \
-  --database my_database \
+  --database "$INFLUXDB_DATABASE" \
+  --token "$INFLUXDB_ADMIN_TOKEN" \
   alert_trigger
 
 # Upload from local
@@ -72,7 +75,8 @@ influxdb3 create trigger \
   --trigger-spec "table:sensors" \
   --path "/absolute/local/path/my_alert" \
   --upload \
-  --database my_database \
+  --database "$INFLUXDB_DATABASE" \
+  --token "$INFLUXDB_ADMIN_TOKEN" \
   alert_trigger
 ```
 
@@ -85,23 +89,25 @@ influxdb3 create trigger \
 
 The official plugin library uses a JSON metadata docstring header to declare the plugin's supported trigger types and configurable arguments — this is what the InfluxDB 3 Explorer UI reads to render plugin configuration forms.
 
-The canonical schema lives at `~/Projects/influxdb3_plugins/REQUIRED_PLUGIN_METADATA.md` (or in the public repo at https://github.com/influxdata/influxdb3_plugins).
+The canonical schema is `REQUIRED_PLUGIN_METADATA.md` in https://github.com/influxdata/influxdb3_plugins.
 
-Our hello-world examples in `examples/` do **not** ship full metadata docstrings — they're minimal by design. If a customer plans to share their plugin via the official library or via Explorer's UI, they should add the metadata docstring per the canonical schema before publishing.
+Our hello-world examples in `examples/` do **not** ship full metadata docstrings — they're minimal by design. If a developer plans to share their plugin via the official library or via Explorer's UI, they should add the metadata docstring per the canonical schema before publishing.
 
 ## Plugin configuration via TOML
 
-InfluxDB 3 loads TOML config files for you. Pass `config_file_path=<filename>` as one of the `--trigger-arguments` when creating the trigger, and the engine reads the TOML and merges its keys into the `args` dict your entry-point function receives. **Do not import `tomllib` in your plugin** — the parsing happens before your code runs.
+Trigger arguments reach the plugin as strings (`Mapping[str, str]`).
+The engine doesn't load a TOML file named by `config_file_path` or merge it into `args`.
+The plugin library's convention is for the plugin to read the file itself:
 
-### File location
+1. Start the server with the `PLUGIN_DIR` environment variable set to the same directory as `--plugin-dir`.
+   `--plugin-dir` tells the server where plugin files are; `PLUGIN_DIR` tells the plugin where its configuration is.
+2. Put the TOML file in that directory.
+3. Pass its file name with `--trigger-arguments config_file_path=<file>.toml`.
+4. In the plugin, resolve the name under `PLUGIN_DIR` and parse it with `tomllib`.
 
-The TOML file must live under the directory your InfluxDB 3 host has configured as `PLUGIN_DIR` (the same directory holding your `.py` file). The value passed to `config_file_path` is resolved relative to `PLUGIN_DIR`:
-
-```bash
---trigger-arguments config_file_path=my_plugin_config_scheduler.toml
-```
-
-Absolute paths and paths outside `PLUGIN_DIR` are not supported.
+Keep the path inside `PLUGIN_DIR`: reject absolute paths, `..`, and symlinks that resolve outside it.
+Keep secrets out of the TOML file and the trigger arguments; trigger arguments are readable in `system.processing_engine_trigger_arguments`.
+See the [plugin library's TOML configuration](https://docs.influxdata.com/influxdb3/core/plugins/library/#using-toml-configuration-files).
 
 ### Naming convention (recommended)
 
@@ -116,59 +122,67 @@ Examples (from `influxdata/influxdb3_plugins/influxdata/basic_transformation/`):
 - `basic_transformation_config_scheduler.toml`
 - `basic_transformation_config_data_writes.toml`
 
-Different file per trigger type because different entry points (`process_scheduled_call` vs `process_writes`) typically want different schemas. The engine doesn't enforce this naming — `config_file_path` accepts any filename — but following the convention makes plugins easier for downstream developers to recognize.
-
 ### Worked example
 
 A scheduled plugin reading a threshold from TOML:
 
 ```python
-# my_plugin.py
+import os
+import tomllib
+
+def load_config(influxdb3_local, args):
+    plugin_dir = os.environ.get("PLUGIN_DIR")
+    name = (args or {}).get("config_file_path")
+    if not plugin_dir or not name:
+        influxdb3_local.error("set PLUGIN_DIR on the server and pass config_file_path")
+        return None
+    base = os.path.realpath(plugin_dir)
+    path = os.path.realpath(os.path.join(base, name))
+    if os.path.commonpath([base, path]) != base:
+        influxdb3_local.error("config_file_path must stay inside PLUGIN_DIR")
+        return None
+    with open(path, "rb") as f:
+        return tomllib.load(f)
+
 def process_scheduled_call(influxdb3_local, call_time, args=None):
-    threshold = args["threshold"]        # int, not str
-    label = args.get("label", "default")
+    config = load_config(influxdb3_local, args)
+    if config is None:
+        return
+    threshold = config["threshold"]
+    label = config.get("label", "default")
     influxdb3_local.info(f"[{label}] threshold={threshold}")
 ```
 
 ```toml
-# my_plugin_config_scheduler.toml
+# my_plugin_config_scheduler.toml, in PLUGIN_DIR
 threshold = 75
 label = "demo"
 ```
 
-Create the trigger with:
-
 ```bash
 influxdb3 create trigger \
-  --database mydb \
+  --database "$INFLUXDB_DATABASE" \
   --path my_plugin.py \
   --trigger-spec "every:1m" \
-  --trigger-arguments config_file_path=my_plugin_config_scheduler.toml \
-  --token "$INFLUXDB_TOKEN" \
+  --trigger-arguments "config_file_path=my_plugin_config_scheduler.toml" \
+  --token "$INFLUXDB_ADMIN_TOKEN" \
   my_plugin_trigger
 ```
 
-Note `--path my_plugin.py` is the bare filename (no `--upload`) — for TOML-config plugins, both the `.py` and the `.toml` must already live in `PLUGIN_DIR` before you create the trigger, because `--upload` only transfers the single Python file. `--path` resolves the .py from `PLUGIN_DIR`; the engine separately resolves `config_file_path` from the same directory. See `examples/toml_config/README.md` for the file-staging steps.
+`examples/toml_config/` is a runnable version with staging and verification steps.
 
-### Native types are preserved
+### Parsing produces native types
 
-This is the practical reason to prefer TOML over inline `--trigger-arguments key=val`:
+An argument stays a string unless the plugin parses it:
 
-| Source | Value of `args["threshold"]` | Type |
+| Source | Result | Type |
 |---|---|---|
-| TOML: `threshold = 75` | `75` | `int` |
+| TOML file: `threshold = 75` | `75` | `int` |
 | Inline: `--trigger-arguments threshold=75` | `"75"` | `str` |
 
-TOML tables become Python `dict`s, arrays become `list`s, booleans become `bool`. No casting required in the plugin — `int(args["threshold"])` is unnecessary (and counterproductive) when the value comes from TOML.
-
-### Runnable example (external)
-
-See `skills/influxdb3-plugins/examples/toml_config/` for a runnable scheduled-trigger plugin with a matching TOML, install commands, and verification queries.
-
-### When in doubt
-
-For canonical real-world examples of TOML config in production InfluxData plugins, see the official repo's `influxdata/` directory: https://docs.influxdata.com/influxdb3/enterprise/plugins/library/
+Inline numeric arguments need explicit conversion in plugin code.
+For more real-world TOML configurations, see the official repo's [`influxdata/` directory](https://github.com/influxdata/influxdb3_plugins/tree/main/influxdata).
 
 ## Where to fetch more
 
-`references/doc-urls.md` → "Plugin library" or the official repo on GitHub.
+[`references/doc-urls.md` → "Plugin library"](doc-urls.md) or the official repo on GitHub.

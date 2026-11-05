@@ -8,7 +8,7 @@
 #   8. delete DB                        9. delete rotated token
 #   10. final orphan check
 #
-# Reads INFLUXDB_HOST and INFLUXDB_TOKEN (admin) from env.
+# Reads INFLUXDB_HOST and INFLUXDB_ADMIN_TOKEN from env.
 # Generates the test DB name at runtime so multiple runs don't collide.
 #
 # Note: requires InfluxDB 3 Enterprise or InfluxDB 3 Cloud: step 3 creates a
@@ -19,14 +19,14 @@ set -euo pipefail
 # Trust boundary: INFLUXDB_HOST and this auto-sourced .env decide where the
 # ADMIN token is sent. Every request below (including the trap-based cleanup
 # DELETEs, which fire even on Ctrl-C) attaches `Authorization: Bearer
-# $INFLUXDB_TOKEN` to "$INFLUXDB_HOST/..." with no host validation — a poisoned
+# $INFLUXDB_ADMIN_TOKEN` to "$INFLUXDB_HOST/..." with no host validation — a poisoned
 # env or a hostile .env in this directory would exfiltrate an admin token. Only
 # run against a host you control; don't source a .env you didn't write.
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 [[ -f "$script_dir/.env" ]] && { set -a; source "$script_dir/.env"; set +a; }
 
 : "${INFLUXDB_HOST:?INFLUXDB_HOST is required}"
-: "${INFLUXDB_TOKEN:?INFLUXDB_TOKEN is required (must be an admin token)}"
+: "${INFLUXDB_ADMIN_TOKEN:?INFLUXDB_ADMIN_TOKEN is required (must be an admin token)}"
 
 TS=$(date +%s)
 TEST_DB="admin_test_http_$TS"
@@ -39,17 +39,17 @@ cleanup() {
   echo
   echo "==> cleanup (exit $rc)"
   curl -sS -X DELETE "$INFLUXDB_HOST/api/v3/configure/token?token_name=$TOKEN_A" \
-    -H "Authorization: Bearer $INFLUXDB_TOKEN" -o /dev/null -w "  delete token A: HTTP %{http_code}\n" || true
+    -H "Authorization: Bearer $INFLUXDB_ADMIN_TOKEN" -o /dev/null -w "  delete token A: HTTP %{http_code}\n" || true
   curl -sS -X DELETE "$INFLUXDB_HOST/api/v3/configure/token?token_name=$TOKEN_B" \
-    -H "Authorization: Bearer $INFLUXDB_TOKEN" -o /dev/null -w "  delete token B: HTTP %{http_code}\n" || true
+    -H "Authorization: Bearer $INFLUXDB_ADMIN_TOKEN" -o /dev/null -w "  delete token B: HTTP %{http_code}\n" || true
   curl -sS -X DELETE "$INFLUXDB_HOST/api/v3/configure/database?db=$TEST_DB" \
-    -H "Authorization: Bearer $INFLUXDB_TOKEN" -o /dev/null -w "  delete DB: HTTP %{http_code}\n" || true
+    -H "Authorization: Bearer $INFLUXDB_ADMIN_TOKEN" -o /dev/null -w "  delete DB: HTTP %{http_code}\n" || true
   echo "==> cleanup done"
   exit $rc
 }
 trap cleanup EXIT
 
-curl_admin() { curl -sS -H "Authorization: Bearer $INFLUXDB_TOKEN" "$@"; }
+curl_admin() { curl -sS -H "Authorization: Bearer $INFLUXDB_ADMIN_TOKEN" "$@"; }
 
 echo "==> step 1: list databases (sanity check)"
 curl_admin "$INFLUXDB_HOST/api/v3/configure/database?format=json" \

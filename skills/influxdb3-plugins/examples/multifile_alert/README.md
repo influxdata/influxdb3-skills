@@ -11,11 +11,11 @@ The plugin watches `sensors_demo` (configurable via `args`) and emits an `alert`
 ## Wire it up
 
 ```bash
-# Assumes INFLUXDB_HOST, INFLUXDB_TOKEN (admin), INFLUXDB_DATABASE are set.
+# Assumes INFLUXDB_HOST, INFLUXDB_ADMIN_TOKEN, INFLUXDB_TOKEN, INFLUXDB_DATABASE are set.
 # IMPORTANT: --path is the DIRECTORY (the parent containing __init__.py)
 influxdb3 create trigger \
   --database "$INFLUXDB_DATABASE" \
-  --token "$INFLUXDB_TOKEN" \
+  --token "$INFLUXDB_ADMIN_TOKEN" \
   --trigger-spec "table:sensors_demo" \
   --path "$(pwd)" \
   --upload \
@@ -66,7 +66,7 @@ Expected: at least one alert row with `host=server01`, `field=temp`, `value=82.5
 ```bash
 influxdb3 delete trigger \
   --database "$INFLUXDB_DATABASE" \
-  --token "$INFLUXDB_TOKEN" \
+  --token "$INFLUXDB_ADMIN_TOKEN" \
   --force \
   multifile_alert
 ```

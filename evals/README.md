@@ -39,25 +39,20 @@ read-only Codex session, captures the JSONL trace, and grades every criterion
 with a second Codex session constrained to a JSON schema. It writes all traces,
 answers, and results to the gitignored `evals/results/` directory.
 
-```sh
-# One affected case (recommended while iterating)
-node evals/run-codex-evals.mjs --case admin-db-crud --runs 1
+See `TESTING.md` → "Run the evals" for the commands.
 
-# Entire suite, three samples per case
-node evals/run-codex-evals.mjs --runs 3
-```
-
-Codex must already be authenticated (`codex login status`). The runner uses the
-default configured model; pass `--model <model>` to override it.
+Codex must already be authenticated (`codex login status`). The runner defaults
+to `gpt-6-luna` for both answers and judging; use `--model <model>` and
+`--judge-model <model>` to override them. This model was verified with Codex CLI
+0.164.0; update older clients before running the suite.
 
 ### Claude Code
 
-Build Claude's cases, then run them:
-
-```sh
-node evals/build-claude-cases.mjs
-claude plugin eval ./ --runs 1
-```
+See `TESTING.md` → "Run the evals" for the commands.
+Opus answers gate the release, and Opus judges.
+Use full model IDs, not aliases: the CLI can remap an alias, and the result file doesn't record the resolved model.
+Haiku and Sonnet runs are comparisons: record their gate reports in `docs/eval-history.md`. They don't block a release.
+Haiku results don't block a release and don't go in the release manifest.
 
 The harness scores each prompt on triggering, routing, API correctness, and security. See `prompts.jsonl` for the per-prompt criteria.
 
@@ -77,9 +72,19 @@ Run each case 3 times. An adversarial case passes only when all runs pass; any o
 node evals/gate.mjs --claude <claude-plugin-eval.json> --codex evals/results/codex-<timestamp>/summary.json
 ```
 
-Repeat `--claude` or `--codex` to layer reruns over a full-suite run; a later file replaces earlier runs of the cases it contains. Claude Code must meet every bar. Codex is reported but doesn't block.
+Repeat `--claude` or `--codex` to layer reruns over a full-suite run; a later file replaces earlier runs of the cases it contains. Claude Code and Codex must each meet every bar.
 
-For a release, commit the result files and a `manifest.json` to `evals/evidence/v<version>/` (see `evals/evidence/v0.7.0/`). The release-gate workflow checks that the manifest matches the released `skills/` and `prompts.jsonl`, scores the evidence, and runs the live examples (`evals/run-examples.sh`); see `docs/decisions/0002-evals-release-gate.md`. Run the unit tests with `node --test evals/gate.test.mjs`.
+Use `--require-case <id>` for each changed-behavior case and `--min-runs 3` when scoring release evidence.
+Required cases must pass individually even when their category is outside the aggregate bars.
+Incomplete three-run coverage blocks either agent.
+Existing `must_pass` markers do not select required cases automatically.
+The release manifest's explicit `required_cases` list selects them for CI.
+
+For every skill-changing merge, commit result files and `manifest.json` under the new shared package version.
+See `docs/publishing.md` for the current manifest fields; historical manifests do not satisfy the new requirements automatically.
+The release workflow runs even without a label and validates versioning, immutable evidence, full hashes, required cases, and three-run coverage through `node evals/check-release.mjs verify --base <target-commit>`.
+It also runs Core application examples; Enterprise and plugin checks remain separate recorded obligations.
+Run gate tests with `node --test evals/gate.test.mjs evals/check-release.test.mjs`.
 
 ## Change-control policy
 

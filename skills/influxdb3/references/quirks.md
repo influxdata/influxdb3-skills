@@ -1,8 +1,8 @@
 # InfluxDB 3 Quirks — Non-obvious Behaviors
 
-A catalogue of behaviors that aren't in the official docs but customers will hit. Each entry: **What you'll see → Why it's that way → What to do.** Entries are bounded — only quirks that are (a) verified against a real release, (b) genuinely non-obvious, (c) likely to be hit in a customer's first month.
+Behaviors that surprise developers. Each entry: **What you'll see → Why it's that way → What to do.** Each entry is verified against a release.
 
-> Quirks can differ on InfluxDB 3 Cloud, InfluxDB Cloud Serverless, InfluxDB Cloud Dedicated, and InfluxDB Clustered — see flavor-specific notes per entry.
+> These quirks are for InfluxDB 3 Core and Enterprise. They can differ on InfluxDB 3 Cloud.
 
 ---
 
@@ -12,23 +12,23 @@ A catalogue of behaviors that aren't in the official docs but customers will hit
 
 **Why:** The `/ping` route is registered for GET only on Core and Enterprise.
 
-**What to do:** Use `GET` for `/ping` health checks. Documented in `references/flavor-detection.md`.
+**What to do:** Use `GET` for `/ping` health checks. Documented in [`references/flavor-detection.md`](flavor-detection.md).
 
 ### `/ping` also needs a token by default
 
 By default `/ping` (like `/health`) requires authentication, so an unauthenticated `GET` returns `401`. Send `Authorization: Bearer <token>` to get `200`. A `401` still proves the host and port are right and the server is up.
 
-Since 3.10 you can opt out of authorization for these routes with `--disable-authz` (env `INFLUXDB3_DISABLE_AUTHZ`). It takes a comma-separated list of `health`, `ping` and `metrics`. On such a server the token is optional. Source: the InfluxDB 3 API spec (`GetPing`) and the config options reference. The default 401 was observed on a 3.10 instance; the opt-out flag has not been run against a live server.
+Since 3.10 you can opt out of authorization for these routes with `--disable-authz` (env `INFLUXDB3_DISABLE_AUTHZ`). It takes a comma-separated list of `health`, `ping` and `metrics`. On such a server the token is optional. Source: the InfluxDB 3 API spec (`GetPing`) and the config options reference.
 
 ---
 
 ## 2. Silent auto-create on first write
 
-**What you'll see:** A write to a database name that doesn't exist returns 200/204 success. The data lands in a brand-new database with that exact (possibly typo'd) name. The DB you intended to write to keeps growing nothing.
+**What you'll see:** A write to a database name that doesn't exist returns 200/204 success. The data lands in a brand-new database with that exact (possibly typo'd) name.
 
 **Why:** Default config auto-creates databases on first write. The auto-create is a UX feature for getting started fast; it becomes a footgun when env vars typo or scripts drift.
 
-**What to do:** Verify the database exists before the first write. Diagnostic + recovery flow in `references/troubleshooting.md` → "Silent auto-create misroute". Generated code that creates a `.env` for production should include a startup check that lists databases and aborts on mismatch.
+**What to do:** Verify the database exists before the first write. Diagnostic + recovery flow in [`references/troubleshooting.md` → "Silent auto-create misroute"](troubleshooting.md#silent-auto-create-misroute). Generated code should check at startup that the database exists and stop if it doesn't.
 
 ---
 
@@ -70,15 +70,23 @@ for row in system_tokens_rows:
 
 ---
 
-## 5. `INFLUXDB_TOKEN` (skill convention) vs `INFLUXDB3_AUTH_TOKEN` (CLI env var)
+## 5. The `influxdb3` CLI doesn't read `INFLUXDB_TOKEN`
 
-**What you'll see:** A script sets `INFLUXDB_TOKEN` in env, then runs `influxdb3 ...` and gets `Failed to create token, error: ApiError { code: 401, message: "the request was not authenticated" }`.
+**What you'll see:** A script exports `INFLUXDB_TOKEN`, runs an `influxdb3` command without `--token`, and gets a 401 (`the request was not authenticated`).
 
-**Why:** Two different conventions:
-- **The skill's app-developer code uses `INFLUXDB_TOKEN`** (matches `INFLUXDB_HOST`, `INFLUXDB_DATABASE` — symmetric naming, all language clients honor it).
-- **The `influxdb3` CLI reads `INFLUXDB3_AUTH_TOKEN`** (different name, prefixed with `INFLUXDB3_`).
+**Why:** When `--token` is absent, the CLI reads only `INFLUXDB3_AUTH_TOKEN`.
+`INFLUXDB_TOKEN` and `INFLUXDB_ADMIN_TOKEN` are this skill's names, and no InfluxDB tool reads them on its own.
+This is the same on Core and Enterprise.
 
-**What to do:** Either set both env vars, or pass the token explicitly via `--token "$INFLUXDB_TOKEN"` on every CLI command (the skill's admin examples do this). Don't rely on env-var fallthrough for CLI work.
+**What to do:** Pass the token each command needs with `--token`, as the token rules in [`SKILL.md`](../SKILL.md) §11 describe:
+
+```sh
+export INFLUXDB_ADMIN_TOKEN=...  # admin: databases, tokens, plugins
+export INFLUXDB_TOKEN=...        # application: write and query
+influxdb3 create database sensors --token "$INFLUXDB_ADMIN_TOKEN"
+influxdb3 query --database sensors --token "$INFLUXDB_TOKEN" "SELECT 1"
+```
+
 
 ---
 
@@ -86,9 +94,9 @@ for row in system_tokens_rows:
 
 **What you'll see:** On Core, a resource-token create request returns 404, or `influxdb3 create token --permission` is rejected.
 
-**Why:** Core has admin tokens only. See `references/tokens.md` → "InfluxDB 3 Core: admin tokens only."
+**Why:** Core has admin tokens only. See [`references/tokens.md` → "InfluxDB 3 Core: admin tokens only."](tokens.md#influxdb-3-core-admin-tokens-only)
 
-**What to do:** Detect the flavor (`references/flavor-detection.md`) before generating admin code. The `examples/admin-*` scripts require Enterprise or InfluxDB 3 Cloud.
+**What to do:** Detect the flavor ([`references/flavor-detection.md`](flavor-detection.md)) before generating admin code. The `examples/admin-http/` and `examples/admin-python/` scripts require Enterprise or InfluxDB 3 Cloud.
 
 ---
 
@@ -98,7 +106,7 @@ for row in system_tokens_rows:
 
 **Why:** The CLI prompts for confirmation (3.10+); the flag to skip it is `-y`/`--yes`, not `--force`. The HTTP API `DELETE /api/v3/configure/database?db=<name>` has **no** prompt and is unaffected.
 
-**What to do:** For scripting/automation, pass `-y` (or `--yes`): `influxdb3 delete database <name> -y --token "$INFLUXDB_TOKEN"`. Combine with `--hard-delete <when>` (`never` / `now` / `default` / `<timestamp>`) or `--data-only` for advanced cases. Pattern documented in `references/databases.md`. Or call the HTTP API, which never prompts.
+**What to do:** For scripting/automation, pass `-y` (or `--yes`): `influxdb3 delete database <name> -y --token "$INFLUXDB_ADMIN_TOKEN"`. Pattern documented in [`references/databases.md`](databases.md). Or call the HTTP API, which never prompts.
 
 ---
 
@@ -108,17 +116,20 @@ for row in system_tokens_rows:
 
 **Why:** Unlike `delete database` (positional `<NAME>`), `delete token` requires the `--token-name <NAME>` flag. The signature differs because there's also a `--token <admin-token>` flag for authentication; positional would be ambiguous.
 
-**What to do:** Use `influxdb3 delete token --token-name <name> -y --token "$INFLUXDB_TOKEN"`. Like `delete database`, it prompts for confirmation, and a script without a TTY fails with `Cannot proceed without confirmation` unless you pass `-y`/`--yes` (observed on 3.11.5). No `--force` here either.
+**What to do:** Use `influxdb3 delete token --token-name <name> -y --token "$INFLUXDB_ADMIN_TOKEN"`. Like `delete database`, it prompts for confirmation, and a script without a TTY fails with `Cannot proceed without confirmation` unless you pass `-y`/`--yes`. No `--force` here either.
 
 ---
 
-## 9. Plugin venv is bundled, system pip will fail
+## 9. Plugins can't import packages installed with the host's `pip`
 
-**What you'll see:** Plugin code that imports `pandas` raises `ImportError`, even though `pip install pandas` was run on the host.
+**What you'll see:** A plugin that imports a third-party package (for example, `pandas` or `requests`) raises `ImportError`, even though `pip install <pkg>` succeeded on the host.
 
-**Why:** When the server starts with `--plugin-dir`, it creates a Python virtual environment at `<PLUGIN_DIR>/venv` using the **bundled Python interpreter** that ships with the `influxdb3` binary. Plugins run inside *that* venv, not the system Python.
+**Why:** Plugins run in `<PLUGIN_DIR>/.venv`, an embedded virtual environment that the server creates from the Python interpreter bundled with `influxdb3`.
+Packages installed into the host's Python, or into any other venv, aren't visible to plugins.
 
-**What to do:** Install packages with `influxdb3 install package <pkg>`. If you need a custom venv, chain off the bundled interpreter: `<PLUGIN_DIR>/venv/bin/python -m venv <new-venv>`. Never `python -m venv` against system Python and expect plugins to use it.
+**What to do:** Install the package into the embedded environment with `influxdb3 install package <pkg>`.
+See the `influxdb3-plugins` skill → [`references/dependencies.md`](../../influxdb3-plugins/references/dependencies.md) for the HTTP API and version pinning.
+To use a different venv, create it with the bundled interpreter, not the system Python, and start the server with `--virtual-env-location <path>`.
 
 ---
 
@@ -131,7 +142,8 @@ for row in system_tokens_rows:
 The physical timestamp column is named `time`, and `event_time` is a virtual alias for it (3.11.0+).
 `event_time` works on every version, so the examples use it.
 
-**What to do:** Use `event_time`, `trigger_name`, `log_level`, and `log_text`. Reference: `skills/influxdb3-plugins/references/testing.md` → "Reading plugin logs".
+**What to do:** Use `event_time`, `trigger_name`, `log_level`, and `log_text`.
+Run the query against the trigger's database for that trigger's logs, or against `_internal` for logs from every trigger on the server. Reference: [`skills/influxdb3-plugins/references/testing.md` → "Reading plugin logs"](../../influxdb3-plugins/references/testing.md#reading-plugin-logs).
 
 ```sql
 SELECT event_time, log_level, log_text FROM system.processing_engine_logs
@@ -143,17 +155,9 @@ ORDER BY event_time DESC LIMIT 50;
 
 ## 11. A 400 from `/api/v3/write_lp` can still write most of the batch
 
-**What you'll see:** A batch of 1,000 line-protocol points returns `400 Bad Request` because line #347 has a parse error.
+**What you'll see:** A batch with one bad line returns `400 Bad Request`, but the other lines are stored.
 
-**Why:** `/api/v3/write_lp` defaults to `accept_partial=true`.
-InfluxDB writes the 999 valid lines and rejects line #347.
-The response `data` array lists each rejected line.
-With `accept_partial=false`, one invalid line rejects the whole batch.
-
-**What to do:** Don't resend the whole batch after a partial write, because that duplicates the lines already stored.
-Fix and resend only the lines listed in `data`.
-The `/api/v2/write` and `/write` compatibility endpoints behave differently: on 3.11.5, one invalid line rejects the whole batch.
-Documented in `references/writing.md` → "Error handling".
+**What to do:** Resend only the lines listed in the response `data` array. Details, including the compatibility endpoints: [`references/writing.md` → "A 400 can mean a partial write"](writing.md#a-400-can-mean-a-partial-write).
 
 ---
 
@@ -165,7 +169,7 @@ Documented in `references/writing.md` → "Error handling".
 - **Short form** — `"db:<name>:<actions>"`. Used by the CLI's `--permission` flag and stored in `system.tokens.permissions`.
 - **Structured form** — `{"resource_type": "db", "resource_names": ["<name>"], "actions": ["read", "write"]}`. Required by the create-token HTTP body.
 
-**What to do:** Use the right encoding for the surface. Reference: `references/admin-http-api.md` → "Permission strings (CLI vs HTTP)".
+**What to do:** Use the right encoding for the surface. Reference: [`references/admin-http-api.md` → "Short-form vs structured permissions"](admin-http-api.md#short-form-vs-structured-permissions).
 
 ```json
 {
@@ -183,9 +187,25 @@ Documented in `references/writing.md` → "Error handling".
 
 ---
 
+## 13. Overwriting a point isn't deterministic
+
+**What you'll see:** After you write a point again with the same table, tag set, and timestamp, a query returns the old value, the new value, or two rows.
+
+**Why:** A point's identity is its table, tag set, and timestamp.
+InfluxDB merges the field sets of duplicate writes, but it doesn't guarantee which value it keeps when they set the same field.
+The result depends on write rate, buffer and snapshot timing, and compaction, so waiting between writes doesn't make it reliable.
+
+**What to do:**
+
+- Write each change as a new point with its real event timestamp, and query for the most recent point.
+- Don't add a field such as `version` to make points unique. Fields aren't part of a point's identity.
+- After a partial write, resend only the rejected lines. Don't treat resending a point as a safe way to deduplicate.
+
+See [Overwrites are not deterministic](https://docs.influxdata.com/influxdb3/enterprise/reference/line-protocol/#overwrites-are-not-deterministic).
+
 ## Where to fetch more
 
-- App-side troubleshooting: `references/troubleshooting.md`
-- Plugin-side troubleshooting: `skills/influxdb3-plugins/references/troubleshooting.md`
+- App-side troubleshooting: [`references/troubleshooting.md`](troubleshooting.md)
+- Plugin-side troubleshooting: [`skills/influxdb3-plugins/references/troubleshooting.md`](../../influxdb3-plugins/references/troubleshooting.md)
 - Diagnostic toolkit: `examples/diagnose/`
 - Broken→fix demo pairs: `examples/troubleshooting/`

@@ -7,10 +7,10 @@
 ## Wire it up
 
 ```bash
-# Assumes INFLUXDB_HOST, INFLUXDB_TOKEN (admin), INFLUXDB_DATABASE are set.
+# Assumes INFLUXDB_HOST, INFLUXDB_ADMIN_TOKEN, INFLUXDB_TOKEN, INFLUXDB_DATABASE are set.
 influxdb3 create trigger \
   --database "$INFLUXDB_DATABASE" \
-  --token "$INFLUXDB_TOKEN" \
+  --token "$INFLUXDB_ADMIN_TOKEN" \
   --trigger-spec "every:30s" \
   --path "$(pwd)/process_scheduled_call_hello.py" \
   --upload \
@@ -42,7 +42,7 @@ Expected: rows with `source=scheduled_hello` and a `recent_count` integer.
 ```bash
 influxdb3 delete trigger \
   --database "$INFLUXDB_DATABASE" \
-  --token "$INFLUXDB_TOKEN" \
+  --token "$INFLUXDB_ADMIN_TOKEN" \
   --force \
   scheduled_hello
 ```

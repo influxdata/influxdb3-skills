@@ -10,7 +10,7 @@ Processing Engine plugins come in three flavors, each with its own entry-point f
 | Run code at intervals or specific times | Scheduled | `process_scheduled_call` | `every:<duration>` or `cron:<expr>` |
 | Expose a custom HTTP endpoint | HTTP request | `process_request` | `request:<path>` |
 
-All three trigger types share the same `influxdb3_local` runtime API (`references/runtime-api.md`) and the same `args: Mapping[str, str] | None` parameter (passed via `--trigger-arguments key=value,...`).
+All three trigger types share the same `influxdb3_local` runtime API ([`references/runtime-api.md`](runtime-api.md)) and the same `args: Mapping[str, str] | None` parameter (passed via `--trigger-arguments key=value,...`).
 
 ---
 
@@ -41,7 +41,7 @@ def process_writes(influxdb3_local, table_batches, args=None):
 
 ### Patterns to study
 
-In `~/Projects/influxdb3_plugins/influxdata/`:
+In https://github.com/influxdata/influxdb3_plugins/tree/main/influxdata:
 - `state_change/` — state-machine WAL plugin pattern
 - `threshold_deadman_checks/` — WAL alerting on threshold crossings
 - `schema_validator/` — WAL validation pattern
@@ -67,7 +67,7 @@ def process_scheduled_call(influxdb3_local, call_time, args=None):
 ### Trigger specs
 
 - `every:<duration>` — `every:30s`, `every:5m`, `every:1h`. The duration is the cadence.
-- `cron:<expression>` — extended cron with seconds: 6 fields (`sec min hour dom mon dow`). Example: `cron:0 0 8 * * *` for 8 AM daily.
+- `cron:<expression>` — extended cron with seconds: 6 fields (`sec min hour dom mon dow`), plus an optional 7th year field. A 5-field expression is rejected. Schedules run in UTC, so a fixed expression doesn't follow local daylight saving time. Write the day of week as names (`MON-FRI`); numeric days start at `1` = Sunday, so `1-5` means Sunday through Thursday. Example: `cron:0 0 8 * * *` for 08:00 UTC daily.
 
 ### Use cases
 
@@ -146,7 +146,7 @@ Inside the plugin:
 ```python
 def process_scheduled_call(influxdb3_local, call_time, args=None):
     if args:
-        threshold = float(args.get("threshold", "100"))  # cast when using --trigger-arguments (strings); TOML config (`config_file_path`) preserves native types — see `plugin-structure.md` → "Plugin configuration via TOML"
+        threshold = float(args.get("threshold", "100"))  # trigger arguments are strings
         email = args.get("notify_email", "default@example.com")
 ```
 
@@ -154,4 +154,4 @@ def process_scheduled_call(influxdb3_local, call_time, args=None):
 
 ## Where to fetch more
 
-`references/doc-urls.md` → "Processing engine and Python plugins" → trigger-spec syntax section.
+[`references/doc-urls.md` → "Processing engine and Python plugins"](doc-urls.md) → trigger-spec syntax section.

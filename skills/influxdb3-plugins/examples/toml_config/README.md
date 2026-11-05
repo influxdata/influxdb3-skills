@@ -1,6 +1,9 @@
 # Example: TOML-Config Scheduled Plugin
 
-A minimal scheduled-trigger plugin that reads its configuration from a TOML file. Demonstrates the InfluxDB 3 Processing Engine's built-in TOML loading — the plugin does **not** import `tomllib`; the engine handles parsing before `process_scheduled_call` is invoked.
+A scheduled plugin that reads its configuration from a TOML file in the plugin directory.
+The engine passes trigger arguments as strings and doesn't load `config_file_path` itself.
+The plugin reads the file named by `config_file_path` from `PLUGIN_DIR` and parses it with `tomllib`.
+This follows the [plugin library's TOML convention](https://docs.influxdata.com/influxdb3/core/plugins/library/#using-toml-configuration-files).
 
 ## What it does
 
@@ -8,39 +11,39 @@ On every tick of the scheduled trigger, the plugin logs a single line at info-le
 
 - the `threshold` (an `int`, with its type proven via `type().__name__`)
 - the `label` (a `str`)
-- the nested `severity_levels.warn` and `severity_levels.alert` thresholds (from a TOML `[severity_levels]` table that arrives as a Python `dict`)
+- the nested `severity_levels.warn` and `severity_levels.alert` thresholds parsed into a Python `dict`
 
-No queries, no writes — the goal is purely to make TOML-to-args delivery observable.
+No queries or writes are needed to demonstrate parsing and type preservation.
 
 ## Install and run
 
-Both the `.py` and the `.toml` need to live in your `PLUGIN_DIR` on the InfluxDB 3 host before you create the trigger. This example passes just the bare filename to `--path` (no `--upload`) because `--upload` only transfers the single Python file — it does NOT upload the companion TOML. For TOML-config plugins, both files must be in place server-side first, after which `--path <filename>` resolves the .py from `PLUGIN_DIR` and the engine separately resolves `config_file_path=<filename.toml>` from the same directory.
+### Start the server with `PLUGIN_DIR`
+
+Set the `PLUGIN_DIR` environment variable to the same directory as `--plugin-dir`.
+`--plugin-dir` tells the server where plugin files are, and `PLUGIN_DIR` tells the plugin where its configuration file is.
+For Docker, add `-e PLUGIN_DIR=/plugins` to the `docker run` command.
 
 ### Stage the files
 
-If you have local filesystem access to the host, copy both files into `PLUGIN_DIR`. Otherwise, upload each file via the HTTP API:
+Copy the plugin and its TOML file into the plugin directory.
+For a Docker deployment, from this example directory:
 
 ```bash
-curl -X POST "$INFLUXDB_HOST/api/v3/plugins/files/example_toml_config.py" \
-  -H "Authorization: Bearer $INFLUXDB_TOKEN" \
-  --data-binary @example_toml_config.py
-
-curl -X POST "$INFLUXDB_HOST/api/v3/plugins/files/example_toml_config_scheduler.toml" \
-  -H "Authorization: Bearer $INFLUXDB_TOKEN" \
-  --data-binary @example_toml_config_scheduler.toml
+docker cp example_toml_config.py <container-name>:/plugins/example_toml_config.py
+docker cp example_toml_config_scheduler.toml <container-name>:/plugins/example_toml_config_scheduler.toml
 ```
+
+To upload the plugin over HTTP instead, see [`references/installing.md`](../../references/installing.md).
 
 ### Create the trigger
 
-With both files staged in `PLUGIN_DIR`:
-
 ```bash
 influxdb3 create trigger \
-  --database mydb \
+  --database "$INFLUXDB_DATABASE" \
   --path example_toml_config.py \
   --trigger-spec "every:10s" \
-  --trigger-arguments config_file_path=example_toml_config_scheduler.toml \
-  --token "$INFLUXDB_TOKEN" \
+  --trigger-arguments "config_file_path=example_toml_config_scheduler.toml" \
+  --token "$INFLUXDB_ADMIN_TOKEN" \
   toml_demo
 ```
 
@@ -50,7 +53,7 @@ Query `system.processing_engine_logs` after the first tick:
 
 ```bash
 influxdb3 query \
-  --database mydb \
+  --database "$INFLUXDB_DATABASE" \
   --token "$INFLUXDB_TOKEN" \
   "SELECT * FROM system.processing_engine_logs WHERE trigger_name = 'toml_demo' ORDER BY event_time DESC LIMIT 5;"
 ```
@@ -61,20 +64,22 @@ You should see a row whose message looks like:
 [demo-trigger] threshold=75 (int); warn_above=70, alert_above=90
 ```
 
-The `(int)` is the receipt that the engine preserved the TOML type rather than stringifying it.
+The `(int)` shows the type returned by the plugin's TOML parser, not a type conversion by the engine.
+If `PLUGIN_DIR` isn't set, the log shows an `ERROR` row instead.
 
 ## Things to notice
 
-- **The plugin never imports `tomllib`.** The engine parses the TOML before invoking your entry-point. Keep your plugin code dependency-free of any TOML library.
-- **Native types come through.** `threshold` is an `int`, `severity_levels` is a `dict`, not strings. This is the practical reason to prefer TOML over inline `--trigger-arguments key=val` (which always arrive as strings).
-- **`config_file_path` is `PLUGIN_DIR`-relative.** Pass just the filename, not an absolute path, unless your operator wants to opt into a non-standard layout.
-- **House naming convention:** `<plugin_base>_config_<trigger_type>.toml`. The engine doesn't enforce it — `config_file_path` accepts any filename — but matching the InfluxData convention makes plugins easier to recognize and lets you ship separate TOMLs for a single plugin's multiple trigger types (e.g., scheduled + data-writes).
+- The engine supplies `config_file_path` as a string. The plugin reads and parses the file.
+- TOML integers and nested tables become Python integers and dictionaries after parsing.
+- The plugin resolves the path inside `PLUGIN_DIR` and rejects absolute paths, `..`, and symlinks that point outside it.
+- Keep secrets out of the TOML file and the trigger arguments. Trigger arguments are readable in `system.processing_engine_trigger_arguments`.
 
 ## Cleanup
 
 ```bash
 influxdb3 delete trigger \
-  --database mydb \
-  --token "$INFLUXDB_TOKEN" \
+  --database "$INFLUXDB_DATABASE" \
+  --token "$INFLUXDB_ADMIN_TOKEN" \
+  --force \
   toml_demo
 ```

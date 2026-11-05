@@ -2,16 +2,15 @@
 
 For any language without a first-class client, or when a developer explicitly wants to skip the client library, use the v3 HTTP API directly.
 The `/api/v3` endpoints exist only on InfluxDB 3 Core, InfluxDB 3 Enterprise, and InfluxDB 3 Cloud.
-For InfluxDB Cloud Serverless and InfluxDB Cloud Dedicated, see `references/flavors.md`.
 
 ## Endpoints
 
 | Action | Method | Path | Notes |
 |---|---|---|---|
-| Health probe / flavor detection | `GET` | `/ping` | See `references/flavor-detection.md` |
+| Health probe / flavor detection | `GET` | `/ping` | See [`references/flavor-detection.md`](../flavor-detection.md) |
 | Write line protocol | `POST` | `/api/v3/write_lp?db=$INFLUXDB_DATABASE` | Body is line protocol; one line per point |
 | Query (SQL) | `POST` | `/api/v3/query_sql` | JSON body: `{"db": "...", "q": "..."}` |
-| Query (InfluxQL) | `POST` | `/api/v3/query_influxql` | Same shape; legacy compat only |
+| Query (InfluxQL) | `POST` | `/api/v3/query_influxql` | Same shape |
 
 ## Auth
 
@@ -44,9 +43,11 @@ Expected: JSON array of rows.
 | Status | Meaning | Retriable? |
 |---|---|---|
 | 200 / 204 | Success | n/a |
-| 400 | Bad request — line protocol parse error or invalid SQL | **No** — fix and retry, don't retry blindly |
+| 400 | Bad request — line protocol parse error or invalid SQL | **No** — fix the request |
 | 401 | Auth failed — bad/missing token | **No** — fix env var |
+| 403 | Token lacks permission | **No** — use a token with access |
 | 404 | Database not found | **No** |
+| 413 | Payload too large | **No** — reduce batch size |
 | 429 | Rate limited | **Yes** — exponential backoff |
 | 5xx | Server side | **Yes** — backoff + retry |
 
@@ -69,4 +70,4 @@ curl -sS -X POST "$INFLUXDB_HOST/api/v3/query_sql" \
 
 ## Where to fetch more
 
-`references/doc-urls.md` → "HTTP API (`/api/v3/*`)".
+[`references/doc-urls.md` → "HTTP API (`/api/v3/*`)"](../doc-urls.md).

@@ -23,7 +23,12 @@ influxdb3 query -d "$INFLUXDB_DATABASE" --token "$INFLUXDB_TOKEN" \
    ORDER BY event_time DESC LIMIT 10"
 ```
 
-Look for `AttributeError: 'dict' object has no attribute`. That's the symptom.
+Look for `AttributeError: 'dict' object has no attribute`. If the query does not
+show the exception, inspect the server's scheduler logs. An uncaught exception
+can appear in the server log, without a traceback, but not in this system
+table. On a multi-node Enterprise cluster, the
+error can be logged on any node that runs the trigger. An empty result does not
+rule out the failure.
 
 ## Fix
 
@@ -52,7 +57,7 @@ influxdb3 create trigger \
   --trigger-spec "table:demo_attr" \
   --path "$(pwd)/broken.py" \
   --upload \
-  --token "$INFLUXDB_TOKEN" \
+  --token "$INFLUXDB_ADMIN_TOKEN" \
   attr_demo_broken
 
 # Cause it to fire by writing a point to the watched table
@@ -62,7 +67,7 @@ curl -sS -X POST "$INFLUXDB_HOST/api/v3/write_lp?db=$INFLUXDB_DATABASE&precision
   --data-binary "demo_attr,host=h1 value=1.0 $NOW"
 sleep 3
 
-# Read the logs — should show AttributeError
+# Check plugin logs; also inspect server scheduler logs for AttributeError
 influxdb3 query -d "$INFLUXDB_DATABASE" --token "$INFLUXDB_TOKEN" \
   "SELECT event_time, log_level, log_text FROM system.processing_engine_logs
    WHERE trigger_name='attr_demo_broken' ORDER BY event_time DESC LIMIT 5"
@@ -72,7 +77,7 @@ influxdb3 update trigger \
   --database "$INFLUXDB_DATABASE" \
   --trigger-name attr_demo_broken \
   --path "$(pwd)/fixed.py" \
-  --token "$INFLUXDB_TOKEN"
+  --token "$INFLUXDB_ADMIN_TOKEN"
 
 # Fire again
 NOW=$(date +%s)
@@ -87,11 +92,11 @@ influxdb3 query -d "$INFLUXDB_DATABASE" --token "$INFLUXDB_TOKEN" \
    WHERE trigger_name='attr_demo_broken' ORDER BY event_time DESC LIMIT 5"
 
 # Cleanup
-influxdb3 delete trigger --database "$INFLUXDB_DATABASE" --force --token "$INFLUXDB_TOKEN" attr_demo_broken
+influxdb3 delete trigger --database "$INFLUXDB_DATABASE" --force --token "$INFLUXDB_ADMIN_TOKEN" attr_demo_broken
 ```
 
 ## Where to fetch more
 
-- `quirks.md` entry 3 (canonical home for this quirk)
-- `skills/influxdb3-plugins/references/runtime-api.md` → "table_batches shape"
-- `skills/influxdb3-plugins/references/troubleshooting.md` → "Plugin errors in `system.processing_engine_logs`"
+- [`quirks.md` entry 3](../../../references/quirks.md#3-table_batches-items-are-dicts-not-class-instances) (canonical home for this quirk)
+- [`skills/influxdb3-plugins/references/runtime-api.md` → "table_batches shape"](../../../../influxdb3-plugins/references/runtime-api.md#table_batches-shape-wal-plugins-only)
+- [`skills/influxdb3-plugins/references/troubleshooting.md` → "Plugin errors in `system.processing_engine_logs`"](../../../../influxdb3-plugins/references/troubleshooting.md#plugin-errors-in-systemprocessing_engine_logs)

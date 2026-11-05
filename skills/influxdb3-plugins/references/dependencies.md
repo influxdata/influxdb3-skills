@@ -2,14 +2,14 @@
 
 ## The embedded venv rule (most important)
 
-When the InfluxDB 3 server is started with `--plugin-dir`, it creates a Python virtual environment at `<PLUGIN_DIR>/venv` using the **bundled Python interpreter** that ships with the `influxdb3` binary. Plugins run inside *that* venv.
+When the InfluxDB 3 server is started with `--plugin-dir`, it creates a Python virtual environment at `<PLUGIN_DIR>/.venv` using the **bundled Python interpreter** that ships with the `influxdb3` binary. Plugins run inside *that* venv.
 
-**Never** run `python -m venv` against your system Python and expect plugins to use it. The bundled Python and your system Python may differ in version and ABI, and the runtime will fail with cryptic import errors.
+Don't point plugins at a venv built from your system Python. The bundled Python and your system Python may differ in version and ABI, and the runtime will fail with cryptic import errors.
 
 If you need a custom virtual environment, chain it off the bundled interpreter:
 
 ```bash
-<PLUGIN_DIR>/venv/bin/python -m venv <new-venv>
+<PLUGIN_DIR>/.venv/bin/python -m venv <new-venv>
 ```
 
 ## Install a Python package into the plugin venv
@@ -17,28 +17,33 @@ If you need a custom virtual environment, chain it off the bundled interpreter:
 CLI (preferred):
 
 ```bash
-influxdb3 install package pandas
-influxdb3 install package requests numpy        # multiple at once
+influxdb3 install package pandas --token "$INFLUXDB_ADMIN_TOKEN"
+influxdb3 install package requests numpy --token "$INFLUXDB_ADMIN_TOKEN"  # multiple at once
 ```
+
+The package lands in `<PLUGIN_DIR>/.venv`, the venv the plugins run in. Don't create a separate venv with system Python (`python -m venv`) for plugins.
 
 Docker:
 
 ```bash
-docker exec -it <container_name> influxdb3 install package pandas
+docker exec -it <container_name> influxdb3 install package pandas --token "$INFLUXDB_ADMIN_TOKEN"
 ```
 
 HTTP API:
 
 ```bash
 curl -X POST "$INFLUXDB_HOST/api/v3/configure/plugin_environment/install_packages" \
-  --header "Authorization: Bearer $INFLUXDB_TOKEN" \
+  --header "Authorization: Bearer $INFLUXDB_ADMIN_TOKEN" \
   --header "Content-Type: application/json" \
   --data '{"packages": ["pandas", "requests", "numpy"]}'
 ```
 
 The HTTP variant requires an admin token.
 
-> **`install package` is a supply-chain trust boundary.** Package names go to `pip` against public PyPI with **no typosquat protection** — a misspelled or look-alike name (`reqeusts`, `panndas`) installs and then becomes importable by unsandboxed plugin code (`references/plugin-code-safety.md`). Extra arguments are passed to `pip` verbatim, so a stray `--index-url http://attacker/…` or `--extra-index-url` redirects where packages come from. Install only names you've verified, pin versions (`pandas==2.2.2`), and prefer a vetted internal index; in locked-down deployments use `--package-manager disabled` (below) to turn this surface off entirely.
+Do not treat a successful HTTP status alone as proof that a package installed.
+Check the installation output and verify that the plugin can import the dependency.
+
+> **`install package` is a supply-chain trust boundary.** Package names go to `pip` against public PyPI with **no typosquat protection** — a misspelled or look-alike name (`reqeusts`, `panndas`) installs and then becomes importable by unsandboxed plugin code ([`references/plugin-code-safety.md`](plugin-code-safety.md)). Extra arguments are passed to `pip` verbatim, so a stray `--index-url http://attacker/…` or `--extra-index-url` redirects where packages come from. Install only names you've verified, pin versions (`pandas==2.2.2`), and prefer a vetted internal index; in locked-down deployments, block installation with the flag for your server version (below).
 
 ## When the plugin imports a package
 
@@ -73,7 +78,7 @@ Check that the user's binary accepts the flag (`influxdb3 serve --help` lists it
 | Earlier than 3.10 | `--package-manager disabled` | Blocks package-install API calls. |
 
 The 3.11.0 release notes add `--disable-package-management`, but the reference docs don't describe it yet.
-The behavior in the first row comes from the 3.11.5 `--help` text and hasn't been behavior-tested.
+The behavior in the first row comes from the 3.11.5 `--help` text.
 
 ```bash
 influxdb3 serve \
@@ -95,4 +100,4 @@ When package installation is blocked:
 
 ## Where to fetch more
 
-`references/doc-urls.md` → "Processing engine and Python plugins" → "Manage plugin dependencies" section.
+[`references/doc-urls.md` → "Processing engine and Python plugins"](doc-urls.md) → "Manage plugin dependencies" section.

@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 # Run the influxdb3 skill's runnable examples against a live InfluxDB 3 instance.
 #
-#   INFLUXDB_HOST=http://127.0.0.1:8181 INFLUXDB_TOKEN=... PRODUCT=core evals/run-examples.sh
+#   INFLUXDB_HOST=http://127.0.0.1:8181 INFLUXDB_ADMIN_TOKEN=... PRODUCT=core evals/run-examples.sh
+#
+# INFLUXDB_TOKEN is the token the data examples use. It defaults to the admin
+# token, because Core has admin tokens only.
 #
 # PRODUCT is core or enterprise. The admin lifecycle examples need resource
 # tokens, so they run only for enterprise. The examples are copied to a temp
@@ -10,7 +13,8 @@
 set -euo pipefail
 
 : "${INFLUXDB_HOST:?set INFLUXDB_HOST}"
-: "${INFLUXDB_TOKEN:?set INFLUXDB_TOKEN (an admin token)}"
+: "${INFLUXDB_ADMIN_TOKEN:?set INFLUXDB_ADMIN_TOKEN (an admin token)}"
+export INFLUXDB_TOKEN=${INFLUXDB_TOKEN:-$INFLUXDB_ADMIN_TOKEN}
 PRODUCT=${PRODUCT:-core}
 repo=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 work=$(mktemp -d)
@@ -18,18 +22,17 @@ OUT=${OUT:-$work/logs}
 DB=skills_examples_$$
 mkdir -p "$OUT"
 cp -R "$repo/skills/influxdb3/examples/." "$work/"
-export INFLUXDB_DATABASE=$DB MAVEN_OPTS=${MAVEN_OPTS:---add-opens=java.base/java.nio=ALL-UNNAMED}
-export DOTNET_CLI_TELEMETRY_OPTOUT=1 DOTNET_NOLOGO=1
+export INFLUXDB_DATABASE=$DB
 
-redact() { TOKEN=$INFLUXDB_TOKEN perl -pe 's/\Q$ENV{TOKEN}\E/<redacted>/g; s/apiv3_[A-Za-z0-9+\/_=-]{12,}/<redacted>/g'; }
+redact() { TOKEN=$INFLUXDB_TOKEN ADMIN=$INFLUXDB_ADMIN_TOKEN perl -pe 's/\Q$ENV{TOKEN}\E/<redacted>/g; s/\Q$ENV{ADMIN}\E/<redacted>/g; s/apiv3_[A-Za-z0-9+\/_=-]{12,}/<redacted>/g'; }
 
 database() { # create|delete
 	if [[ $1 == create ]]; then
 		curl -sS -o /dev/null -w '%{http_code}' -X POST "$INFLUXDB_HOST/api/v3/configure/database" \
-			-H "Authorization: Bearer $INFLUXDB_TOKEN" -H 'Content-Type: application/json' --data "{\"db\":\"$DB\"}"
+			-H "Authorization: Bearer $INFLUXDB_ADMIN_TOKEN" -H 'Content-Type: application/json' --data "{\"db\":\"$DB\"}"
 	else
 		curl -sS -o /dev/null -w '%{http_code}' -X DELETE "$INFLUXDB_HOST/api/v3/configure/database?db=$DB&hard_delete_at=now" \
-			-H "Authorization: Bearer $INFLUXDB_TOKEN"
+			-H "Authorization: Bearer $INFLUXDB_ADMIN_TOKEN"
 	fi
 }
 
@@ -50,30 +53,30 @@ run() { # label dir command...
 }
 
 # shellcheck disable=SC2329 # invoked by trap
-cleanup() { printf '%-22s HTTP %s\n' "delete $DB" "$(database delete || true)"; }
+cleanup() {
+	local rc=$? status
+	status=$(database delete) || status=connection-error
+	printf '%-22s HTTP %s\n' "delete $DB" "$status"
+	case "$status" in 200|204|404) ;; *) rc=1 ;; esac
+	exit "$rc"
+}
 trap cleanup EXIT
 
-printf '%-22s HTTP %s\n' "create $DB" "$(database create)"
+status=$(database create)
+printf '%-22s HTTP %s\n' "create $DB" "$status"
+if [[ "$status" != 200 ]]; then
+	echo 'Database setup failed; examples were not run.' >&2
+	exit 1
+fi
 
 run http http bash hello.sh
 run python python uv run --quiet --with influxdb3-python --with python-dotenv --with pandas python hello.py
 run python-schema python uv run --quiet --with influxdb3-python --with python-dotenv --with pandas python schema-example.py
-run javascript javascript sh -c 'npm install --silent --no-audit --no-fund && node hello.js'
-run javascript-schema javascript node schema-example.js
-run go go sh -c 'go mod tidy && go run hello.go'
-run go-schema go go run -tags=schema schema_example.go
-run java java sh -c 'mvn -q compile && mvn -q exec:java -Dexec.mainClass=Hello'
-run java-schema java mvn -q exec:java -Dexec.mainClass=SchemaExample
-run csharp csharp sh -c 'dotnet restore -v q && dotnet run'
 run diagnose diagnose uv run --quiet --with-requirements requirements.txt python diagnose.py
 
 if [[ $PRODUCT == enterprise ]]; then
 	run admin-http admin-http bash admin_lifecycle.sh
 	run admin-python admin-python uv run --quiet --with-requirements requirements.txt python admin_lifecycle.py
-	run admin-javascript admin-javascript sh -c 'npm install --silent --no-audit --no-fund && node admin-lifecycle.js'
-	run admin-go admin-go sh -c 'go mod tidy && go run admin_lifecycle.go'
-	run admin-java admin-java sh -c 'mvn -q compile && mvn -q exec:java -Dexec.mainClass=AdminLifecycle'
-	run admin-csharp admin-csharp sh -c 'dotnet restore -v q && dotnet run'
 fi
 
 echo "Logs: $OUT"

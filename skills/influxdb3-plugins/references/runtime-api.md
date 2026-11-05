@@ -1,4 +1,4 @@
-# Plugin Runtime API
+# Plugin runtime API
 
 Every Processing Engine plugin gets the `influxdb3_local` object passed in as the first argument to its entry-point function. This object is the only API the plugin needs for logging, querying data, writing data, and managing in-memory state. **Do not `import` it** — it's injected by the runtime.
 
@@ -6,15 +6,18 @@ Every Processing Engine plugin gets the `influxdb3_local` object passed in as th
 
 | Method | Purpose |
 |---|---|
-| `info(*args)` | Log an informational message; args stringified and space-joined; written to system logs and `system.processing_engine_logs`. |
-| `warn(*args)` | Log a warning; same destinations as `info`. |
-| `error(*args)` | Log an error; same destinations; also recorded in the plugin return payload for trigger error tracking. |
-| `query(query, args=None)` | Execute a SQL query. Returns `list[dict[str, Any]]` — one dict per row, column name as key. Time columns return as nanosecond integers. Raises `QueryError` on bad SQL or execution failure. |
-| `write_sync(line, no_sync)` | **Preferred.** Write line protocol to the trigger's database via the write buffer. `no_sync` is required (no default): `no_sync=True` returns as soon as the write is buffered (high-throughput); `no_sync=False` waits for WAL synchronization (durable). `line` must be a `LineBuilder`. |
-| `write_sync_to_db(db_name, line, no_sync)` | Same as `write_sync` but writes to a different database. `no_sync` is required (no default). |
-| `write(line)` | **Legacy.** Queues a line protocol write back to the trigger's database; flushed when the plugin completes. Still works but new plugins should prefer `write_sync(line, no_sync=True)` for explicit control over timing and durability. |
-| `write_to_db(db_name, line)` | **Legacy.** Same as `write` but to a different database. New plugins should prefer `write_sync_to_db`. |
+| `info(*args)` | Log at `INFO`. Arguments are converted to strings and joined with spaces. Stored in `system.processing_engine_logs` and shown in `influxdb3 test` output. |
+| `warn(*args)` | Log at `WARN`; same as `info`. |
+| `error(*args)` | Log at `ERROR`; same as `info`. |
+| `query(query, args=None, database=None)` | Execute a SQL query. Returns `list[dict[str, Any]]`, one dict per row keyed by column name. `args` values must be strings; an `int` or `float` raises `TypeError`. `database` defaults to the trigger's database. Timestamps are nanosecond integers, and SQL `NULL` is `None`. Raises `QueryError` on bad SQL, execution failure, or an invalid database name (see "Exceptions"). |
+| `write_sync(line, no_sync)` | Write to the trigger's database synchronously, while the plugin runs. `no_sync` is required: `True` skips waiting for WAL synchronization, `False` waits for it. Raises if the server rejects the write. |
+| `write_sync_to_db(db_name, line, no_sync)` | Same as `write_sync`, to another database. |
+| `write(line)` | Queue a write to the trigger's database. Queued writes are flushed after the plugin returns, after any `write_sync` calls. A rejected write can't be caught in the plugin; it surfaces after the run as an `ERROR` row in `system.processing_engine_logs`. |
+| `write_to_db(db_name, line)` | Same as `write`, to another database. |
 | `cache` | Property returning the `Cache` for this trigger. |
+
+Every write method takes a `LineBuilder` and raises if the target database is `_internal`.
+Use `write_sync` or `write_sync_to_db` when the plugin needs to know a write failed.
 
 ### `no_sync=True` vs `no_sync=False` — which to pick
 
@@ -22,16 +25,20 @@ Every Processing Engine plugin gets the `influxdb3_local` object passed in as th
 |---|---|
 | Returns as soon as the write is in the in-memory buffer. | Returns only after the write is durably persisted in the WAL. |
 | High-throughput plugins that produce many writes per execution (data transformations, aggregations writing back to InfluxDB). | Critical writes where losing the data on a server crash between buffer and WAL sync would be unacceptable. |
-| Default for examples in this skill — fits the most common plugin pattern. | Use when you need at-least-once durability guarantees within the plugin invocation. |
+| Default for examples in this skill — fits the most common plugin pattern. | Use when losing a buffered write on a server crash is unacceptable. |
 
 Both modes still go through the same write path; the only difference is whether the call blocks until WAL sync.
+
+WAL synchronization and logical deduplication are different properties.
+A durable write does not make a retried event safe to repeat.
+Overwriting a point isn't deterministic; see the `influxdb3` skill's [`references/quirks.md` entry 13](../../influxdb3/references/quirks.md#13-overwriting-a-point-isnt-deterministic) before promising that a deterministic timestamp makes retries safe.
 
 ### Quick examples
 
 ```python
 # Log
 influxdb3_local.info("Processing started")
-influxdb3_local.warn("missing field in row", row_id)
+influxdb3_local.warn("missing field in row", 42)
 
 # Query
 rows = influxdb3_local.query(
@@ -64,7 +71,7 @@ Helper for constructing InfluxDB line protocol with type strictness and escaping
 | `float64_field(key, value)` | Add a float field. Integral values render with trailing `.0`. |
 | `string_field(key, value)` | Add a string field; quotes and backslashes escaped. |
 | `bool_field(key, value)` | Add a boolean field as `t` or `f`. |
-| `time_ns(timestamp_ns)` | Set the nanosecond timestamp. Optional — server stamps "now" if omitted. |
+| `time_ns(timestamp_ns)` | Set the nanosecond timestamp. Optional; without it, the server assigns the time it received the write. Set it from the event's time when the data has one. |
 | `build()` | Render the line protocol string. Raises `InvalidLineError` if no fields were added. |
 
 ### Type strictness
@@ -107,7 +114,7 @@ counter += 1
 influxdb3_local.cache.put("count", counter)
 
 # Cache an external API response with a TTL
-influxdb3_local.cache.put("weather", api_response, ttl=300)
+influxdb3_local.cache.put("weather", {"temp_c": 21.5}, ttl=300)
 
 # Shared config across all triggers
 influxdb3_local.cache.put("config", {"threshold": 90}, use_global=True)
@@ -146,9 +153,23 @@ def process_writes(influxdb3_local, table_batches, args=None):
 | `InvalidMeasurementError` | Measurement name contains a space. |
 | `InvalidKeyError` | Tag or field key is empty or contains spaces, commas, or `=`. |
 | `InvalidLineError` | `LineBuilder.build()` called with no fields. |
+| `QueryError` | `query()` fails or names an invalid database. |
 
-In application code, prefer to validate inputs before constructing a `LineBuilder` rather than catching these — they signal programmer error, not runtime conditions.
+In plugin code, prefer to validate inputs before constructing a `LineBuilder` rather than catching these — they signal programmer error, not runtime conditions.
+
+`QueryError` isn't importable or defined in plugin globals, so `except QueryError` raises `NameError`.
+Catch `Exception` and check the type name:
+
+```python
+try:
+    rows = influxdb3_local.query("SELECT * FROM cpu")
+except Exception as err:
+    if type(err).__name__ == "QueryError":
+        influxdb3_local.error("query failed:", err)
+        return
+    raise
+```
 
 ## Where to fetch more
 
-`references/doc-urls.md` → "Extend plugins with API features and state management".
+[`references/doc-urls.md` → "Extend plugins with API features and state management"](doc-urls.md).

@@ -37,7 +37,7 @@ points = [
 client.write(record=points)
 ```
 
-`influxdb3-python` 0.20.0+ writes through `/api/v2/write` by default, so one invalid line rejects the whole batch. For partial writes or `no_sync` on InfluxDB 3 Core or Enterprise, pass `write_use_v2_api=False`. See `references/writing.md` → "Official clients write through `/api/v2/write` by default".
+`influxdb3-python` 0.20.0+ writes through `/api/v2/write` by default, so one invalid line rejects the whole batch. For partial writes or `no_sync` on InfluxDB 3 Core or Enterprise, pass `write_use_v2_api=False`. See [`references/writing.md` → "Official clients write through `/api/v2/write` by default"](../writing.md#official-clients-write-through-apiv2write-by-default).
 
 ## Automatic batching
 
@@ -86,7 +86,7 @@ for row in result:
     print(row)
 ```
 
-> Note: as of `influxdb3-python` 0.19.x, the keyword for parameters is `query_parameters` (not `parameters`). Always pass user input here, never via string formatting.
+> The keyword for parameters is `query_parameters`, not `parameters`.
 
 ## Error handling
 
@@ -100,10 +100,10 @@ except InfluxDBError as e:
         # retriable — back off and retry
         ...
     else:
-        # 400/401/404 — fix and don't retry blindly
+        # 400/401/403/404/413 — fix the request; don't retry
         raise
 ```
 
 ## Where to fetch more
 
-`references/doc-urls.md` → "Python".
+[`references/doc-urls.md` → "Python"](../doc-urls.md).

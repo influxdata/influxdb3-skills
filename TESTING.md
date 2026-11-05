@@ -1,17 +1,21 @@
 # Testing
 
-How to check a change to the skills before you open a pull request.
-CI runs the validation checks on every pull request. The evals and runnable examples need a model API key or a live InfluxDB 3 instance, so run the ones your change affects locally.
+This page explains how to check a change to the skills before you open a pull request.
+CI runs the validation checks on every pull request.
+Every skill or prompt change also runs the release gate, even without a `release` label.
+Before you merge a skill change, run the full eval suite locally on the final skill text and commit its evidence.
+The gate runs Core application examples.
+You run the applicable Enterprise, plugin, and troubleshooting checks locally.
 
 ## Before you open a pull request
 
 | Change | Run |
 |---|---|
-| Any skill text | [Validate the skills](#validate-the-skills), [check links](#check-links), and the [evals](#run-the-evals) for the cases your change affects |
+| Any skill text | [Validate the skills](#validate-the-skills), [check links](#check-links), and full final-text [eval evidence](#run-the-evals) before merge; use affected cases while iterating |
 | A version or `metadata:` field | [Check versions](#check-versions) |
 | Example code | [Run the examples](#run-the-examples) |
 | A workflow in `.github/workflows/` | [Lint workflows](#lint-workflows) |
-| `evals/gate.mjs` | [Unit tests](#unit-tests) |
+| Eval scoring or evidence validation | [Unit tests](#unit-tests) |
 
 ## Validate the skills
 
@@ -45,15 +49,17 @@ git config core.hooksPath .githooks
 
 ## Check links
 
-CI checks links with [lychee](https://github.com/lycheeverse/lychee). To run the same check locally:
+CI checks links with [lychee](https://github.com/lycheeverse/lychee).
+To run the same check locally:
 
 ```sh
-lychee --no-progress --max-retries 3 --exclude-loopback 'skills/**/*.md' README.md
+lychee --no-progress --max-retries 3 --exclude-loopback --include-fragments 'skills/**/*.md' README.md
 ```
 
 ## Lint workflows
 
-Workflow actions are pinned to commit SHAs. Run both linters after you edit a workflow:
+Workflow actions are pinned to commit SHAs.
+Run both linters after you edit a workflow:
 
 ```sh
 actionlint
@@ -63,50 +69,92 @@ zizmor .github/workflows/
 ## Unit tests
 
 ```sh
-node --test evals/gate.test.mjs
+node --test evals/gate.test.mjs evals/check-release.test.mjs scripts/check-claim-policy.test.mjs scripts/check-shared-blocks.test.mjs scripts/check-file-links.test.mjs
+node scripts/check-claim-policy.mjs
+node scripts/check-shared-blocks.mjs
+node scripts/check-file-links.mjs
 ```
+
+`check-claim-policy.mjs` fails when `skills/**` contains a claim ID or when any tracked file names a docs-tooling research path.
+`check-shared-blocks.mjs` fails when the token rules block differs between the two `SKILL.md` files. Each skill loads on its own, so both carry the block between `<!-- token-rules:start -->` and `<!-- token-rules:end -->`. Edit both copies together.
+`check-file-links.mjs` fails when a skill file names a Markdown file from either skill in backticks without linking it, so lychee checks every file reference. `--fix` rewrites them as relative links. Name a file in the other skill as "`influxdb3` skill → `references/x.md`" so the check resolves it against that skill.
+CI and the pre-commit hook run it.
+Cite claim IDs only in `CHANGELOG.md`, `docs/`, and eval evidence.
 
 ## Run the examples
 
-`evals/run-examples.sh` runs every example in `skills/influxdb3/examples/` against a live instance.
+`evals/run-examples.sh` runs application client examples, schema examples, and the diagnostic toolkit against a live instance.
 It copies the examples to a temporary directory, so dependency installs don't touch the repo, and it redacts tokens from its logs.
-It needs Python (with `uv`), Node.js, Go, Java, and .NET.
+It needs Python (with `uv`), `curl`, and Bash.
 
 To run it against a throwaway InfluxDB 3 Core container, as CI does:
 
 ```sh
-docker run -d --name influxdb3-test -p 8181:8181 influxdb:3.11.5-core \
+docker run -d --name influxdb3-test -p 8181:8181 influxdb:3.12.1-core \
   serve --node-id test --object-store memory
 export INFLUXDB_HOST=http://127.0.0.1:8181
-export INFLUXDB_TOKEN=$(docker exec influxdb3-test influxdb3 create token --admin --format json | jq -r .token)
+export INFLUXDB_ADMIN_TOKEN=$(docker exec influxdb3-test influxdb3 create token --admin --format json | jq -r .token)
 PRODUCT=core evals/run-examples.sh
 docker rm -f influxdb3-test
 ```
 
 Set `PRODUCT=enterprise` against an InfluxDB 3 Enterprise instance to also run the admin lifecycle examples, which need resource tokens.
+The runner doesn't run Processing Engine round trips or the troubleshooting broken/fixed demonstrations.
+Run those separately when applicable, following `docs/publishing.md`, and record cleanup results.
 
 ## Run the evals
 
-The formal eval suite is `evals/prompts.jsonl`. Each case has a prompt and the criteria a judge grades the answer against.
-You can run it with Claude Code or Codex. `evals/README.md` has the full commands, the pass bar, and the change-control policy.
+The formal eval suite is `evals/prompts.jsonl`.
+Each case has a prompt and the criteria a judge grades the answer against.
+You can run it with Claude Code or Codex.
+`evals/README.md` has the pass bar, the model policy, and the change-control policy.
+
+Opus results gate the release, and Haiku and Sonnet results are comparisons. Opus judges every Claude run.
+To run the full Claude Code suite:
+
+```sh
+mkdir -p evals/results
+node evals/build-claude-cases.mjs
+claude plugin eval ./ --eval-dir evals/claude-cases --keep-temp --model claude-opus-5-5 --judge-model claude-opus-5-5 --runs 3 --ablation none --trust-plugin --json > evals/results/claude-opus.json
+node evals/gate.mjs --claude evals/results/claude-opus.json --min-runs 3
+claude plugin eval ./ --eval-dir evals/claude-cases --keep-temp --model claude-haiku-5-5 --judge-model claude-opus-5-5 --runs 3 --ablation none --trust-plugin --json > evals/results/claude-haiku.json
+node evals/gate.mjs --claude evals/results/claude-haiku.json --min-runs 3
+claude plugin eval ./ --eval-dir evals/claude-cases --keep-temp --model claude-sonnet-5-5 --judge-model claude-opus-5-5 --runs 3 --ablation none --trust-plugin --json > evals/results/claude-sonnet.json
+node evals/gate.mjs --claude evals/results/claude-sonnet.json --min-runs 3
+```
+
+To run the full Codex suite:
+
+```sh
+node evals/run-codex-evals.mjs --runs 3 --model gpt-6-luna --judge-model gpt-6-luna
+node evals/gate.mjs --codex evals/results/codex-<timestamp>/summary.json --min-runs 3
+```
 
 To rerun one case while you iterate:
 
 ```sh
 # Claude Code
 node evals/build-claude-cases.mjs
-claude plugin eval ./ --eval-dir evals/claude-cases --case <id> --runs 3 --ablation none --trust-plugin --judge-model sonnet
+claude plugin eval ./ --eval-dir evals/claude-cases --keep-temp --case <id> --model claude-opus-5-5 --judge-model claude-opus-5-5 --runs 3 --ablation none --trust-plugin
 
 # Codex
-node evals/run-codex-evals.mjs --case <id> --runs 3 --model gpt-5.6-terra --judge-model gpt-5.6-luna
+node evals/run-codex-evals.mjs --case <id> --runs 3 --model gpt-6-luna --judge-model gpt-6-luna
 ```
 
-A single run is noisy. Run a case 3 times before you change the skill or its criteria.
+A single run is noisy.
+Run a case 3 times before you change the skill or its criteria.
 Results go to the gitignored `evals/results/` and `evals/claude-cases/` directories.
+`--keep-temp` keeps each run's scaffold directory, so the `tracePath` in the result JSON still points to the run's trace.
+The trace shows whether the agent loaded the skill and which references it read.
+The directories stay in the system temp directory until you delete them.
 
 `evals/smoke-prompts.md` lists prompts to try by hand in a fresh agent session against a live instance.
 
-For a release, maintainers run the full suite and commit the results to `evals/evidence/v<version>/`. See `docs/publishing.md`.
+For every skill-changing merge, maintainers run the full suite with three samples per case on both agents and commit the results to `evals/evidence/v<new-version>/`.
+The manifest records the full skills and prompts hashes, the fixed model, judge, and CLI versions, and explicit `required_cases` for changed behavior.
+Required cases must pass individually, including plugin, admin, and troubleshooting cases outside the aggregate bars.
+Use `node evals/check-release.mjs verify --base <target-commit>` on the committed candidate to check the same evidence as CI.
+See `docs/publishing.md` for evidence review and live checks.
 
 ## Test your working copy in an agent
 
