@@ -2,7 +2,7 @@
 
 `admin_lifecycle.py` exercises the full token + database lifecycle, using `requests` to call the HTTP API directly. The official `influxdb3-python` client is data-plane only — it doesn't expose admin operations.
 
-> **Requires InfluxDB 3 Enterprise or InfluxDB 3 Cloud.** `_create_scoped_token` creates a scoped resource token via `/api/v3/enterprise/configure/token`. Core has no resource tokens, so it doesn't run on Core (`references/tokens.md`).
+> **Requires InfluxDB 3 Enterprise or InfluxDB 3 Cloud.** `_create_scoped_token` creates a scoped resource token via `/api/v3/enterprise/configure/token`. Core has no resource tokens, so it doesn't run on Core ([`references/tokens.md`](../../references/tokens.md)).
 
 ## What it does
 
@@ -27,4 +27,4 @@ python admin_lifecycle.py
 
 ## Where to fetch more
 
-`references/admin-http-api.md` for endpoint details; `references/tokens.md` for permission-string syntax and rotation pattern.
+[`references/admin-http-api.md`](../../references/admin-http-api.md) for endpoint details; [`references/tokens.md`](../../references/tokens.md) for permission-string syntax and rotation pattern.

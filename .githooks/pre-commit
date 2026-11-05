@@ -6,6 +6,7 @@ cd "$(git rev-parse --show-toplevel)"
 
 scripts/check-paths.sh
 node scripts/check-claim-policy.mjs
+node scripts/check-file-links.mjs
 
 if command -v gitleaks >/dev/null; then
   gitleaks git --staged --redact --no-banner -c .gitleaks.toml

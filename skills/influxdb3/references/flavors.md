@@ -37,4 +37,4 @@ Existing token workflows remain supported. User and role administration beyond t
 
 ## When to ask the developer
 
-Ask explicitly which flavor they're targeting only if `references/flavor-detection.md`'s `/ping` probe returns ambiguous output **and** the answer would change the generated code (e.g., write endpoint differs). For most read code, you can generate flavor-agnostic code via env vars and skip the question.
+Ask explicitly which flavor they're targeting only if [`references/flavor-detection.md`](flavor-detection.md)'s `/ping` probe returns ambiguous output **and** the answer would change the generated code (e.g., write endpoint differs). For most read code, you can generate flavor-agnostic code via env vars and skip the question.

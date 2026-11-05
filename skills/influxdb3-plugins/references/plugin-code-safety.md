@@ -9,7 +9,7 @@ inside the server. Generated plugin code has to be held to that standard.
 
 These rules are about the code an agent *writes into a plugin*, not about the
 server's deploy-time permission checks (which are covered in
-`references/installing.md`).
+[`references/installing.md`](installing.md)).
 
 ## 1. No dynamic execution of untrusted data
 
@@ -50,7 +50,7 @@ def process_request(influxdb3_local, query_parameters, request_headers, request_
     return {"rows": rows}, 200
 ```
 
-The `query(sql, args=None)` binding path (`references/runtime-api.md`) is the
+The `query(sql, args=None)` binding path ([`references/runtime-api.md`](runtime-api.md)) is the
 same parameterization the sibling `influxdb3` skill requires for external
 queries. Use it for any value that originated outside the plugin.
 
@@ -116,5 +116,5 @@ type-check before acting on them; never feed them into the sinks in [§1](#1-no-
 ## 6. Review third-party plugin code before deploying it
 
 `--path "gh:..."`, `--plugin-repo`, and `influxdb3 install package` all pull
-code that then runs unsandboxed (see `references/installing.md`). Read it first;
+code that then runs unsandboxed (see [`references/installing.md`](installing.md)). Read it first;
 the rules above apply to code you deploy as much as code you write.

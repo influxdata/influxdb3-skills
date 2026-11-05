@@ -1,4 +1,4 @@
-> **Looking for the InfluxDB 3 *server* install?** This file covers Processing Engine plugin install / deploy on a server that's already running. For installing the server itself, see `skills/influxdb3/references/installing.md`.
+> **Looking for the InfluxDB 3 *server* install?** This file covers Processing Engine plugin install / deploy on a server that's already running. For installing the server itself, see [`skills/influxdb3/references/installing.md`](../../influxdb3/references/installing.md).
 
 # Installing & Deploying Plugins
 
@@ -18,7 +18,7 @@ Verify the engine is enabled:
 influxdb3 show plugins --token "$INFLUXDB_ADMIN_TOKEN"
 ```
 
-If the engine is on, this succeeds and `system.plugin_files` is queryable (see `references/testing.md`).
+If the engine is on, this succeeds and `system.plugin_files` is queryable (see [`references/testing.md`](testing.md)).
 
 ## Three install paths
 
@@ -95,7 +95,7 @@ influxdb3 serve \
 
 Then `--path "gh:myorg/custom_plugin.py"` resolves against that custom URL.
 
-> **Trust boundary: `gh:` and `--plugin-repo` fetch code that then runs unsandboxed.** The server retrieves the referenced file over the network and executes it with full server privileges (see `references/plugin-code-safety.md`) — there is **no signature, checksum, or version pin**, so whoever controls the repo (or `--plugin-repo` URL, or a MITM on a non-HTTPS fetch) controls what runs. Pin to a repo you trust, use HTTPS, and **read third-party plugin code before deploying it**. Whoever can set `--plugin-repo` at server start chooses the code source for every later `gh:` reference.
+> **Trust boundary: `gh:` and `--plugin-repo` fetch code that then runs unsandboxed.** The server retrieves the referenced file over the network and executes it with full server privileges (see [`references/plugin-code-safety.md`](plugin-code-safety.md)) — there is **no signature, checksum, or version pin**, so whoever controls the repo (or `--plugin-repo` URL, or a MITM on a non-HTTPS fetch) controls what runs. Pin to a repo you trust, use HTTPS, and **read third-party plugin code before deploying it**. Whoever can set `--plugin-repo` at server start chooses the code source for every later `gh:` reference.
 
 ## Updating a plugin in place
 
@@ -137,13 +137,13 @@ The server enforces:
 - **Symlink escape protection** — symlinks that resolve outside `--plugin-dir` are rejected.
 - **Admin-only deploys** — non-admin tokens cannot upload, update, or create triggers.
 
-**Never inline a token in generated commands or scripts.** Admin commands read `INFLUXDB_ADMIN_TOKEN`, and application code reads `INFLUXDB_TOKEN` (`references/connecting.md` in the `influxdb3` skill).
+**Never inline a token in generated commands or scripts.** Admin commands read `INFLUXDB_ADMIN_TOKEN`, and application code reads `INFLUXDB_TOKEN` (`influxdb3` skill → [`references/connecting.md`](../../influxdb3/references/connecting.md)).
 Trigger arguments are stored in the catalog and readable in `system.processing_engine_trigger_arguments`, so anyone who can query system tables can read a secret passed as a trigger argument.
 
 **What the server does *not* protect against** (admin-token-gated, but code-execution-equivalent once reached — an admin token on InfluxDB is effectively arbitrary code in the server process):
 - **`gh:` / `--plugin-repo`** fetch and run remote code with no integrity check (above).
-- **`influxdb3 install package`** installs from public PyPI with no typosquat protection, and extra arguments reach `pip` verbatim (e.g. a redirected `--index-url`) — see `references/dependencies.md`.
-- **A deployed plugin is unsandboxed** — `references/plugin-code-safety.md`.
+- **`influxdb3 install package`** installs from public PyPI with no typosquat protection, and extra arguments reach `pip` verbatim (e.g. a redirected `--index-url`) — see [`references/dependencies.md`](dependencies.md).
+- **A deployed plugin is unsandboxed** — [`references/plugin-code-safety.md`](plugin-code-safety.md).
 
 **Plugin hardening flags** (3.10.0+):
 - `--plugin-dir-only` — disables `gh:` fetches and `--upload`, restricting plugins to files already placed in `--plugin-dir` (server-side placement, path 2). **Enterprise only** — not available on Core, where the admin token is the entire boundary for plugin sourcing.

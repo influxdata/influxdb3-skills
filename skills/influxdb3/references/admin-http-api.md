@@ -2,7 +2,7 @@
 
 This is a summary of the InfluxDB 3 admin endpoints. The HTTP API reference is authoritative. The admin examples (`examples/admin-http/` and `examples/admin-python/`) translate from this summary.
 
-> These endpoints exist only on InfluxDB 3 Core, InfluxDB 3 Enterprise, and InfluxDB 3 Cloud. See `references/flavors.md`.
+> These endpoints exist only on InfluxDB 3 Core, InfluxDB 3 Enterprise, and InfluxDB 3 Cloud. See [`references/flavors.md`](flavors.md).
 
 ## Auth
 
@@ -186,7 +186,7 @@ The structured form's `resource_type` enum is `"db"` or `"system"`; `actions` en
 | Operation | Core | Enterprise |
 |---|---|---|
 | Database CRUD | `/api/v3/configure/database` | Same |
-| Resource token create | Not supported (`references/tokens.md`) | `/api/v3/enterprise/configure/token` |
+| Resource token create | Not supported ([`references/tokens.md`](tokens.md)) | `/api/v3/enterprise/configure/token` |
 | Admin token create | `/api/v3/configure/token/named_admin` | Same |
 | Delete token | `/api/v3/configure/token?token_name=<name>` | Same |
 | List tokens | SQL on `system.tokens` (`_internal`) | Same |
@@ -199,7 +199,7 @@ The structured form's `resource_type` enum is `"db"` or `"system"`; `actions` en
 | 400 | Bad request — invalid name, malformed body, invalid permission shape | Fix the input; the body usually names the field. Watch for using short-form permission strings in the create-token body — the body needs structured form. |
 | 401 | Auth missing or invalid | Use a valid admin token. |
 | 403 | Auth valid but lacks admin scope | Use the operator/admin token, not a scoped resource token. |
-| 404 | Resource (DB or token name) not found, OR endpoint not found | Confirm the name. On Core, a 404 from a resource-token endpoint is expected: Core has no resource tokens (`references/tokens.md`). |
+| 404 | Resource (DB or token name) not found, OR endpoint not found | Confirm the name. On Core, a 404 from a resource-token endpoint is expected: Core has no resource tokens ([`references/tokens.md`](tokens.md)). |
 | 409 | Already exists | Use a different name or delete first. |
 
 ## Where to fetch more

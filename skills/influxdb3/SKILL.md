@@ -42,6 +42,7 @@ It covers Python, JavaScript/TypeScript, Go, Java, C#, and raw HTTP.
 "Cloud" or "InfluxDB Cloud" alone can mean InfluxDB 3 Cloud, InfluxDB Cloud Serverless, InfluxDB Cloud Dedicated, or InfluxDB Cloud (TSM).
 If the developer doesn't name the product, ask which one they use before giving product-specific steps.
 A host URL or `/ping` headers can identify it ([`flavor-detection.md` → "Identify the product"](references/flavor-detection.md#identify-the-product)).
+A host ending in `enterprise.influxdb.io` is InfluxDB 3 Cloud, not a self-hosted InfluxDB 3 Enterprise server, so check the InfluxDB 3 Cloud docs for its token steps.
 
 ### Other InfluxDB products
 
@@ -67,9 +68,9 @@ Migration from v1 or v2 to InfluxDB 3 is also out of scope.
 ## 1.5. No instance yet
 
 If the developer has no InfluxDB 3 server running, including when the binary is installed but not started, help them start one before [§2](#2-setup-checklist).
-`references/installing.md` covers Core and Enterprise install (script and Docker), the object store, the operator token, and checking `/ping`. It names the other install methods (DEB/RPM packages, binaries, Docker Compose) and points to the docs for their steps.
+[`references/installing.md`](references/installing.md) covers Core and Enterprise install (script and Docker), the object store, the operator token, and checking `/ping`. It names the other install methods (DEB/RPM packages, binaries, Docker Compose) and points to the docs for their steps.
 
-Before you give a start command, get these two things right. `references/installing.md` has the details.
+Before you give a start command, get these two things right. [`references/installing.md`](references/installing.md) has the details.
 
 - **Enterprise needs a license.** Without `--license-email` and `--license-type` (or `--license-file`), a non-interactive `serve` fails. Use `you@example.com` and `home` as placeholders, and ask for the real values before you run it.
 - **Pick the object store.** `--object-store` is required and has no default (3.2.1+). Use `file` with `--data-dir` for local work. `memory` is RAM-only and unsafe for sustained writes or restarts.
@@ -102,7 +103,7 @@ The developer may remove the check.
 
 **Order for InfluxDB 3 Cloud:** create the database and a scoped token as the InfluxDB 3 Cloud docs describe, set env vars, then generate code.
 
-Commands: `references/connecting.md`.
+Commands: [`references/connecting.md`](references/connecting.md).
 
 ## 3. Flavor detection
 
@@ -113,7 +114,7 @@ Probe `/ping` first. Ask only if detection is ambiguous.
 3. If the header is absent, probe `GET /api/v3/configure/retention_period` (404 means Core, 403 means Enterprise).
 4. Otherwise, the server isn't Core or Enterprise. Ask which product the developer uses, and route products this skill doesn't cover to their docs ([§1](#1-scope)).
 
-Decision flow: `references/flavor-detection.md`. Product differences: `references/flavors.md`.
+Decision flow: [`references/flavor-detection.md`](references/flavor-detection.md). Product differences: [`references/flavors.md`](references/flavors.md).
 
 ## 4. Connecting and authenticating
 
@@ -132,7 +133,7 @@ Follow the rules in [`references/connecting.md` → "Configuration rules"](refer
 | C# | [`references/clients/csharp.md`](references/clients/csharp.md) and the [client library](https://github.com/InfluxCommunity/influxdb3-csharp) |
 | Anything else, or raw HTTP | [`references/clients/http.md`](references/clients/http.md) and `examples/http/hello.sh` |
 
-Auth details and `.env` loaders for each language: `references/connecting.md`.
+Auth details and `.env` loaders for each language: [`references/connecting.md`](references/connecting.md).
 
 ## 5. Writing data
 
@@ -145,7 +146,7 @@ Auth details and `.env` loaders for each language: `references/connecting.md`.
 - **Recent official clients write through `/api/v2/write` by default.** There, one invalid line rejects the whole batch.
 - **Respect existing explicit schemas.** In an Enterprise explicit-schema database, writes cannot introduce undeclared tables or columns. Diagnose the schema violation and route declaration work to the Enterprise docs; don't disable enforcement or create declarations from the application's write path.
 
-Details: `references/writing.md`. Batch-write code for each language: the table in [§4](#4-connecting-and-authenticating). Auto-create and the database check: [`references/connecting.md` → "The silent auto-create footgun"](references/connecting.md#the-silent-auto-create-footgun).
+Details: [`references/writing.md`](references/writing.md). Batch-write code for each language: the table in [§4](#4-connecting-and-authenticating). Auto-create and the database check: [`references/connecting.md` → "The silent auto-create footgun"](references/connecting.md#the-silent-auto-create-footgun).
 
 ## 6. Querying data
 
@@ -154,7 +155,7 @@ Details: `references/writing.md`. Batch-write code for each language: the table 
 - Parameterize user input. Never concatenate it into a query string.
 - **Handle errors before parsing results.** See [`references/querying.md` → "Query failures"](references/querying.md#query-failures).
 
-Time idioms with `DATE_BIN`, pagination, and parameterization for each language: `references/querying.md`.
+Time idioms with `DATE_BIN`, pagination, and parameterization for each language: [`references/querying.md`](references/querying.md).
 
 ## 7. Schema design
 
@@ -163,7 +164,7 @@ Time idioms with `DATE_BIN`, pagination, and parameterization for each language:
 - **An identifier that tells sources apart is a tag, not a field.** InfluxDB 3 has no tag-cardinality limit, so InfluxDB v1 and v2 cardinality advice doesn't apply.
 - **Name tables and columns in singular snake_case, and avoid SQL reserved words** such as `time`, `value`, and `select`. A reserved word needs double quotes in every query.
 
-Decision rule, naming, and common mistakes: `references/schema-design.md`.
+Decision rule, naming, and common mistakes: [`references/schema-design.md`](references/schema-design.md).
 
 ## 8. Lookup order
 
@@ -171,7 +172,7 @@ For anything this skill doesn't cover, such as a recent client API change, a les
 
 1. The InfluxDB Documentation MCP server (`search_influxdata_knowledge_sources`), if it's connected.
 2. For live state on the developer's instance (databases, tokens, schema, query results), the `influxdb3` CLI or the InfluxDB 3 MCP server, if it's connected.
-3. A curated URL in `references/doc-urls.md`. Don't invent URLs.
+3. A curated URL in [`references/doc-urls.md`](references/doc-urls.md). Don't invent URLs.
 
 Neither MCP server is required.
 
@@ -192,7 +193,7 @@ In the first two sentences, say that this skill doesn't cover the topic and give
 Add at most one line of guidance after that.
 Don't write setup steps, tuning procedures, or code for these topics.
 
-- **Air-gapped setup:** custom plugin repos (`--plugin-repo`), offline mirrors, and offline package installs. To block plugin package installation, see `influxdb3-plugins` → `references/dependencies.md`.
+- **Air-gapped setup:** custom plugin repos (`--plugin-repo`), offline mirrors, and offline package installs. To block plugin package installation, see the `influxdb3-plugins` skill → [`references/dependencies.md`](../influxdb3-plugins/references/dependencies.md).
 - **Performance tuning:** slow queries, slow writes, cardinality remediation, and workload-specific batch-size optimization. Basic batching and write error handling are in scope; see [§5](#5-writing-data).
 - **Migration from v1 or v2 to InfluxDB 3,** including rewriting v1 or v2 client code or Flux queries. Don't offer to do the rewrite.
 - **App-pattern templates:** IoT pipelines, dashboards, alerts, and downsampling.
@@ -207,7 +208,7 @@ Example reply:
 - Creating and deleting databases and changing retention periods require an **admin token**. Check that it's set before you generate provisioning code.
 - **Give the application its own token for writes, even in a demo** ([§11](#11-tokens)). Pattern: [`references/databases.md` → "Create, write, and drop: which token does what"](references/databases.md#create-write-and-drop-which-token-does-what).
 - For InfluxDB 3 Cloud, confirm these APIs in its docs. For scripts that span products, detect the product first ([§3](#3-flavor-detection)).
-- Database names follow the measurement naming conventions in `references/schema-design.md`. Watch for auto-create ([§5](#5-writing-data) and `references/connecting.md`).
+- Database names follow the measurement naming conventions in [`references/schema-design.md`](references/schema-design.md). Watch for auto-create ([§5](#5-writing-data) and [`references/connecting.md`](references/connecting.md)).
 
 | Goal | Read |
 |---|---|
@@ -247,7 +248,7 @@ These rules apply to every answer that uses a token, including the commands in t
 |---|---|
 | Create, list, or delete tokens with the CLI | [`references/tokens.md` → CLI section](references/tokens.md#cli) |
 | Automate token rotation in CI or scripts | [`references/tokens.md` → "Token rotation pattern"](references/tokens.md#token-rotation-pattern) and `examples/admin-http/` or `examples/admin-python/` |
-| HTTP wire format | `references/admin-http-api.md` |
+| HTTP wire format | [`references/admin-http-api.md`](references/admin-http-api.md) |
 
 
 ## 12. Troubleshooting
@@ -268,6 +269,6 @@ Use this section when something stopped working: connection errors, writes that 
 | Query returns 0 rows or wrong rows | [`references/troubleshooting.md` → "Query failures"](references/troubleshooting.md#query-failures) |
 | Token rotation broke CI | [`references/troubleshooting.md` → "Admin failures"](references/troubleshooting.md#admin-failures) |
 | Plugin trigger never fires, or errors appear in logs | `influxdb3-plugins` → its troubleshooting reference |
-| Surprising behavior the docs don't explain | `references/quirks.md` |
+| Surprising behavior the docs don't explain | [`references/quirks.md`](references/quirks.md) |
 
 Broken and fixed code pairs: `examples/troubleshooting/`.

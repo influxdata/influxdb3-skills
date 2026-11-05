@@ -101,6 +101,9 @@ Claim IDs (`claim-YYYYMMDD-NNNN`) refer to InfluxData's internal verification le
 - Keep each eval run's scaffold directory with `--keep-temp`, so traces show whether the agent loaded the skill.
 - Add an "Identify the product" section to `flavor-detection.md` from the docs' InfluxDB version detector and `data/products.yml`: host patterns for InfluxDB 3 Cloud, InfluxDB Cloud Dedicated, InfluxDB Cloud Serverless, InfluxDB Cloud (TSM), and InfluxDB Cloud 1, and `/ping` version headers for InfluxDB Clustered and InfluxDB v1 and v2. Check `x-influxdb-version` before `x-influxdb-build`, because InfluxDB Enterprise v1 also sends `x-influxdb-build: Enterprise`. Add four eval cases for these signals.
 - Name every InfluxDB product the skill routes in its description, including a bare "InfluxDB Cloud", so the skill loads for them and routes instead of the agent answering from memory. Replace the client package list with influxdb3-python as the example, to stay within the 1,024-character limit.
+- Link every Markdown file reference in the skills, including references to the other skill, and add `scripts/check-file-links.mjs` to CI and the pre-commit hook. The earlier conversion linked only references that named a section, so 109 bare file mentions stayed unchecked. Cross-skill mentions now use one form, "`influxdb3` skill → `references/x.md`", which the check resolves against that skill.
+- Say in `SKILL.md` that a host ending in `enterprise.influxdb.io` is InfluxDB 3 Cloud. Agents read the host name as a self-hosted InfluxDB 3 Enterprise server.
+- Accept per-customer token code in `admin-defer-multitenant` when it follows the identity-layer recommendation and says each customer then needs its own database. The skill advises against per-user tokens but doesn't forbid them, and a database per customer is a valid design for hard isolation. `tokens.md` now states that resource tokens are scoped to whole databases.
 
 ### Removed
 

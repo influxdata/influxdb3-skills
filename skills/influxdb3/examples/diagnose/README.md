@@ -54,5 +54,5 @@ Done. (Full health: OK)
 
 ## Where to fetch more
 
-- `references/troubleshooting.md` for symptom→fix lookups
-- `references/quirks.md` for non-obvious behaviors
+- [`references/troubleshooting.md`](../../references/troubleshooting.md) for symptom→fix lookups
+- [`references/quirks.md`](../../references/quirks.md) for non-obvious behaviors
