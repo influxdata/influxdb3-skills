@@ -113,11 +113,11 @@ To run the full Claude Code suite:
 ```sh
 mkdir -p evals/results
 node evals/build-claude-cases.mjs
-claude plugin eval ./ --eval-dir evals/claude-cases --model claude-opus-5-5 --judge-model claude-opus-5-5 --runs 3 --ablation none --trust-plugin --json > evals/results/claude-opus.json
+claude plugin eval ./ --eval-dir evals/claude-cases --keep-temp --model claude-opus-5-5 --judge-model claude-opus-5-5 --runs 3 --ablation none --trust-plugin --json > evals/results/claude-opus.json
 node evals/gate.mjs --claude evals/results/claude-opus.json --min-runs 3
-claude plugin eval ./ --eval-dir evals/claude-cases --model claude-haiku-5-5 --judge-model claude-opus-5-5 --runs 3 --ablation none --trust-plugin --json > evals/results/claude-haiku.json
+claude plugin eval ./ --eval-dir evals/claude-cases --keep-temp --model claude-haiku-5-5 --judge-model claude-opus-5-5 --runs 3 --ablation none --trust-plugin --json > evals/results/claude-haiku.json
 node evals/gate.mjs --claude evals/results/claude-haiku.json --min-runs 3
-claude plugin eval ./ --eval-dir evals/claude-cases --model claude-sonnet-5-5 --judge-model claude-opus-5-5 --runs 3 --ablation none --trust-plugin --json > evals/results/claude-sonnet.json
+claude plugin eval ./ --eval-dir evals/claude-cases --keep-temp --model claude-sonnet-5-5 --judge-model claude-opus-5-5 --runs 3 --ablation none --trust-plugin --json > evals/results/claude-sonnet.json
 node evals/gate.mjs --claude evals/results/claude-sonnet.json --min-runs 3
 ```
 
@@ -133,7 +133,7 @@ To rerun one case while you iterate:
 ```sh
 # Claude Code
 node evals/build-claude-cases.mjs
-claude plugin eval ./ --eval-dir evals/claude-cases --case <id> --model claude-opus-5-5 --judge-model claude-opus-5-5 --runs 3 --ablation none --trust-plugin
+claude plugin eval ./ --eval-dir evals/claude-cases --keep-temp --case <id> --model claude-opus-5-5 --judge-model claude-opus-5-5 --runs 3 --ablation none --trust-plugin
 
 # Codex
 node evals/run-codex-evals.mjs --case <id> --runs 3 --model gpt-6-luna --judge-model gpt-6-luna
@@ -142,6 +142,9 @@ node evals/run-codex-evals.mjs --case <id> --runs 3 --model gpt-6-luna --judge-m
 A single run is noisy.
 Run a case 3 times before you change the skill or its criteria.
 Results go to the gitignored `evals/results/` and `evals/claude-cases/` directories.
+`--keep-temp` keeps each run's scaffold directory, so the `tracePath` in the result JSON still points to the run's trace.
+The trace shows whether the agent loaded the skill and which references it read.
+The directories stay in the system temp directory until you delete them.
 
 `evals/smoke-prompts.md` lists prompts to try by hand in a fresh agent session against a live instance.
 
