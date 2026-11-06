@@ -69,7 +69,7 @@ zizmor .github/workflows/
 ## Unit tests
 
 ```sh
-node --test evals/gate.test.mjs evals/check-release.test.mjs scripts/check-claim-policy.test.mjs scripts/check-shared-blocks.test.mjs scripts/check-file-links.test.mjs
+node --test evals/gate.test.mjs evals/check-release.test.mjs evals/build-claude-cases.test.mjs evals/run-codex-evals.test.mjs scripts/check-claim-policy.test.mjs scripts/check-shared-blocks.test.mjs scripts/check-file-links.test.mjs
 node scripts/check-claim-policy.mjs
 node scripts/check-shared-blocks.mjs
 node scripts/check-file-links.mjs
