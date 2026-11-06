@@ -27,6 +27,8 @@ These changes make the skills usable by a Sonnet-level model that reads the skil
 - Move the plugin-runtime quirks (`table_batches` items are dicts, plugins see only the embedded venv, the processing-engine log columns) into the `influxdb3-plugins` runtime, dependencies, and testing references, and drop the cross-skill pointers to them. The plugins skill loads alone, so a plugin author never saw those facts. The `influxdb3` quirks reference keeps its numbering so existing links still resolve. The `table_batches` broken-and-fixed pair moves to the plugins skill's examples.
 - State the plugin credential rules positively in the plugins body: admin calls stay outside the plugin, and a plugin that calls out gets a least-privilege token in a trigger argument, because anyone who can query system tables can read trigger arguments. Answers to the inline admin-token prompt suggested passing the admin token as a trigger argument.
 
+- Grade behavior instead of wording in three cases. `write-partial-400` accepts any answer that reads rejected lines from the structured response body, with the `data` array as an example, because correct answers that described the list without naming the array failed. `flavor-bare-cloud` now also fails an answer that asks which product and then gives token steps from memory for products the skill doesn't cover, which is the hazard the case exists for. `connect-py-core` checks the skill's headline rules: setup steps in the same reply as the code, and a startup check that the database exists. No criterion tested them.
+
 ### Documentation-grounded corrections
 
 - Preserve existing capability boundaries. Explicit-schema administration and distributed plugin placement remain separate work.
