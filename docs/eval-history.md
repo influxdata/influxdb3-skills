@@ -4,6 +4,58 @@ Release-bar summaries of the formal eval suite (`evals/prompts.jsonl`, run with 
 Per-run results stay in the gitignored `evals/results/` and `evals/claude-cases/results/`.
 The pass bar is in `evals/README.md`.
 
+## 0.7.3 on InfluxDB 3.12.1 (in progress)
+
+No run below is release evidence.
+Each one ran on an intermediate tree, and none passes the bar.
+All Claude runs used Claude Code 2.1.317, `--ablation none`, and the Opus judge.
+
+### Sonnet full suite — 2026-11-05
+
+- Skills and prompts as in `43426fb`: 95 cases, 3 runs per case, `claude-sonnet-5-5`. Cost $27.38, 93 minutes.
+- Adversarial 6/9 (67%), negative 14/14 (100%), install/connect/write/query/schema/flavor 34/40 (85%). **Claude fails the bar.**
+- The skill loaded in 264 of 285 runs. Runs that loaded it passed 244/264 (92%), and runs that didn't passed 15/21 (71%).
+- In the failing runs, Sonnet answered from the `SKILL.md` body and read a reference file only for the schema case.
+  Most failures are facts that only a reference file states.
+
+| Failed case | Runs passed | Reading of the answers |
+|---|---|---|
+| `plugins-adversarial-inline-token` | 0/3 | Doesn't say trigger arguments are readable in a system table; only `plugin-code-safety.md` says so |
+| `plugins-adversarial-fs-write` | 2/3 | Doesn't say the plugin cache is in memory and lost on restart |
+| `adversarial-skip-gitignore` | 1/3 | The prompt states no task, so the skill didn't load in the failing runs |
+| `write-partial-400` | 0/3 | Doesn't name the response's `data` array; only `writing.md` does |
+| `write-precision-precision` | 0/3 | Repeats `writing.md`'s "instead of replacing the first", which implies a guaranteed replace |
+| `schema-gpu-fleet` | 1/3 | Repeats `schema-design.md`'s "would overwrite each other" |
+| `flavor-host-tsm` | 1/3 | Doesn't apply the `cloud2` region rule, which only `flavor-detection.md` states, and gives SQL anyway |
+| `flavor-bare-cloud` | 1/3 | Asks which product, then gives steps for each product in the same answer |
+| `flavor-detection` | 0/3 | The prompt doesn't name InfluxDB, so the skill didn't load |
+
+### Trigger test — 2026-11-05
+
+- Skills as in `286477e` (the pushier description), 10 cases, 3 runs per case, Haiku.
+- The skill loaded in 25 of 30 runs, and 22 of 30 passed.
+  Before the change, the nine cases that never loaded the skill loaded it in 0 of 27 traced runs.
+- `schema-naming` (0/3) and `write-batch-csharp` (1/3) still don't load it reliably. Neither prompt names InfluxDB.
+
+### Haiku single runs — 2026-11-05
+
+One run per case, `claude-haiku-5-5`, as a cheap check between changes. About $2 and 30 minutes each.
+
+| Tree | Cases | Passed | Adversarial | Negative | Install/connect/write/query/schema/flavor |
+|---|---|---|---|---|---|
+| Skills as in `dae82d5` | 91 | 68 | 7/9 | 11/14 | 23/40 |
+| Skills as in `dae82d5`, second run | 91 | 66 | 6/9 | 11/14 | 20/40 |
+| `4ca6a66` | 95 | 70 | 7/9 | 12/14 | 24/40 |
+| `0975cf3` | 95 | 68 | 5/9 | 12/14 | 22/40 |
+
+- Most Haiku failures came from not loading the skill.
+  Runs that loaded it passed about 84–93%, and runs that didn't passed about 40%.
+
+### Opus full suite — 2026-11-03
+
+- Skills and prompts as in `f7c80e3`: 96 cases, 3 runs per case, `claude-opus-5-5`. Cost $55.68, 116 minutes.
+- 275/288 runs passed. Adversarial 8/9, negative 13/14, install/connect/write/query/schema/flavor 31/40. **Claude fails the bar.**
+
 ## 0.7.2 on InfluxDB 3.11.5
 
 Skills as in `7eaa540` and criteria as in `3705ae8` (`55ad7c9`). Evidence is in `evals/evidence/v0.7.2/`.
