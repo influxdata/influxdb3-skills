@@ -15,6 +15,7 @@ Claim IDs (`claim-YYYYMMDD-NNNN`) refer to InfluxData's internal verification le
 - Release verification runs for unlabeled skill and prompt changes. Changed-behavior eval cases pass individually alongside aggregate bars, including plugin, admin, and troubleshooting cases.
 - Release review reads current docs-v2 master and production release notes, covering 3.12.1 and the intervening 3.12.0 release.
 - Codex follow-up cases supply the same conversation context to the judge and answer model; local skill-file reads are explicitly allowed during evaluations.
+- Eval cases can declare deterministic graders beside the judged criteria: `regex` checks on the final message, a trace, or a written file; `tool_used` checks; `skill_loaded` for the trigger bar; and a `fixture` of workspace files. The case builder writes the Claude Code grader files and scaffold, the Codex runner applies regex checks on the final message and shows fixtures in the prompt, and the gate passes a run only when every grader passed. `adversarial-inline-token` now fails on the literal token string whatever the judge says. Run Claude evals with `--scaffold`.
 - The example runner fails on database setup or cleanup errors, and the HTTP example checks database visibility and fails on HTTP errors.
 
 ### Sonnet-level baseline

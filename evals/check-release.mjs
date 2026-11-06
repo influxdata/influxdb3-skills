@@ -90,7 +90,7 @@ function verify(base, changed) {
       }
       return agent === 'claude' ? runsFromClaude(result, { validateRuns: true }) : runsFromCodex(result, { validateRuns: true });
     });
-    const scored = score(prompts, mergeRuns(maps), { requiredCases: manifest.required_cases, minRuns: 3 });
+    const scored = score(prompts, mergeRuns(maps), { requiredCases: manifest.required_cases, minRuns: 3, measuresTrigger: agent === 'claude' });
     passed &&= scored.pass;
     sections.push(report(agent === 'claude' ? 'Claude Code' : 'Codex', scored));
   }
