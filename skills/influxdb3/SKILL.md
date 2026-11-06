@@ -157,13 +157,15 @@ Auth details and `.env` loaders for each language: [`references/connecting.md`](
 - **Check that the database exists before the first write.** See [§2](#2-setup-checklist).
 - **Write line protocol.** InfluxDB 3 ingests line protocol; don't invent a JSON write path.
 - **Batch writes:** up to 10,000 lines or 10 MB per request, with a timed flush (for example, every second) for live streams.
-- **Write the event's timestamp.** Without one, the server assigns its receive time.
-- **Use second precision by default.** Use finer precision to distinguish multiple points from the same source in one second. For rewrite and retry safety, see [`references/quirks.md` entry 13](references/quirks.md#13-overwriting-a-point-isnt-deterministic).
-- **Sort errors into retriable (5xx, 429) and non-retriable (400, 401, 403, 404).** One exception: a 400 from `/api/v3/write_lp` can be a partial write. The valid lines are already stored, so resend only the rejected lines.
-- **Recent official clients write through `/api/v2/write` by default.** There, one invalid line rejects the whole batch.
+- **Write the event's own timestamp.** Without one, the server assigns its receive time, so a retried write lands as a second point.
+- **Use second precision by default.** Points that share a table, tag set, and timestamp merge, and which field value survives isn't guaranteed ([`references/quirks.md` entry 13](references/quirks.md#13-overwriting-a-point-isnt-deterministic)). If one series can have more than one point per second, use finer precision.
+- **Sort errors into retriable (5xx, 429, no response) and non-retriable (400, 401, 403, 404, 413).** Retry with backoff and jitter. A retry may help; it doesn't make repeating a write safe.
+- **A 400 from `/api/v3/write_lp` can be a partial write.** With the default `accept_partial=true`, the valid lines are already stored, and the response body lists the rejected lines (the `data` array, with each `line_number`). Resend only the corrected rejected lines. Match on the status and that list, not on the message text.
+- **On the compatibility endpoints (`/api/v2/write` and `/write`), one invalid line rejects the whole batch.** Fix it and resend the whole batch.
+- **Recent official clients write through `/api/v2/write` by default,** so a client write gets whole-batch rejection, and `accept_partial` and `no_sync` don't apply. For partial writes or `no_sync` on Core or Enterprise, set the client's V3 option ([`references/writing.md` → client table](references/writing.md#official-clients-write-through-apiv2write-by-default)).
 - **Respect existing explicit schemas.** In an Enterprise explicit-schema database, writes cannot introduce undeclared tables or columns. Diagnose the schema violation and route declaration work to the Enterprise docs; don't disable enforcement or create declarations from the application's write path.
 
-Details: [`references/writing.md`](references/writing.md). Batch-write code for each language: the table in [§4](#4-connecting-and-authenticating). Auto-create and the database check: [`references/connecting.md` → "The silent auto-create footgun"](references/connecting.md#the-silent-auto-create-footgun).
+Line protocol escaping, the status table, duplicate tag keys, and type stickiness: [`references/writing.md`](references/writing.md). Batch-write code for each language: the table in [§4](#4-connecting-and-authenticating).
 
 ## 6. Querying data
 
@@ -282,7 +284,7 @@ Use this section when something stopped working: connection errors, writes that 
 |---|---|
 | 401 or 403 from any operation | [`references/troubleshooting.md` → "Auth failures"](references/troubleshooting.md#auth-failures) |
 | Write succeeded, but data isn't where expected | [`references/troubleshooting.md` → "Silent auto-create misroute"](references/troubleshooting.md#silent-auto-create-misroute) |
-| Write fails with 400 | [`references/troubleshooting.md` → "Write failures"](references/troubleshooting.md#write-failures). On `/api/v3/write_lp` with default `accept_partial=true`, valid lines were written. Compatibility endpoints reject the whole batch. |
+| Write fails with 400 | Which lines were stored: [§5](#5-writing-data). Causes: [`references/troubleshooting.md` → "Write failures"](references/troubleshooting.md#write-failures) |
 | Query returns 0 rows or wrong rows | [`references/troubleshooting.md` → "Query failures"](references/troubleshooting.md#query-failures) |
 | Token rotation broke CI | [`references/troubleshooting.md` → "Admin failures"](references/troubleshooting.md#admin-failures) |
 | Plugin trigger never fires, or errors appear in logs | `influxdb3-plugins` → its troubleshooting reference |

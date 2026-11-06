@@ -14,7 +14,7 @@ Example:
 sensor,host=server01,region=us-west temperature=72.4,humidity=45.1 1714400000
 ```
 
-Spaces separate the three sections. Commas separate tags within section 1 and fields within section 2. The timestamp is optional. Without it, the server assigns the time it received the point, not the time the event happened (see "Timestamps" below).
+Spaces separate the three sections. Commas separate tags within section 1 and fields within section 2. The timestamp is optional. Without it, the server assigns the time it received the point, not the time the event happened.
 
 Quoting: string field values are wrapped in double quotes (`status="ok"`), tag values are not. Escape commas, equals, and spaces in tag/field keys and tag values with `\`; escape double quotes and backslashes inside string field values with `\`.
 
@@ -48,30 +48,21 @@ For real-time streams in Python, use the client's batching mode ([`references/cl
 | 5xx | Server side | **Yes** — backoff with jitter |
 | No response (connection reset or refused) | The node is stopped or unreachable | **Yes** — back off, or send to another node |
 
-Retriable means a bounded retry may help, not that repeating a write is safe; see [`references/quirks.md` entry 13](quirks.md#13-overwriting-a-point-isnt-deterministic).
-
 Before Core and Enterprise 3.10.0, `/api/v2/write` returned 401, not 403, for a valid token that lacks permission.
 Handle both codes as "fix the token."
 
 ### A 400 can mean a partial write
 
-`/api/v3/write_lp` accepts partial writes by default (`accept_partial=true`).
-InfluxDB writes the valid lines, rejects the invalid ones, and returns 400.
-The response body's `data` array lists rejected lines with `line_number` values.
-After a partial write, the valid lines are already stored.
-Resend only the corrected rejected lines, not the whole batch.
+| Endpoint | One invalid line in a batch |
+|---|---|
+| `/api/v3/write_lp` (default `accept_partial=true`) | 400; valid lines stored; the body's `data` array lists each rejected line with its `line_number` |
+| `/api/v3/write_lp?accept_partial=false` | 400; nothing stored |
+| `/api/v2/write`, `/write` | 400; nothing stored |
 
-With `accept_partial=false`, one invalid line rejects the whole batch.
-
-The `/api/v2/write` and `/write` compatibility endpoints behave differently.
-There, one invalid line in the batch returns 400, and none of the lines are written.
-Fix the invalid line and resend the whole batch.
 The v1 compatibility route is `/write`, not `/api/v1/write`.
+The 400 message text differs between the docs and some releases.
 
 ### Official clients write through `/api/v2/write` by default
-
-The official InfluxDB 3 clients send writes to the V2 API endpoint (`/api/v2/write`) by default, starting in these releases.
-So by default, one invalid line rejects the whole batch, and `accept_partial` has no effect.
 
 | Client | V2 default starting in | Write through `/api/v3/write_lp` instead |
 |---|---|---|
@@ -83,11 +74,7 @@ So by default, one invalid line rejects the whole batch, and `accept_partial` ha
 
 The Python and JavaScript clients also read the `INFLUX_WRITE_USE_V2_API` environment variable.
 `no_sync` (`noSync`, `NoSync`) requires the V3 endpoint in every client.
-For InfluxDB 3 Core and Enterprise, opt into the V3 endpoint when you need partial writes or `no_sync`.
 Check the client's README for the exact option syntax in the version the user runs.
-
-Match on the status code and the `data` array, not on the error message text.
-The message text differs between the docs and some releases.
 
 ### Duplicate tag keys
 
@@ -119,11 +106,6 @@ Route declaration or schema-mode administration to the [Enterprise database docs
 
 The [3.12.1 notes](https://docs.influxdata.com/influxdb3/enterprise/release-notes/#v3121) document rejection of timestamps after `2262-04-11T23:39:59.999999999Z`.
 Validate timestamps in the application before you write them.
-
-## Timestamps
-
-- **Write the event's own timestamp** from the source, for live writes and backfills alike. A point without a timestamp gets the server's receive time, so a retried write lands as a second point. Omit the timestamp only when receive time is what you want, and keep hosts synchronized with NTP.
-- **Use second precision (`?precision=second`) by default.** It makes line protocol smaller, and storage precision is the same either way. If a series can have more than one point in the same second, use finer precision; at second precision those points share a timestamp and merge ([`references/schema-design.md`](schema-design.md)).
 
 ## When to use raw HTTP vs the client
 
