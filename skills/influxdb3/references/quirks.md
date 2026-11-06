@@ -1,6 +1,6 @@
 # InfluxDB 3 Quirks — Non-obvious Behaviors
 
-Behaviors that surprise developers. Each entry: **What you'll see → Why it's that way → What to do.** Each entry is verified against a release.
+Behaviors that surprise developers. Each entry: **What you'll see → Why it's that way → What to do.** Each entry is verified against a release. Plugin-runtime behaviors live in the `influxdb3-plugins` skill; entry numbers here stay fixed so links keep working.
 
 > These quirks are for InfluxDB 3 Core and Enterprise. They can differ on InfluxDB 3 Cloud.
 
@@ -29,25 +29,6 @@ Since 3.10 you can opt out of authorization for these routes with `--disable-aut
 **Why:** Default config auto-creates databases on first write. The auto-create is a UX feature for getting started fast; it becomes a footgun when env vars typo or scripts drift.
 
 **What to do:** Verify the database exists before the first write. Diagnostic + recovery flow in [`references/troubleshooting.md` → "Silent auto-create misroute"](troubleshooting.md#silent-auto-create-misroute). Generated code should check at startup that the database exists and stop if it doesn't.
-
----
-
-## 3. `table_batches` items are dicts, not class instances
-
-**What you'll see (in plugin code):** `for batch in table_batches: batch.rows` raises `AttributeError: 'dict' object has no attribute 'rows'`.
-
-**Why:** The runtime hands plain dicts to `process_writes(...)`, even though some upstream type docs describe a `TableBatch` class. The dict has keys `"table_name"` (str) and `"rows"` (list of dicts).
-
-**What to do:** Use dict access: `batch["table_name"]` and `batch["rows"]`. Each row is also a dict with all columns (tags, fields, time) keyed by column name. Time is a nanosecond integer.
-
-```python
-def process_writes(influxdb3_local, table_batches, args=None):
-    for batch in table_batches:
-        table_name = batch["table_name"]   # NOT batch.table_name
-        rows = batch["rows"]               # NOT batch.rows
-        for row in rows:
-            ts = row["time"]               # ns int
-```
 
 ---
 
@@ -120,39 +101,6 @@ influxdb3 query --database sensors --token "$INFLUXDB_TOKEN" "SELECT 1"
 
 ---
 
-## 9. Plugins can't import packages installed with the host's `pip`
-
-**What you'll see:** A plugin that imports a third-party package (for example, `pandas` or `requests`) raises `ImportError`, even though `pip install <pkg>` succeeded on the host.
-
-**Why:** Plugins run in `<PLUGIN_DIR>/.venv`, an embedded virtual environment that the server creates from the Python interpreter bundled with `influxdb3`.
-Packages installed into the host's Python, or into any other venv, aren't visible to plugins.
-
-**What to do:** Install the package into the embedded environment with `influxdb3 install package <pkg>`.
-See the `influxdb3-plugins` skill → [`references/dependencies.md`](../../influxdb3-plugins/references/dependencies.md) for the HTTP API and version pinning.
-To use a different venv, create it with the bundled interpreter, not the system Python, and start the server with `--virtual-env-location <path>`.
-
----
-
-## 10. `system.processing_engine_logs` columns are `event_time / trigger_name / log_level / log_text`
-
-**What you'll see:** A query `SELECT time, plugin_name, level, message FROM system.processing_engine_logs` returns `Schema error: No field named plugin_name`.
-
-**Why:** The columns are `event_time` (timestamp), `trigger_name` (string), `log_level` (`INFO` / `WARN` / `ERROR` uppercase), and `log_text` (string).
-`plugin_name`, `level`, and `message` aren't columns.
-The physical timestamp column is named `time`, and `event_time` is a virtual alias for it (3.11.0+).
-`event_time` works on every version, so the examples use it.
-
-**What to do:** Use `event_time`, `trigger_name`, `log_level`, and `log_text`.
-Run the query against the trigger's database for that trigger's logs, or against `_internal` for logs from every trigger on the server. Reference: [`skills/influxdb3-plugins/references/testing.md` → "Reading plugin logs"](../../influxdb3-plugins/references/testing.md#reading-plugin-logs).
-
-```sql
-SELECT event_time, log_level, log_text FROM system.processing_engine_logs
-WHERE trigger_name = 'my_trigger'
-ORDER BY event_time DESC LIMIT 50;
-```
-
----
-
 ## 11. A 400 from `/api/v3/write_lp` can still write most of the batch
 
 **What you'll see:** A batch with one bad line returns `400 Bad Request`, but the other lines are stored.
@@ -206,6 +154,6 @@ See [Overwrites are not deterministic](https://docs.influxdata.com/influxdb3/ent
 ## Where to fetch more
 
 - App-side troubleshooting: [`references/troubleshooting.md`](troubleshooting.md)
-- Plugin-side troubleshooting: [`skills/influxdb3-plugins/references/troubleshooting.md`](../../influxdb3-plugins/references/troubleshooting.md)
+- Plugin-side behaviors and troubleshooting: the `influxdb3-plugins` skill → [`references/troubleshooting.md`](../../influxdb3-plugins/references/troubleshooting.md)
 - Diagnostic toolkit: `examples/diagnose/`
 - Broken→fix demo pairs: `examples/troubleshooting/`

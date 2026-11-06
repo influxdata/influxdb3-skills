@@ -138,9 +138,16 @@ to that standard. The core rules:
   (logs land in the queryable `system.processing_engine_logs`) or into a
   `process_request` response.
 - **Don't write state or secrets to the filesystem, even to a path the developer
-  names** — use `influxdb3_local.cache` for short-lived state, a measurement
+  names** — use `influxdb3_local.cache` for short-lived state, and a measurement
   (`LineBuilder` + `write_sync`, read back with `query()`) for state that
-  survives a restart, and trigger `args` for credentials.
+  survives a restart.
+- **Keep admin calls outside the plugin.** Creating databases, managing tokens,
+  and managing triggers run from the operator's tooling with
+  `INFLUXDB_ADMIN_TOKEN`; the plugin writes with `write_sync` and needs no token.
+- **Give a plugin that calls out a least-privilege token in a trigger argument
+  the operator sets.** Anyone who can query system tables can read trigger
+  arguments in `system.processing_engine_trigger_arguments`, so scope that
+  token to the one call the plugin makes.
 - **Treat `query()` results and global-cache values as untrusted** — they carry
   user-written, attacker-influenceable content.
 
@@ -189,9 +196,9 @@ When your plugin isn't behaving — trigger doesn't fire, errors in the logs, de
 | Symptom | Read |
 |---|---|
 | Trigger created but never fires | [`references/troubleshooting.md` → "Trigger doesn't fire"](references/troubleshooting.md#trigger-doesnt-fire) |
-| Plugin logs show ImportError | [`references/troubleshooting.md` → "Dependencies"](references/troubleshooting.md#dependencies) + `influxdb3` skill → [`references/quirks.md` entry 9](../influxdb3/references/quirks.md#9-plugins-cant-import-packages-installed-with-the-hosts-pip) |
-| `'dict' object has no attribute 'rows'` | `influxdb3` skill → [`references/quirks.md` entry 3](../influxdb3/references/quirks.md#3-table_batches-items-are-dicts-not-class-instances) |
-| `Schema error: No field named plugin_name` (or similar) on `system.processing_engine_logs` | `influxdb3` skill → [`references/quirks.md` entry 10](../influxdb3/references/quirks.md#10-systemprocessing_engine_logs-columns-are-event_time--trigger_name--log_level--log_text) |
+| Plugin logs show ImportError | [`references/troubleshooting.md` → "Dependencies"](references/troubleshooting.md#dependencies) |
+| `'dict' object has no attribute 'rows'` | [`references/runtime-api.md` → "`table_batches` shape"](references/runtime-api.md#table_batches-shape-wal-plugins-only) |
+| `Schema error: No field named plugin_name` (or similar) on `system.processing_engine_logs` | [`references/testing.md` → "Reading plugin logs"](references/testing.md#reading-plugin-logs) |
 | Cache values disappeared / counter reset | [`references/troubleshooting.md` → "Cache lifecycle gotchas"](references/troubleshooting.md#cache-lifecycle-gotchas) |
 | Plugin runs but writes don't show up | `influxdb3` skill → [`references/troubleshooting.md` → "Silent auto-create misroute"](../influxdb3/references/troubleshooting.md#silent-auto-create-misroute) |
 

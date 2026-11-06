@@ -10,7 +10,7 @@ InfluxDB 3 identifies a point by its table, its tag set, and its timestamp.
 Fields aren't part of that identity.
 Points with the same identity merge into one, and InfluxDB doesn't guarantee which value it keeps for a field they share.
 So a value that tells data sources apart must be a tag, even when it's unique per device.
-For example, if `gpu_id` were a field, GPUs on the same host reporting at the same timestamp would overwrite each other.
+For example, if `gpu_id` were a field, readings from GPUs on the same host at the same timestamp would share one identity and merge, so per-GPU values would be lost.
 For rewrite and retry safety, see [`references/quirks.md` entry 13](quirks.md#13-overwriting-a-point-isnt-deterministic).
 
 ## Cardinality

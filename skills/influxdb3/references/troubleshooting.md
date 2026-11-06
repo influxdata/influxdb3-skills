@@ -217,7 +217,7 @@ An empty JSON result is `[]`.
 
 ### Schema mismatch (`No field named X`)
 
-**Diagnose:** the field name in the query doesn't match the measurement's schema. The most common case is a query on `system.processing_engine_logs` with the wrong column names (see [`quirks.md` entry 10](quirks.md#10-systemprocessing_engine_logs-columns-are-event_time--trigger_name--log_level--log_text)).
+**Diagnose:** the field name in the query doesn't match the measurement's schema. The most common case is a query on `system.processing_engine_logs` with the wrong column names (see the `influxdb3-plugins` skill → [`references/testing.md` → "Reading plugin logs"](../../influxdb3-plugins/references/testing.md#reading-plugin-logs)).
 
 **Fix:** check the actual schema:
 
