@@ -56,7 +56,7 @@ These steps assume a single-node deployment, which needs no placement: every wri
 
 ## Plugin errors in `system.processing_engine_logs`
 
-Query the trigger's database for that trigger's logs, or `_internal` for logs from every trigger. The columns are `event_time`, `trigger_name`, `log_level`, `log_text`. (`plugin_name`, `level`, and `message` aren't columns.)
+Query the trigger's database for that trigger's logs, or `_internal` for logs from every trigger. For the columns, including `time` versus `event_time` by version, see [`testing.md`](testing.md#reading-plugin-logs). (`plugin_name`, `level`, and `message` aren't columns.)
 
 ```bash
 influxdb3 query -d "$INFLUXDB_DATABASE" --token "$INFLUXDB_TOKEN" \
