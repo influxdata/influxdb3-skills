@@ -2,54 +2,148 @@
 // Generate `claude plugin eval` cases from prompts.jsonl.
 //
 // prompts.jsonl is the source of truth and stays harness-neutral. This script
-// writes evals/claude-cases/<id>/prompt.md and graders/criteria.md, which are
-// gitignored build output. Rerun it after editing prompts.jsonl.
+// writes evals/claude-cases/<id>/prompt.md and graders/*.md, plus case.yaml and
+// scaffold.sh for a case with a fixture. The output is gitignored build output.
+// Rerun it after editing prompts.jsonl.
 //
 //   node evals/build-claude-cases.mjs
-//   claude plugin eval ./ --case <id> --runs 1
+//   claude plugin eval ./ --eval-dir evals/claude-cases --scaffold --case <id> --runs 1
 //
 // Each case runs in a fresh session, so a prompt that continues an earlier one
 // names it in `follows`. Its prompt then carries the earlier request as context.
+// The optional fields (`checks`, `skill_loaded`, `fixture`) are documented in
+// evals/README.md.
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const evalsDir = dirname(fileURLToPath(import.meta.url));
-const outDir = join(evalsDir, 'claude-cases');
+export const TRIGGER_GRADER = 'skill-loaded';
+const SAFE_NAME = /^[a-z0-9-]+$/;
+const REGEX_MATCH = /^(contains|not_contains|count:\d+)$/;
 
-const cases = readFileSync(join(evalsDir, 'prompts.jsonl'), 'utf8')
-  .split('\n')
-  .filter((line) => line.trim())
-  .map((line, i) => {
-    try {
-      return JSON.parse(line);
-    } catch (err) {
-      throw new Error(`prompts.jsonl line ${i + 1}: ${err.message}`);
-    }
-  });
-const byId = new Map(cases.map((c) => [c.id, c]));
+export function readCases(text) {
+  return text
+    .split('\n')
+    .filter((line) => line.trim())
+    .map((line, i) => {
+      try {
+        return JSON.parse(line);
+      } catch (err) {
+        throw new Error(`prompts.jsonl line ${i + 1}: ${err.message}`);
+      }
+    });
+}
 
-function promptText(c) {
+export function promptText(c, byId) {
   if (!c.follows) return c.prompt;
   const parent = byId.get(c.follows);
   if (!parent) throw new Error(`${c.id}: follows unknown case '${c.follows}'`);
-  return `Earlier in this conversation I asked: "${promptText(parent)}"\n\n${c.prompt}`;
+  return `Earlier in this conversation I asked: "${promptText(parent, byId)}"\n\n${c.prompt}`;
 }
 
-rmSync(outDir, { recursive: true, force: true });
-for (const c of cases) {
-  if (!/^[a-z0-9-]+$/.test(c.id)) throw new Error(`unsafe case id: ${c.id}`);
-  const dir = join(outDir, c.id);
-  mkdirSync(join(dir, 'graders'), { recursive: true });
-  writeFileSync(
-    join(dir, 'prompt.md'),
-    `---\nmax_turns: 10\nallowed_tools: [Read, Glob, Grep, Skill]\ntags: [${c.category}]\n---\n\n${promptText(c)}\n`
-  );
-  writeFileSync(
-    join(dir, 'graders', 'criteria.md'),
-    `---\ntype: llm\nweight: 1\n---\n\nThe response passes only if it meets every criterion:\n\n` +
-      c.criteria.map((line) => `- ${line}`).join('\n') +
-      '\n'
-  );
+// YAML single-quoted scalar: only ' needs escaping.
+const yamlString = (value) => `'${String(value).replace(/'/g, "''")}'`;
+
+function regexGrader(c, check) {
+  if (!check.pattern) throw new Error(`${c.id}: check '${check.name}' needs a pattern`);
+  new RegExp(check.pattern, (check.flags ?? '').replace(/[^dgimsuvy]/g, ''));
+  const match = check.match ?? 'contains';
+  if (!REGEX_MATCH.test(match)) throw new Error(`${c.id}: check '${check.name}' has unknown match '${match}'`);
+  const lines = ['type: regex', `pattern: ${yamlString(check.pattern)}`, `match: ${match}`];
+  if (check.flags) lines.push(`flags: ${yamlString(check.flags)}`);
+  const target = check.target ?? 'last_message';
+  if (typeof target === 'string') {
+    if (!['last_message', 'trace', 'files'].includes(target)) throw new Error(`${c.id}: check '${check.name}' has unknown target '${target}'`);
+    lines.push(`target: ${target}`);
+  } else if (target?.file) {
+    lines.push('target:', '  source: file', `  path: ${yamlString(target.file)}`);
+  } else {
+    throw new Error(`${c.id}: check '${check.name}' has an invalid target`);
+  }
+  return lines;
 }
-console.log(`wrote ${cases.length} cases to ${outDir}`);
+
+function toolGrader(c, check) {
+  if (!check.tool) throw new Error(`${c.id}: check '${check.name}' needs a tool`);
+  const lines = ['type: tool_used', `tool: ${check.tool}`];
+  if (check.input_match) {
+    new RegExp(check.input_match);
+    lines.push(`input_match: ${yamlString(check.input_match)}`);
+  }
+  lines.push(`min: ${check.min ?? 1}`);
+  if (check.max !== undefined) lines.push(`max: ${check.max}`);
+  return lines;
+}
+
+// Returns { [fileName]: contents } for every grader the case declares.
+export function graderFiles(c) {
+  const files = {
+    'criteria.md':
+      `---\ntype: llm\nweight: 1\n---\n\nThe response passes only if it meets every criterion:\n\n` +
+      c.criteria.map((line) => `- ${line}`).join('\n') +
+      '\n',
+  };
+  const checks = [...(c.checks ?? [])];
+  if (c.skill_loaded) {
+    if (!SAFE_NAME.test(c.skill_loaded)) throw new Error(`${c.id}: unsafe skill name '${c.skill_loaded}'`);
+    checks.push({ name: TRIGGER_GRADER, type: 'tool_used', tool: 'Skill', input_match: `"skill"\\s*:\\s*"(?:[\\w-]+:)?${c.skill_loaded}"` });
+  }
+  for (const check of checks) {
+    if (!SAFE_NAME.test(check.name ?? '') || check.name === 'criteria') throw new Error(`${c.id}: check needs a safe, unique name`);
+    if (check.name === TRIGGER_GRADER && !c.skill_loaded) throw new Error(`${c.id}: '${TRIGGER_GRADER}' is reserved; use skill_loaded`);
+    const file = `${check.name}.md`;
+    if (files[file]) throw new Error(`${c.id}: duplicate check name '${check.name}'`);
+    let lines;
+    if (check.type === 'regex') lines = regexGrader(c, check);
+    else if (check.type === 'tool_used') lines = toolGrader(c, check);
+    else throw new Error(`${c.id}: check '${check.name}' has unknown type '${check.type}'`);
+    files[file] = `---\n${lines.join('\n')}\nweight: 1\n---\n`;
+  }
+  return files;
+}
+
+// A fixture is a map of relative path to file contents, written into the run's
+// working directory before the agent starts.
+export function scaffoldScript(c) {
+  const files = c.fixture?.files;
+  if (!files) return null;
+  const parts = ['#!/usr/bin/env bash', '# Generated by evals/build-claude-cases.mjs from prompts.jsonl.', 'set -euo pipefail'];
+  for (const [path, contents] of Object.entries(files)) {
+    if (!/^[A-Za-z0-9._-]+(\/[A-Za-z0-9._-]+)*$/.test(path) || path.split('/').includes('..')) {
+      throw new Error(`${c.id}: unsafe fixture path '${path}'`);
+    }
+    const body = contents.endsWith('\n') ? contents : `${contents}\n`;
+    if (body.split('\n').includes('EVAL_FIXTURE_EOF')) throw new Error(`${c.id}: fixture '${path}' contains the heredoc delimiter`);
+    if (path.includes('/')) parts.push(`mkdir -p '${dirname(path)}'`);
+    parts.push(`cat > '${path}' <<'EVAL_FIXTURE_EOF'`, `${body}EVAL_FIXTURE_EOF`);
+  }
+  return `${parts.join('\n')}\n`;
+}
+
+export function build(cases, outDir) {
+  const byId = new Map(cases.map((c) => [c.id, c]));
+  rmSync(outDir, { recursive: true, force: true });
+  for (const c of cases) {
+    if (!SAFE_NAME.test(c.id)) throw new Error(`unsafe case id: ${c.id}`);
+    const dir = join(outDir, c.id);
+    mkdirSync(join(dir, 'graders'), { recursive: true });
+    writeFileSync(
+      join(dir, 'prompt.md'),
+      `---\nmax_turns: 10\nallowed_tools: [Read, Glob, Grep, Skill]\ntags: [${c.category}]\n---\n\n${promptText(c, byId)}\n`
+    );
+    for (const [file, text] of Object.entries(graderFiles(c))) writeFileSync(join(dir, 'graders', file), text);
+    const scaffold = scaffoldScript(c);
+    if (scaffold) {
+      writeFileSync(join(dir, 'scaffold.sh'), scaffold, { mode: 0o755 });
+      writeFileSync(join(dir, 'case.yaml'), `schema_version: "1.1"\nname: ${c.id}\ncontext:\n  scaffold_script: scaffold.sh\n`);
+    }
+  }
+  return cases.length;
+}
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const evalsDir = dirname(fileURLToPath(import.meta.url));
+  const outDir = join(evalsDir, 'claude-cases');
+  const count = build(readCases(readFileSync(join(evalsDir, 'prompts.jsonl'), 'utf8')), outDir);
+  console.log(`wrote ${count} cases to ${outDir}`);
+}

@@ -12,6 +12,7 @@
 // docs/decisions/0002-evals-release-gate.md.
 import { appendFileSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { TRIGGER_GRADER } from './build-claude-cases.mjs';
 
 // Adversarial cases must pass every run; other cases pass on a strict majority.
 export const BARS = [
@@ -19,6 +20,12 @@ export const BARS = [
   { name: 'Negative', categories: ['negative'], min: 0.9 },
   { name: 'Install, connect, write, query, schema, and flavor', categories: ['install', 'connect', 'write', 'query', 'schema', 'flavor'], min: 0.9 },
 ];
+
+// Cases with `skill_loaded` also count toward the trigger bar: the skill loaded
+// in a strict majority of runs. Whether it loaded doesn't count toward the
+// content bars above. Codex is told to read the skill, so only Claude Code
+// measures triggering.
+export const TRIGGER_BAR = { name: 'Trigger (skill loaded)', min: 0.9 };
 
 export function readPrompts(text) {
   return text
@@ -33,7 +40,9 @@ export function readPrompts(text) {
     });
 }
 
-// Normalize each harness's output to Map<caseId, [{ passed, error }]>.
+// Normalize each harness's output to Map<caseId, [{ passed, error, loaded? }]>.
+// A Claude run passes when every scored grader except the trigger grader
+// passed and the run had no harness error.
 export function runsFromClaude(result, { validateRuns = false } = {}) {
   if (validateRuns) {
     for (const c of result.cases ?? []) {
@@ -48,7 +57,13 @@ export function runsFromClaude(result, { validateRuns = false } = {}) {
   }
   return new Map((result.cases ?? []).map((c) => [
     c.name,
-    (c.arms?.with ?? []).map((run) => ({ passed: run.passed === true, error: run.error ?? null })),
+    (c.arms?.with ?? []).map((run) => {
+      const graders = run.graders ?? [];
+      const trigger = graders.find((g) => g.name === TRIGGER_GRADER);
+      const content = graders.filter((g) => g !== trigger && g.scored !== false);
+      const passed = content.length ? !run.error && content.every((g) => g.passed === true) : run.passed === true;
+      return { passed, error: run.error ?? null, ...(trigger ? { loaded: trigger.passed === true } : {}) };
+    }),
   ]));
 }
 
@@ -86,7 +101,13 @@ export function scoreCase(testCase, runs) {
   return { id: testCase.id, category: testCase.category, passed, total, errors, pass: total > 0 && passed >= needed };
 }
 
-export function score(prompts, runsById, { requiredCases = [], minRuns = 1 } = {}) {
+export function scoreTrigger(testCase, runs) {
+  const total = runs.length;
+  const loaded = runs.filter((run) => run.loaded === true).length;
+  return { id: testCase.id, loaded, total, pass: total > 0 && loaded >= Math.floor(total / 2) + 1 };
+}
+
+export function score(prompts, runsById, { requiredCases = [], minRuns = 1, measuresTrigger = false } = {}) {
   if (!Number.isInteger(minRuns) || minRuns < 1) throw new Error('minRuns must be a positive integer');
   const ids = new Set(prompts.map((p) => p.id));
   for (const id of requiredCases) if (!ids.has(id)) throw new Error(`unknown required case: ${id}`);
@@ -97,13 +118,21 @@ export function score(prompts, runsById, { requiredCases = [], minRuns = 1 } = {
     const rate = inBar.length ? passed / inBar.length : 0;
     return { ...bar, passed, total: inBar.length, rate, pass: inBar.length > 0 && rate >= bar.min };
   });
+  const triggerCases = measuresTrigger
+    ? prompts.filter((p) => p.skill_loaded).map((p) => scoreTrigger(p, runsById.get(p.id) ?? []))
+    : [];
+  if (triggerCases.length) {
+    const passed = triggerCases.filter((c) => c.pass).length;
+    const rate = passed / triggerCases.length;
+    bars.push({ ...TRIGGER_BAR, categories: [], passed, total: triggerCases.length, rate, pass: rate >= TRIGGER_BAR.min });
+  }
   const required = cases.filter((c) => requiredCases.includes(c.id));
   const incomplete = cases.filter((c) => c.total < minRuns);
-  return { cases, bars, required, incomplete, minRuns,
+  return { cases, bars, triggerCases, required, incomplete, minRuns,
     pass: bars.every((bar) => bar.pass) && required.every((c) => c.pass) && incomplete.length === 0 };
 }
 
-export function report(agent, { cases, bars, required, incomplete, minRuns, pass }, note) {
+export function report(agent, { cases, bars, triggerCases = [], required, incomplete, minRuns, pass }, note) {
   const pct = (x) => `${Math.round(x * 100)}%`;
   const runsPerCase = Math.max(0, ...cases.map((c) => c.total));
   const lines = [
@@ -122,6 +151,10 @@ export function report(agent, { cases, bars, required, incomplete, minRuns, pass
   if (incomplete.length) {
     lines.push('', `Incomplete evidence: at least ${minRuns} runs required for every case.`,
       ...incomplete.map((c) => `- ${c.id}: ${c.total} runs`));
+  }
+  const notLoaded = triggerCases.filter((c) => !c.pass);
+  if (notLoaded.length) {
+    lines.push('', '| Skill not loaded | Runs loaded |', '|---|---|', ...notLoaded.map((c) => `| ${c.id} | ${c.loaded}/${c.total} |`));
   }
   const failed = cases.filter((c) => !c.pass);
   if (failed.length) {
@@ -156,7 +189,7 @@ function main(argv) {
   const read = (file) => JSON.parse(readFileSync(file, 'utf8'));
   if (opts.claude.length) {
     const results = opts.claude.map(read);
-    const scored = score(prompts, mergeRuns(results.map((r) => runsFromClaude(r, { validateRuns: opts.minRuns > 1 }))), opts);
+    const scored = score(prompts, mergeRuns(results.map((r) => runsFromClaude(r, { validateRuns: opts.minRuns > 1 }))), { ...opts, measuresTrigger: true });
     pass &&= scored.pass;
     const cost = results.reduce((sum, r) => sum + (r.costUsd ?? 0), 0);
     const versions = [...new Set(results.map((r) => r.claudeVersion ?? '?'))].join(', ');

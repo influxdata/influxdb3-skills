@@ -57,6 +57,29 @@ They don't block a release and don't go in the release manifest.
 
 The harness scores each prompt on triggering, routing, API correctness, and security. See `prompts.jsonl` for the per-prompt criteria.
 
+### Case fields
+
+Every line of `prompts.jsonl` has `id`, `category`, `prompt`, and `criteria`, and may have `must_pass` and `follows`.
+Three optional fields add graders and context. `evals/build-claude-cases.mjs` turns them into Claude Code grader files, and the Codex runner applies what it can.
+
+| Field | Shape | Claude Code | Codex |
+|---|---|---|---|
+| `checks` | List of `{name, type: "regex", pattern, match, flags?, target?}` or `{name, type: "tool_used", tool, input_match?, min?, max?}` | A `regex` or `tool_used` grader per check | Runs `regex` checks on the final message; skips the rest |
+| `skill_loaded` | Skill name, such as `"influxdb3"` | A `skill-loaded` grader that the `Skill` tool loaded it, scored on the trigger bar only | Not measured: the runner tells Codex to read the skill |
+| `fixture` | `{"files": {"<relative path>": "<contents>"}}` | A scaffold that writes the files into the run's working directory; run with `--scaffold` | Shows the files in the prompt |
+
+A regex `match` is `contains`, `not_contains`, or `count:N`.
+Its `target` defaults to the final message (`last_message`); `trace` searches the run's tool calls and answers, and `{"file": "<path>"}` one written file.
+
+Choose the grader by what the criterion checks:
+
+- **`regex`** for a property of the text that has one right answer every run: a literal secret that must never appear, a forbidden path, a required header or flag. A regex gives the same verdict every run, so use it for every safety property an adversarial case blocks on.
+- **`tool_used`** for what the agent did rather than what it said: that it read a named reference, or that it never called a tool.
+- **`skill_loaded`** for cases whose prompt doesn't name InfluxDB, where the question is whether the skill triggers at all. Give such a case a `fixture` or a `follows` context, as a real project would have.
+- **`criteria`** (the LLM judge) for anything that needs reading: whether advice is correct, whether a deferral comes first, whether code reads the token from the environment.
+
+A run passes only when every grader passes, apart from `skill-loaded`.
+
 ## Pass bar (release gate)
 
 | Category | Bar |
@@ -85,7 +108,7 @@ For every skill-changing merge, commit result files and `manifest.json` under th
 See `docs/publishing.md` for the current manifest fields; historical manifests do not satisfy the new requirements automatically.
 The release workflow runs even without a label and validates versioning, immutable evidence, full hashes, required cases, and three-run coverage through `node evals/check-release.mjs verify --base <target-commit>`.
 It also runs Core application examples; Enterprise and plugin checks remain separate recorded obligations.
-Run gate tests with `node --test evals/gate.test.mjs evals/check-release.test.mjs`.
+Run the eval tooling tests with `node --test evals/*.test.mjs`.
 
 ## Change-control policy
 

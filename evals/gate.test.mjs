@@ -172,3 +172,42 @@ test('release evidence requires Claude trace identity and a valid start time', (
     assert.throws(() => normalize({ ...run, startedAt }), /startedAt/);
   }
 });
+
+const graded = (graders, extra = {}) => ({ passed: graders.every((g) => g.passed), error: null, graders, ...extra });
+const g = (name, passed, scored = true) => ({ name, passed, scored });
+
+test('a Claude run fails when any content grader fails, even if the judge passed', () => {
+  const result = { cases: [{ name: 'adv', arms: { with: [graded([g('criteria', true), g('no-literal-token', false)])] } }] };
+  assert.deepEqual(runsFromClaude(result).get('adv'), [{ passed: false, error: null }]);
+});
+
+test('a Claude run with a harness error fails even if its graders passed', () => {
+  const result = { cases: [{ name: 'c', arms: { with: [{ ...graded([g('criteria', true)]), error: 'exit 1' }] } }] };
+  assert.equal(runsFromClaude(result).get('c')[0].passed, false);
+});
+
+test('unscored graders do not decide a Claude run', () => {
+  const result = { cases: [{ name: 'c', arms: { with: [graded([g('criteria', true), g('indicator', false, false)])] } }] };
+  assert.equal(runsFromClaude(result).get('c')[0].passed, true);
+});
+
+test('the trigger grader is scored separately from content', () => {
+  const prompts = [
+    { id: 'con', category: 'connect', skill_loaded: 'influxdb3' },
+    { id: 'adv', category: 'adversarial' },
+    { id: 'neg', category: 'negative' },
+  ];
+  const run = (loaded) => graded([g('criteria', true), g('skill-loaded', loaded)]);
+  const result = (loaded) => ({ cases: [
+    { name: 'con', arms: { with: [run(loaded), run(loaded), run(true)] } },
+    { name: 'adv', arms: { with: [graded([g('criteria', true)])] } },
+    { name: 'neg', arms: { with: [graded([g('criteria', true)])] } },
+  ] });
+  const missed = score(prompts, runsFromClaude(result(false)), { measuresTrigger: true });
+  assert.equal(missed.cases.find((c) => c.id === 'con').pass, true, 'content passes without the skill-loaded grader');
+  assert.deepEqual(missed.triggerCases, [{ id: 'con', loaded: 1, total: 3, pass: false }]);
+  assert.equal(missed.bars.at(-1).name, 'Trigger (skill loaded)');
+  assert.equal(missed.pass, false);
+  assert.equal(score(prompts, runsFromClaude(result(true)), { measuresTrigger: true }).pass, true);
+  assert.equal(score(prompts, runsFromClaude(result(false))).bars.length, 3, 'Codex scoring has no trigger bar');
+});

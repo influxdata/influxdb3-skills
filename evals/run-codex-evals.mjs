@@ -55,6 +55,33 @@ function promptFor(testCase, byId) {
   return `Earlier in this conversation I asked: "${promptFor(parent, byId)}"\n\n${testCase.prompt}`;
 }
 
+// The Codex sandbox is read-only, so a fixture is shown in the prompt instead
+// of written to the working directory.
+function fixturePrompt(testCase) {
+  const files = Object.entries(testCase.fixture?.files ?? {});
+  if (!files.length) return '';
+  return `The developer's project contains these files:\n\n` +
+    files.map(([path, contents]) => `--- ${path} ---\n${contents}${contents.endsWith('\n') ? '' : '\n'}`).join('\n') + '\n';
+}
+
+// Regex checks on the final message run here too. Other checks (tool use,
+// trace, and written files) need Claude Code's harness, and skill_loaded
+// doesn't apply because this runner tells Codex to read the skill.
+export function deterministicChecks(testCase, response) {
+  return (testCase.checks ?? []).map((check) => {
+    if (check.type !== 'regex' || (check.target ?? 'last_message') !== 'last_message') {
+      return { name: check.name, skipped: true };
+    }
+    const flags = (check.flags ?? '').replace(/[^imsuv]/g, '');
+    const count = (response.match(new RegExp(check.pattern, `${flags}g`)) ?? []).length;
+    const match = check.match ?? 'contains';
+    const pass = match === 'contains' ? count > 0
+      : match === 'not_contains' ? count === 0
+        : count === Number(match.slice('count:'.length));
+    return { name: check.name, pass };
+  });
+}
+
 function skillPrompt(testCase) {
   if (testCase.id.startsWith('plugins-')) {
     return `You are answering a user with the InfluxDB 3 Processing Engine plugins skill from this checked-out repository. ` +
@@ -109,43 +136,51 @@ function grade(testCase, response, resultDir, runNumber, judgeModel) {
   }
 }
 
-const options = args(process.argv.slice(2));
-const allCases = readCases();
-const byId = new Map(allCases.map((testCase) => [testCase.id, testCase]));
-const cases = options.caseIds
-  ? options.caseIds.map((id) => byId.get(id) ?? usage(`unknown case '${id}'`))
-  : allCases;
-const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-const resultDir = join(evalsDir, 'results', `codex-${timestamp}-${process.pid}`);
-mkdirSync(resultDir, { recursive: true });
-const results = [];
+let byId;
 
-for (const testCase of cases) {
-  for (let runNumber = 1; runNumber <= options.runs; runNumber += 1) {
-    const execution = runCodex({
-      prompt: skillPrompt(testCase) +
-        `Do not edit files or contact a live service. You may read local skill and reference files. Answer the following request directly:\n\n${promptFor(testCase, byId)}`,
-      tracePath: join(resultDir, `${testCase.id}.run-${runNumber}.trace.jsonl`),
-      outputPath: join(resultDir, `${testCase.id}.run-${runNumber}.answer.txt`),
-      model: options.model,
-    });
-    const answerPath = join(resultDir, `${testCase.id}.run-${runNumber}.answer.txt`);
-    if (execution.exitCode !== 0 || !existsSync(answerPath)) {
-      results.push({ id: testCase.id, run: runNumber, pass: false, reason: `agent failed (exit ${execution.exitCode})`, execution });
-      continue;
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const options = args(process.argv.slice(2));
+  const allCases = readCases();
+  byId = new Map(allCases.map((testCase) => [testCase.id, testCase]));
+  const cases = options.caseIds
+    ? options.caseIds.map((id) => byId.get(id) ?? usage(`unknown case '${id}'`))
+    : allCases;
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const resultDir = join(evalsDir, 'results', `codex-${timestamp}-${process.pid}`);
+  mkdirSync(resultDir, { recursive: true });
+  const results = [];
+
+  for (const testCase of cases) {
+    for (let runNumber = 1; runNumber <= options.runs; runNumber += 1) {
+      const execution = runCodex({
+        prompt: skillPrompt(testCase) +
+          `Do not edit files or contact a live service. You may read local skill and reference files. Answer the following request directly:\n\n${fixturePrompt(testCase)}${promptFor(testCase, byId)}`,
+        tracePath: join(resultDir, `${testCase.id}.run-${runNumber}.trace.jsonl`),
+        outputPath: join(resultDir, `${testCase.id}.run-${runNumber}.answer.txt`),
+        model: options.model,
+      });
+      const answerPath = join(resultDir, `${testCase.id}.run-${runNumber}.answer.txt`);
+      if (execution.exitCode !== 0 || !existsSync(answerPath)) {
+        results.push({ id: testCase.id, run: runNumber, pass: false, reason: `agent failed (exit ${execution.exitCode})`, execution });
+        continue;
+      }
+      const response = readFileSync(answerPath, 'utf8');
+      const checks = deterministicChecks(testCase, response);
+      const judged = grade(testCase, response, resultDir, runNumber, options.judgeModel);
+      const checksPass = checks.every((check) => check.skipped || check.pass);
+      results.push({ id: testCase.id, run: runNumber, ...judged, pass: judged.pass && checksPass, checks });
     }
-    results.push({ id: testCase.id, run: runNumber, ...grade(testCase, readFileSync(answerPath, 'utf8'), resultDir, runNumber, options.judgeModel) });
   }
-}
 
-const summary = {
-  generatedAt: new Date().toISOString(),
-  model: options.model ?? 'Codex default',
-  judgeModel: options.judgeModel ?? 'Codex default',
-  runs: options.runs,
-  results,
-};
-writeFileSync(join(resultDir, 'summary.json'), `${JSON.stringify(summary, null, 2)}\n`, 'utf8');
-const passed = results.filter((result) => result.pass).length;
-console.log(`${passed}/${results.length} Codex eval runs passed. Results: ${resultDir}`);
-process.exit(passed === results.length ? 0 : 1);
+  const summary = {
+    generatedAt: new Date().toISOString(),
+    model: options.model ?? 'Codex default',
+    judgeModel: options.judgeModel ?? 'Codex default',
+    runs: options.runs,
+    results,
+  };
+  writeFileSync(join(resultDir, 'summary.json'), `${JSON.stringify(summary, null, 2)}\n`, 'utf8');
+  const passed = results.filter((result) => result.pass).length;
+  console.log(`${passed}/${results.length} Codex eval runs passed. Results: ${resultDir}`);
+  process.exit(passed === results.length ? 0 : 1);
+}
