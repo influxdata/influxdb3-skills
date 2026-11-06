@@ -5,7 +5,8 @@ description: >-
   InfluxDB 3 Cloud question, even one you think you know: behavior and
   defaults change between releases. Use for installing, connecting, writing
   line protocol, SQL and InfluxQL queries, schema design, databases and
-  retention, tokens, and troubleshooting, including code that uses an
+  retention, tokens, and troubleshooting, including unreachable instances,
+  mock-data stubs, and code that uses an
   InfluxDB 3 client library or INFLUXDB_HOST, INFLUXDB_TOKEN, or
   INFLUXDB_DATABASE. For a bare "InfluxDB Cloud" or another InfluxDB
   product, it identifies the product and routes to its docs. For Processing

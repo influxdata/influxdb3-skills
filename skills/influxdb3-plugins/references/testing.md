@@ -110,6 +110,11 @@ Columns:
 | `trigger_name` | string | Name of the trigger that produced the log. |
 | `log_level` | string | `INFO` / `WARN` / `ERROR` (uppercase). |
 | `log_text` | string | The space-joined args passed to `info`/`warn`/`error`. The runtime also emits framing lines like `starting execution of wal plugin.` and `finished execution in N ms`. |
+| `run_id` | string | Shared by every line from one plugin invocation (observed on 3.12.1). |
+| `node_id` | string | Node that ran the invocation; on a cluster, a WAL trigger can run on several nodes (observed on 3.12.1). |
+| `database_name` | string | Database the trigger belongs to (observed on 3.12.1). |
+| `plugin_filename` | string | Plugin file the trigger runs (observed on 3.12.1). |
+| `error_details` | string | Empty on 3.12.1, including for an uncaught exception. The exception appears only in the server log and, for a request trigger, the HTTP 500 body ([troubleshooting](troubleshooting.md#plugin-errors-in-systemprocessing_engine_logs)). |
 
 `plugin_name`, `level`, and `message` aren't columns; a query that names them fails with `Schema error: No field named plugin_name`.
 
