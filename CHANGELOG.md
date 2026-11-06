@@ -17,6 +17,15 @@ Claim IDs (`claim-YYYYMMDD-NNNN`) refer to InfluxData's internal verification le
 - Codex follow-up cases supply the same conversation context to the judge and answer model; local skill-file reads are explicitly allowed during evaluations.
 - The example runner fails on database setup or cleanup errors, and the HTTP example checks database visibility and fails on HTTP errors.
 
+### Sonnet-level baseline
+
+These changes make the skills usable by a Sonnet-level model that reads the skill body and few references.
+
+- State one overwrite rule: points that share a table, tag set, and timestamp merge, and which field value survives isn't guaranteed ([line protocol docs](https://docs.influxdata.com/influxdb3/enterprise/reference/line-protocol/#overwrites-are-not-deterministic)). The schema reference's GPU example said such points "would overwrite each other", and the writing reference said a timestamped retry replaces the first point. Sonnet repeated both into answers that the overwrite criteria then failed.
+- Put the product signal table (host patterns and `/ping` version headers) in the `influxdb3` body's flavor section, ahead of the Core-versus-Enterprise probe. It lived only in `flavor-detection.md`, which agents rarely opened, so a `cloud2` host outside the Serverless regions got InfluxDB 3 answers. The reference keeps the detection flow and points at the body.
+- Move the plugin-runtime quirks (`table_batches` items are dicts, plugins see only the embedded venv, the processing-engine log columns) into the `influxdb3-plugins` runtime, dependencies, and testing references, and drop the cross-skill pointers to them. The plugins skill loads alone, so a plugin author never saw those facts. The `influxdb3` quirks reference keeps its numbering so existing links still resolve. The `table_batches` broken-and-fixed pair moves to the plugins skill's examples.
+- State the plugin credential rules positively in the plugins body: admin calls stay outside the plugin, and a plugin that calls out gets a least-privilege token in a trigger argument, because anyone who can query system tables can read trigger arguments. Answers to the inline admin-token prompt suggested passing the admin token as a trigger argument.
+
 ### Documentation-grounded corrections
 
 - Preserve existing capability boundaries. Explicit-schema administration and distributed plugin placement remain separate work.

@@ -111,6 +111,8 @@ Columns:
 | `log_level` | string | `INFO` / `WARN` / `ERROR` (uppercase). |
 | `log_text` | string | The space-joined args passed to `info`/`warn`/`error`. The runtime also emits framing lines like `starting execution of wal plugin.` and `finished execution in N ms`. |
 
+`plugin_name`, `level`, and `message` aren't columns; a query that names them fails with `Schema error: No field named plugin_name`.
+
 Common queries:
 
 ```sql

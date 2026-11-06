@@ -122,7 +122,7 @@ Validate timestamps in the application before you write them.
 
 ## Timestamps
 
-- **Write the event's own timestamp** from the source, for live writes and backfills alike. A point without a timestamp gets the server's receive time, so a retried write lands as a second point instead of replacing the first. Omit the timestamp only when receive time is what you want, and keep hosts synchronized with NTP.
+- **Write the event's own timestamp** from the source, for live writes and backfills alike. A point without a timestamp gets the server's receive time, so a retried write lands as a second point. Omit the timestamp only when receive time is what you want, and keep hosts synchronized with NTP.
 - **Use second precision (`?precision=second`) by default.** It makes line protocol smaller, and storage precision is the same either way. If a series can have more than one point in the same second, use finer precision; at second precision those points share a timestamp and merge ([`references/schema-design.md`](schema-design.md)).
 
 ## When to use raw HTTP vs the client

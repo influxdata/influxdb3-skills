@@ -4,9 +4,12 @@
 
 When the InfluxDB 3 server is started with `--plugin-dir`, it creates a Python virtual environment at `<PLUGIN_DIR>/.venv` using the **bundled Python interpreter** that ships with the `influxdb3` binary. Plugins run inside *that* venv.
 
+Packages installed with the host's `pip`, or into any other venv, aren't visible to plugins: the plugin raises `ImportError` even though `pip install <pkg>` succeeded on the host.
+Install into the embedded venv with `influxdb3 install package` (below).
+
 Don't point plugins at a venv built from your system Python. The bundled Python and your system Python may differ in version and ABI, and the runtime will fail with cryptic import errors.
 
-If you need a custom virtual environment, chain it off the bundled interpreter:
+If you need a custom virtual environment, chain it off the bundled interpreter and start the server with `--virtual-env-location <new-venv>`:
 
 ```bash
 <PLUGIN_DIR>/.venv/bin/python -m venv <new-venv>

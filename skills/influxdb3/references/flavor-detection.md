@@ -9,26 +9,7 @@ Those steps identify Core and Enterprise. Explorer's later steps identify produc
 
 ## Identify the product
 
-Identify the product before you answer a question about a hosted service or a host you haven't probed.
-"InfluxDB Cloud" alone can mean InfluxDB 3 Cloud, InfluxDB Cloud Serverless, InfluxDB Cloud Dedicated, InfluxDB Cloud (TSM), or InfluxDB Cloud 1.
-These signals come from the docs' [InfluxDB version detector](https://docs.influxdata.com/influxdb3/core/admin/identify-version/).
-Use the first one that matches.
-
-| Signal | Product | This skill |
-|---|---|---|
-| Host ends in `enterprise.influxdb.io` | InfluxDB 3 Cloud | Covered |
-| Host ends in `a.influxdb.io` | InfluxDB Cloud Dedicated | Route to its docs |
-| Host is `us-east-1-1.aws.cloud2.influxdata.com` or `eu-central-1-1.aws.cloud2.influxdata.com` | InfluxDB Cloud Serverless | Route to its docs |
-| Host is in another `cloud2.influxdata.com` region | InfluxDB Cloud (TSM) | Route to its docs |
-| Host contains `influxcloud.net` | InfluxDB Cloud 1 | Route to its docs |
-| `/ping` returns `x-influxdb-version` starting with `3.` and `x-influxdb-build: Core` or `Enterprise` | InfluxDB 3 Core or Enterprise | Covered. See the decision flow. |
-| `/ping` returns `x-influxdb-version: influxqlbridged-development` | InfluxDB Clustered | Route to its docs |
-| `/ping` returns `x-influxdb-version` starting with `1.` or `2.` | InfluxDB OSS v1 or v2, or InfluxDB Enterprise v1 | Route to its docs |
-
-Port `8181` suggests InfluxDB 3 Core or Enterprise, and port `8086` suggests InfluxDB OSS v1 or v2.
-The query language narrows it too: SQL rules out InfluxDB v1 and v2, and Flux rules out InfluxDB 3 Core, Enterprise, and InfluxDB 3 Cloud.
-If no signal matches, ask which product the developer uses.
-Route each product to its docs in [`doc-urls.md`](doc-urls.md).
+Identify a hosted service or an unprobed host with the signal table in [`SKILL.md` §3](../SKILL.md#3-flavor-detection) before you run this flow.
 
 ---
 
@@ -68,7 +49,7 @@ If no check matches, don't guess. Have the code return an unknown result, and as
 
 4. Not Core or Enterprise (a non-3.x version, a build header containing "cloud",
    or step 3 didn't match):
-   Stop. Identify the product with "Identify the product" above, or ask.
+   Stop. Identify the product with the signal table in SKILL.md §3, or ask.
    Route each product this skill doesn't cover to its docs.
 ```
 

@@ -1,7 +1,7 @@
 """FIXED plugin: uses batch["rows"] / batch["table_name"] (dict access).
 
-The runtime hands plain dicts; access via key. Quirk reference:
-`skills/influxdb3/references/quirks.md` entry 3.
+The runtime hands plain dicts; access via key. Reference:
+`references/runtime-api.md`, "`table_batches` shape".
 """
 
 

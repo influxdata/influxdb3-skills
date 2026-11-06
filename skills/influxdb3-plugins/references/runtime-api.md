@@ -129,7 +129,7 @@ What `process_writes` receives. Each item is a **dict** (not a class instance) r
 | `"table_name"` | str | The measurement / table name. |
 | `"rows"` | list of dicts | The rows. Each row dict has all columns (tags, fields, time) keyed by column name. Time is a nanosecond integer. |
 
-> **Important:** access these as dict keys (`batch["table_name"]`, `batch["rows"]`), NOT as attributes. The runtime hands plain dicts even though some upstream type docs describe a `TableBatch` class.
+> **Important:** access these as dict keys (`batch["table_name"]`, `batch["rows"]`), NOT as attributes. The runtime hands plain dicts even though some upstream type docs describe a `TableBatch` class, so `batch.rows` raises `AttributeError: 'dict' object has no attribute 'rows'`.
 
 ### Quick example
 

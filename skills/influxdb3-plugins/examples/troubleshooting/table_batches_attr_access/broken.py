@@ -6,7 +6,7 @@ Symptom (when wired up as a WAL trigger): plugin logs show
 Why: the runtime hands plain dicts to process_writes, even though the
 upstream type docs describe a TableBatch class. Use dict access instead.
 
-The fix is in `fixed.py`. Quirk reference: `quirks.md` entry 3.
+The fix is in `fixed.py`. Reference: `references/runtime-api.md`, "`table_batches` shape".
 """
 
 

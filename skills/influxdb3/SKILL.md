@@ -41,9 +41,7 @@ It covers Python, JavaScript/TypeScript, Go, Java, C#, and raw HTTP.
 
 **Use the full product name.**
 "Cloud" or "InfluxDB Cloud" alone can mean InfluxDB 3 Cloud, InfluxDB Cloud Serverless, InfluxDB Cloud Dedicated, or InfluxDB Cloud (TSM).
-If the developer doesn't name the product, ask which one they use before giving product-specific steps.
-A host URL or `/ping` headers can identify it ([`flavor-detection.md` → "Identify the product"](references/flavor-detection.md#identify-the-product)).
-A host ending in `enterprise.influxdb.io` is InfluxDB 3 Cloud, not a self-hosted InfluxDB 3 Enterprise server, so check the InfluxDB 3 Cloud docs for its token steps.
+If the developer doesn't name the product, identify it from the host or `/ping` ([§3](#3-flavor-detection)), and ask only when no signal matches.
 
 ### Other InfluxDB products
 
@@ -108,14 +106,32 @@ Commands: [`references/connecting.md`](references/connecting.md).
 
 ## 3. Flavor detection
 
-Probe `/ping` first. Ask only if detection is ambiguous.
+Identify the product before you write SQL, commands, or endpoints for a host.
+Use the first signal that matches, from the docs' [InfluxDB version detector](https://docs.influxdata.com/influxdb3/core/admin/identify-version/):
+
+| Signal | Product | This skill |
+|---|---|---|
+| Host ends in `enterprise.influxdb.io` | InfluxDB 3 Cloud (hosted Enterprise, not a self-hosted server) | Covered; confirm token steps in the InfluxDB 3 Cloud docs |
+| Host ends in `a.influxdb.io` | InfluxDB Cloud Dedicated | Route to its docs |
+| Host is `us-east-1-1.aws.cloud2.influxdata.com` or `eu-central-1-1.aws.cloud2.influxdata.com` | InfluxDB Cloud Serverless | Route to its docs |
+| Host is in any other `cloud2.influxdata.com` region | InfluxDB Cloud (TSM) | Route to its docs |
+| Host contains `influxcloud.net` | InfluxDB Cloud 1 | Route to its docs |
+| `/ping` returns `x-influxdb-version: influxqlbridged-development` | InfluxDB Clustered | Route to its docs |
+| `/ping` returns `x-influxdb-version` starting with `1.` or `2.` | InfluxDB OSS v1 or v2, or InfluxDB Enterprise v1 (which also sends `x-influxdb-build: Enterprise`) | Route to its docs |
+| `/ping` returns `x-influxdb-version` starting with `3.` | InfluxDB 3 Core or Enterprise | Covered; tell them apart below |
+
+Port `8181` suggests InfluxDB 3 Core or Enterprise, and port `8086` suggests InfluxDB OSS v1 or v2.
+Flux rules out InfluxDB 3.
+Route each product this skill doesn't cover to its docs ([§1](#1-scope)), with no InfluxDB 3 commands or SQL.
+
+Then tell Core from Enterprise:
 
 1. `GET <host>/ping` with `Authorization: Bearer $INFLUXDB_TOKEN`.
 2. Check the `x-influxdb-build` header for `Enterprise` or `Core` (case-insensitive substring).
 3. If the header is absent, probe `GET /api/v3/configure/retention_period` (404 means Core, 403 means Enterprise).
-4. Otherwise, the server isn't Core or Enterprise. Ask which product the developer uses, and route products this skill doesn't cover to their docs ([§1](#1-scope)).
+4. Otherwise, ask which product the developer uses.
 
-Decision flow: [`references/flavor-detection.md`](references/flavor-detection.md). Product differences: [`references/flavors.md`](references/flavors.md).
+Detection code with every branch: [`references/flavor-detection.md`](references/flavor-detection.md). Product differences: [`references/flavors.md`](references/flavors.md).
 
 ## 4. Connecting and authenticating
 
