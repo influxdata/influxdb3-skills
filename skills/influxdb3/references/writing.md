@@ -18,14 +18,6 @@ Spaces separate the three sections. Commas separate tags within section 1 and fi
 
 Quoting: string field values are wrapped in double quotes (`status="ok"`), tag values are not. Escape commas, equals, and spaces in tag/field keys and tag values with `\`; escape double quotes and backslashes inside string field values with `\`.
 
-**Building line protocol from untrusted values is injection-prone, because a newline separates records.**
-If you interpolate a tag or field value that contains a newline (`\n`) or carriage return (`\r`), everything after it is parsed as a second point.
-For example, a value like `"ok\nmalicious,host=x value=1"` forges an extra record.
-Line protocol has no escape for `\n` or `\r`, so a value that may contain them can't be written raw.
-Prefer an official client's point builder, which escapes the structural characters it can.
-For values that might contain `\n` or `\r`, **reject or strip them before writing** instead of relying on escaping.
-This matters most on `/api/v3/write_lp` with `accept_partial=true`, where a 400 on a later line doesn't undo a forged point that was already stored.
-
 Full spec: see [`references/doc-urls.md` → "Line protocol"](doc-urls.md).
 
 ## Batching rule

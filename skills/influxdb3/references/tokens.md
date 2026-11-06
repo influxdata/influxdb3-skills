@@ -8,6 +8,8 @@
 | **Named admin token** | `influxdb3 create token --admin --name <name>` | Admin automation, and application code on Core | The consumer's secret manager or env var |
 | **Scoped resource token** *(Enterprise and InfluxDB 3 Cloud only)* | Created via `--permission` referencing a specific database | Application code: writing data, querying | The application's `INFLUXDB_TOKEN` env var, or its secret manager |
 
+Why an application needs its own token, shown live: [`examples/troubleshooting/admin_token_at_data_plane/`](../examples/troubleshooting/admin_token_at_data_plane/README.md).
+
 ## InfluxDB 3 Core: admin tokens only
 
 - InfluxDB 3 Core has no resource tokens and no RBAC.

@@ -24,7 +24,7 @@ When the skill content does not cover a developer's question — or when the ans
 
 ## Topics this skill defers
 
-Use these URLs in the deferral replies that [SKILL.md §9](../SKILL.md#9-not-covered) describes. Link the page for the developer's product: replace `core` with `enterprise` for InfluxDB 3 Enterprise.
+Use these URLs in deferral replies. Link the page for the developer's product: replace `core` with `enterprise` for InfluxDB 3 Enterprise.
 
 | Topic | URL |
 |---|---|

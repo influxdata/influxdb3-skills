@@ -13,7 +13,7 @@
 
 If the token lacks admin scope, step 4 is skipped and the report says "diagnostic limited to read-side."
 
-Cleanup is trapped: if anything fails mid-script, the throwaway DB still gets deleted.
+Cleanup follows the pattern in [`examples/admin-http/`](../admin-http/README.md#cleanup-is-trapped): if anything fails, the throwaway DB still gets deleted.
 
 ## Run it
 

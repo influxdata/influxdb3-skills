@@ -12,7 +12,7 @@ Behaviors that surprise developers. Each entry: **What you'll see → Why it's t
 
 **Why:** The `/ping` route is registered for GET only on Core and Enterprise.
 
-**What to do:** Use `GET` for `/ping` health checks. Documented in [`references/flavor-detection.md`](flavor-detection.md).
+**What to do:** Use `GET` for `/ping` health checks. Demo: [`examples/troubleshooting/ping_head_404/`](../examples/troubleshooting/ping_head_404/README.md).
 
 ### `/ping` also needs a token by default
 
@@ -26,9 +26,7 @@ Since 3.10 you can opt out of authorization for these routes with `--disable-aut
 
 **What you'll see:** A write to a database name that doesn't exist returns 200/204 success. The data lands in a brand-new database with that exact (possibly typo'd) name.
 
-**Why:** Default config auto-creates databases on first write. The auto-create is a UX feature for getting started fast; it becomes a footgun when env vars typo or scripts drift.
-
-**What to do:** Verify the database exists before the first write. Diagnostic + recovery flow in [`references/troubleshooting.md` → "Silent auto-create misroute"](troubleshooting.md#silent-auto-create-misroute). Generated code should check at startup that the database exists and stop if it doesn't.
+**What to do:** Diagnose and recover with [`references/troubleshooting.md` → "Silent auto-create misroute"](troubleshooting.md#silent-auto-create-misroute). Demo: [`examples/troubleshooting/silent_auto_create/`](../examples/troubleshooting/silent_auto_create/README.md).
 
 ---
 
@@ -38,7 +36,7 @@ Since 3.10 you can opt out of authorization for these routes with `--disable-aut
 
 **Why:** The `permissions` column in `system.tokens` is stored as a JSON-encoded string like `"[\"db:gf_ha:read\", \"db:gf_ha:write\"]"`, not as a native array. The CLI rendering and JSON-API responses serialize it as a literal string.
 
-**What to do:** `JSON.parse` (or `json.loads`) the column before iterating.
+**What to do:** `JSON.parse` (or `json.loads`) the column before iterating. Demo: [`examples/troubleshooting/tokens_permissions_parse/`](../examples/troubleshooting/tokens_permissions_parse/README.md).
 
 ```python
 import json
@@ -59,7 +57,7 @@ for row in system_tokens_rows:
 `INFLUXDB_TOKEN` and `INFLUXDB_ADMIN_TOKEN` are this skill's names, and no InfluxDB tool reads them on its own.
 This is the same on Core and Enterprise.
 
-**What to do:** Pass the token each command needs with `--token`, as the token rules in [`SKILL.md`](../SKILL.md) §11 describe:
+**What to do:** Pass the token each command needs with `--token`:
 
 ```sh
 export INFLUXDB_ADMIN_TOKEN=...  # admin: databases, tokens, plugins
@@ -156,4 +154,3 @@ See [Overwrites are not deterministic](https://docs.influxdata.com/influxdb3/ent
 - App-side troubleshooting: [`references/troubleshooting.md`](troubleshooting.md)
 - Plugin-side behaviors and troubleshooting: the `influxdb3-plugins` skill → [`references/troubleshooting.md`](../../influxdb3-plugins/references/troubleshooting.md)
 - Diagnostic toolkit: `examples/diagnose/`
-- Broken→fix demo pairs: `examples/troubleshooting/`

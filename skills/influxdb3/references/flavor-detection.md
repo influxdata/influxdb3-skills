@@ -7,12 +7,6 @@ Those steps identify Core and Enterprise. Explorer's later steps identify produc
 
 ---
 
-## Identify the product
-
-Identify a hosted service or an unprobed host with the signal table in [`SKILL.md` §3](../SKILL.md#3-flavor-detection) before you run this flow.
-
----
-
 ## Decision Flow
 
 Run these checks in order. The first check that matches wins; later checks are skipped.
@@ -49,7 +43,7 @@ If no check matches, don't guess. Have the code return an unknown result, and as
 
 4. Not Core or Enterprise (a non-3.x version, a build header containing "cloud",
    or step 3 didn't match):
-   Stop. Identify the product with the signal table in SKILL.md §3, or ask.
+   Stop. Identify the product from the host, or ask.
    Route each product this skill doesn't cover to its docs.
 ```
 

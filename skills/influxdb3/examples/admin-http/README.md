@@ -19,7 +19,7 @@
 
 ## Cleanup is trapped
 
-A `trap EXIT` ensures cleanup runs even on partial failure. Mid-script crashes still revoke whatever was created. The trap uses the admin token from env to delete any token or database the script created.
+Every example that creates tokens or databases registers cleanup before it creates anything: a `trap EXIT` here, `try/finally` in the Python examples. A partial failure or Ctrl+C still deletes every token and database the script created, using the admin token from env. Use the same pattern in real provisioning scripts.
 
 ## Run it
 
@@ -33,7 +33,6 @@ cp .env.example .env  # then edit with real values
 ## Adapting for production
 
 - **Do not** copy this script into a production CI workflow without changing the test-DB name pattern. The `admin_test_http_<ts>` pattern is for development only.
-- **Do** generalize the trap-based cleanup pattern into your real provisioning scripts.
 
 ## Where to fetch more
 
