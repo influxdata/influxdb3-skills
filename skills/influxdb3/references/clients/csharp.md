@@ -46,7 +46,7 @@ The C# client doesn't expose the Python client's automatic `batch_size` or `flus
 
 See [`references/writing.md` → "Error handling"](../writing.md#error-handling) for the status-code meanings.
 
-`InfluxDB3.Client` 1.9.0+ writes through `/api/v2/write` by default, so one invalid line rejects the whole batch. For partial writes or `NoSync` on InfluxDB 3 Core or Enterprise, set the `UseV2Api` write option to `false`. See [`references/writing.md` → "Official clients write through `/api/v2/write` by default"](../writing.md#official-clients-write-through-apiv2write-by-default).
+To write through `/api/v3/write_lp` (partial writes, `NoSync`), set the `UseV2Api` write option to `false`.
 
 ## Parameterized SQL query
 

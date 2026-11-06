@@ -59,7 +59,7 @@ for (int i = 0; i < 1000; i++) {
 client.writePoints(points);
 ```
 
-`influxdb3-java` 1.10.0+ writes through `/api/v2/write` by default, so one invalid line rejects the whole batch. For partial writes or `noSync` on InfluxDB 3 Core or Enterprise, set the `useV2Api` write option to `false`. See [`references/writing.md` → "Official clients write through `/api/v2/write` by default"](../writing.md#official-clients-write-through-apiv2write-by-default).
+To write through `/api/v3/write_lp` (partial writes, `noSync`), set the `useV2Api` write option to `false`.
 
 ## Parameterized SQL query
 
