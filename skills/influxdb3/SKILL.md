@@ -2,7 +2,7 @@
 name: influxdb3
 description: >-
   Load it before answering any InfluxDB 3 Core, InfluxDB 3 Enterprise, or
-  InfluxDB 3 Cloud question, even one you think you know: behavior and
+  InfluxDB 3 Cloud question or task, even one you think you know: behavior and
   defaults change between releases. Use for installing, connecting, writing
   line protocol, SQL and InfluxQL queries, schema design, databases and
   retention, tokens, and troubleshooting, including unreachable instances,
