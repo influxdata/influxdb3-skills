@@ -106,23 +106,6 @@ See [`references/admin-http-api.md`](admin-http-api.md) for the full endpoint re
 | Delete | `DELETE /api/v3/configure/database?db=<name>` |
 
 
-## Recovering from the silent auto-create footgun
-
-With the default config, InfluxDB 3 Core and Enterprise silently auto-create a database on first write to a name that doesn't exist. If you've written to a typo'd database name (e.g., `senor_data` instead of `sensor_data`):
-
-1. Verify which DB has the data:
-   ```bash
-   influxdb3 query -d <typo_name> --token "$INFLUXDB_ADMIN_TOKEN" "SELECT count(*) FROM <table>"
-   influxdb3 query -d <correct_name> --token "$INFLUXDB_ADMIN_TOKEN" "SELECT count(*) FROM <table>"
-   ```
-2. Fix the env var or the typo in code so future writes target the correct name.
-3. Once you've confirmed writes are now flowing to the correct DB, drop the typo'd one:
-   ```bash
-   influxdb3 delete database <typo_name> -y --token "$INFLUXDB_ADMIN_TOKEN"
-   ```
-
-For prevention guidance, see the setup checklist in [`SKILL.md` §2](../SKILL.md#2-setup-checklist) and [`references/connecting.md` → "The silent auto-create footgun"](connecting.md#the-silent-auto-create-footgun).
-
 ## Reserved or problematic names
 
 - `_internal` — system database; do not use as your application's DB name. Reading from it (e.g., `system.tokens`, `system.processing_engine_logs`) is fine.

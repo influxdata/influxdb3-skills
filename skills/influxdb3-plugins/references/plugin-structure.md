@@ -169,7 +169,7 @@ influxdb3 create trigger \
   my_plugin_trigger
 ```
 
-`examples/toml_config/` is a runnable version with staging and verification steps.
+[`examples/toml_config/`](../examples/toml_config/README.md) is a runnable version with staging and verification steps.
 
 ### Parsing produces native types
 

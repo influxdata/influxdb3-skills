@@ -4,8 +4,6 @@ Covers Core and Enterprise on macOS and Linux. Two paths are spelled out here: t
 
 > **InfluxDB 3 Cloud** is a managed service, so it isn't installed locally. Sign up at https://www.influxdata.com/products/influxdb-overview/. Once you have credentials, return to [`references/connecting.md`](connecting.md). Don't create accounts for the developer.
 
-> **Already have an instance running?** Skip to [`SKILL.md` §2](../SKILL.md#2-setup-checklist) (Setup checklist).
-
 ## Decision: Core or Enterprise?
 
 | | Core | Enterprise |
@@ -179,14 +177,6 @@ If you see `HTTP/1.1 200 OK` with `x-influxdb-build: Core` (or `Enterprise`), yo
 To tell which edition and version an existing instance runs, use the docs' identify-version pages: https://docs.influxdata.com/influxdb3/core/admin/identify-version/ (same content under `/influxdb3/enterprise/`). [`references/flavor-detection.md`](flavor-detection.md) covers the full procedure.
 
 > **Quirk:** `HEAD /ping` returns 404 — only `GET /ping` works. See [`references/quirks.md` entry 1](quirks.md#1-head-ping-returns-404-only-get-ping-works).
-
-## Next steps
-
-You now have a running, authenticated InfluxDB 3 instance. Pick your path:
-
-- Want to write data and query it? → [`SKILL.md` §2](../SKILL.md#2-setup-checklist) (Setup checklist) → [§4](../SKILL.md#4-connecting-and-authenticating)–[§6](../SKILL.md#6-querying-data) (Connect, Write, Query)
-- Want to provision a database now? → [`references/databases.md`](databases.md)
-- Want to develop a Processing Engine plugin? → sibling skill `influxdb3-plugins`. The server needs `--plugin-dir`, which the commands above set.
 
 ## Where to fetch more
 

@@ -4,7 +4,7 @@
 
 InfluxDB 3 supports SQL (Apache DataFusion under the hood) and InfluxQL. Use the language the developer asks for. When they don't say, generate SQL.
 
-InfluxDB 3 doesn't run Flux. Migration from Flux is out of scope; see [SKILL.md §9](../SKILL.md#9-not-covered).
+InfluxDB 3 doesn't run Flux. Migration from Flux is out of scope; link the migration docs in [`references/doc-urls.md`](doc-urls.md).
 
 ## Time idioms
 

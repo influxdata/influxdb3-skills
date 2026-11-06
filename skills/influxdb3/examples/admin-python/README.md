@@ -6,7 +6,7 @@
 
 ## What it does
 
-The same 10-step lifecycle as `examples/admin-http/admin_lifecycle.sh` (list → create DB → create scoped token → write a point → list/filter via SQL → rotate → delete original → delete DB → delete rotated → orphan check). Cleanup runs in a `try/finally` block; partial failures still revoke whatever was created.
+The same 10-step lifecycle as `examples/admin-http/admin_lifecycle.sh` (list → create DB → create scoped token → write a point → list/filter via SQL → rotate → delete original → delete DB → delete rotated → orphan check). Cleanup follows the pattern in [`examples/admin-http/`](../admin-http/README.md#cleanup-is-trapped), with `try/finally`.
 
 ## Run it
 
@@ -23,7 +23,6 @@ python admin_lifecycle.py
 ## Adapting for production
 
 - Don't copy this script into production CI without changing the test-DB name pattern (`admin_test_python_<ts>`).
-- Generalize the `try/finally` cleanup pattern into your real provisioning code.
 
 ## Where to fetch more
 
