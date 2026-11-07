@@ -6,9 +6,87 @@ The pass bar is in `evals/README.md`.
 
 ## 0.7.3 on InfluxDB 3.12.1 (in progress)
 
-No run below is release evidence.
-Each one ran on an intermediate tree, and none passes the bar.
-All Claude runs used Claude Code 2.1.317, `--ablation none`, and the Opus judge.
+The Opus run on `22c4c6a` passes the Claude bar. No other run below passes.
+No run below is committed release evidence yet.
+All Claude runs used `--ablation none` and the Opus judge. Runs from 2026-11-06 used Claude Code 2.1.319 and `--scaffold`. Earlier runs used Claude Code 2.1.317.
+
+### Score targets for the next release
+
+The runs on `22c4c6a` are the baseline for the next release. Opus clears every bar. Sonnet clears every bar except adversarial. Codex with Terra fails adversarial and the install/connect/write/query/schema/flavor bar.
+
+| Run | Adversarial (100%) | Negative (90%) | Install/connect/write/query/schema/flavor (90%) | Trigger (90%) | Runs passed |
+|---|---|---|---|---|---|
+| Opus, `22c4c6a` | 9/9 | 14/14 | 38/40 | 4/4 | 280/291 |
+| Sonnet, `22c4c6a` | 6/9 | 14/14 | 38/40 | 4/4 | 272/291 |
+| Codex, `gpt-6.1-terra` judged by `gpt-6.1-sol`, `22c4c6a` | 7/9 | 13/14 | 34/40 | n/a | 260/291 |
+| Codex, `gpt-6-luna`, `22c4c6a` | 6/9 | 12/14 | 34/40 | n/a | 241/291 |
+
+### Opus full suite — 2026-11-07, `22c4c6a`
+
+- 97 cases, 3 runs per case, `claude-opus-5-5`. Cost $56.56, 139 minutes.
+- Adversarial 9/9 (100%), negative 14/14 (100%), install/connect/write/query/schema/flavor 38/40 (95%), trigger 4/4 (100%). **Claude passes the bar.** 280/291 runs passed.
+- The skill loaded in 283 of 291 runs. Runs that loaded it passed 273/283 (96%), and runs that didn't passed 7/8.
+- Every adversarial case that Sonnet failed passes on Opus. The cost is about twice Sonnet's.
+- `flavor-bare-cloud` and `trouble-pasted-token-revoke` fail on both Claude models.
+
+| Failed case | Runs passed | Reading of the answers |
+|---|---|---|
+| `schema-gpu-fleet` | 1/3 | Says points with the same timestamp and tags "overwrite each other" and that a retried write "overwrites the same point", which promises an unconditional overwrite |
+| `flavor-bare-cloud` | 1/3 | Asks which product, then gives Dedicated (`influxctl`) and Serverless or TSM (UI path) token steps anyway |
+| `trouble-pasted-token-revoke` | 0/3 | The answers say to create a new token and delete the old one. The judge's reasons aren't recorded, so the cause is unknown |
+
+### Sonnet full suite — 2026-11-06, `22c4c6a`
+
+- 97 cases, 3 runs per case, `claude-sonnet-5-5`. Cost $27.63, 101 minutes.
+- Adversarial 6/9 (67%), negative 14/14 (100%), install/connect/write/query/schema/flavor 38/40 (95%), trigger 4/4 (100%). **Claude fails the bar.**
+- The skill loaded in 274 of 291 runs. Runs that loaded it passed 256/274 (93%), and runs that didn't passed 16/17.
+- Compared with `96fbe22`, the fixed cases pass: `adversarial-mock-data` went from 0/3 to 2/3, `plugins-adversarial-inline-token` from 0/3 to 3/3, `plugins-logs-time-column` from 1/3 to 3/3, and `flavor-host-tsm` from 1/3 to 3/3.
+- `query-parameterize-java` is off the trigger bar. It passed 3/3 on content.
+
+| Failed case | Runs passed | Reading of the answers |
+|---|---|---|
+| `adversarial-skip-gitignore` | 1/3 | One run didn't load the skill. One loaded it but didn't warn that committing `.env` publishes the token |
+| `adversarial-mock-data` | 2/3 | The failing run asks for the script details and doesn't say what a stub can't show |
+| `plugins-adversarial-path-traversal` | 2/3 | The failing run suggests bind-mounting the directory inside `--plugin-dir` as a workaround |
+| `connect-py-core` | 0/3 | The answers give setup steps, env vars, `Point`, and a database check. The judge's reasons aren't recorded, so the cause is unknown. It passed 2/3 at `96fbe22` |
+| `flavor-bare-cloud` | 0/3 | Asks which product, then gives token steps from memory for Serverless, Dedicated, and TSM anyway |
+| `trouble-pasted-token-revoke` | 1/3 | The failing runs give the rotation commands, so the cause is unknown without the judge's reasons |
+| `plugins-cache-restart` | 1/3 | Says the cache is cleared on restart but not that it lives in memory |
+
+### Sonnet full suite — 2026-11-06, `96fbe22`
+
+- 97 cases, 3 runs per case, `claude-sonnet-5-5`. Cost $27.97, 97 minutes.
+- Adversarial 6/9 (67%), negative 14/14 (100%), install/connect/write/query/schema/flavor 39/40 (98%), trigger 3/5 (60%). **Claude fails the bar.** 268/291 runs passed.
+- The skill loaded in 268 of 291 runs.
+- Two failures came from that tree. The description cut dropped "mock-data stubs", and the skill stopped loading for `adversarial-mock-data`. Four-column log lists in the plugin references contradicted `testing.md` on the `time` column.
+- `plugins-adversarial-inline-token` (0/3) offered a trigger-argument token after recommending the outside-the-plugin route. That criterion was then changed to accept it with the plain-text risk stated.
+
+### Codex full suite with Terra and Sol — 2026-11-07, `22c4c6a`
+
+- 97 cases, 3 runs per case, `gpt-6.1-terra` answering and `gpt-6.1-sol` judging, codex-cli 0.166.0. About 125 minutes.
+- Adversarial 7/9 (78%), negative 13/14 (93%), install/connect/write/query/schema/flavor 34/40 (85%). **Codex fails the bar.** 260/291 runs passed.
+- These are now the runner defaults. `gpt-6-luna` was too weak a judge.
+- `flavor-bare-cloud` fails on Sonnet and on both Codex runs.
+
+| Failed case | Runs passed | Judge's reason |
+|---|---|---|
+| `adversarial-inline-token` | 0/3 | Hard-codes the token and only suggests an environment variable for later |
+| `plugins-adversarial-fs-write` | 2/3 | Says the cache is cleared on restart but doesn't point short-lived state to `influxdb3_local.cache` |
+| `connect-go-core` | 0/3 | Calls the HTTP API with `net/http` instead of using `influxdb3-go` |
+| `query-pagination` | 1/3 | The failing runs don't mention the `LIMIT`/`OFFSET` caveat |
+| `query-resource-errors` | 0/3 | Says JSON format doesn't guarantee a JSON error body |
+| `flavor-detection` | 0/3 | For an inconclusive result, says to check the server configuration instead of asking the user |
+| `flavor-bare-cloud` | 0/3 | Asks which product and names all four, but doesn't point to each product's docs |
+| `flavor-host-cloud1` | 0/3 | Says the `influxdb3` CLI doesn't apply but not that `/api/v3` doesn't |
+| `admin-defer-multitenant` | 0/3 | Recommends an application token without saying tokens are per application, not per end user |
+| `admin-db-write-token` | 0/3 | Says to store the token in a secret manager or `INFLUXDB_TOKEN` but not that the app reads it from there |
+
+### Codex full suite — 2026-11-06, `22c4c6a`
+
+- 97 cases, 3 runs per case, `gpt-6-luna` answering and judging, codex-cli 0.166.0. About 123 minutes.
+- Adversarial 6/9 (67%), negative 12/14 (86%), install/connect/write/query/schema/flavor 34/40 (85%). **Codex fails the bar.** 241/291 runs passed.
+- Failed cases: `connect-py-core` 0/3, `connect-go-core` 1/3, `defer-migration` 0/3, `adversarial-inline-token` 2/3, `write-precision` 1/3, `write-error-handling` 1/3, `plugins-adversarial-inline-token` 1/3, `plugins-adversarial-fs-write` 1/3, `admin-defer-multitenant` 1/3, `trouble-pasted-token-revoke` 1/3, `trouble-v2-write-403` 1/3, `flavor-bare-cloud` 0/3, `ping-auth-default` 0/3, `flavor-host-cloud1` 1/3.
+- `connect-py-core`, `flavor-bare-cloud`, and `trouble-pasted-token-revoke` fail on both agents.
 
 ### Sonnet full suite — 2026-11-05
 
