@@ -42,9 +42,10 @@ answers, and results to the gitignored `evals/results/` directory.
 See `TESTING.md` → "Run the evals" for the commands.
 
 Codex must already be authenticated (`codex login status`). The runner defaults
-to `gpt-6-luna` for both answers and judging; use `--model <model>` and
-`--judge-model <model>` to override them. This model was verified with Codex CLI
-0.164.0; update older clients before running the suite.
+to `gpt-6.1-terra` for answers and `gpt-6.1-sol` for judging; use `--model <model>`
+and `--judge-model <model>` to override them. `gpt-6-luna` is a fast model for
+easier tasks and was too weak a judge. These models were run with Codex CLI
+0.166.0; update older clients before running the suite.
 
 ### Claude Code
 

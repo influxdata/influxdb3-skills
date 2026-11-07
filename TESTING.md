@@ -126,7 +126,7 @@ node evals/gate.mjs --claude evals/results/claude-opus.json --min-runs 3
 To run the full Codex suite:
 
 ```sh
-node evals/run-codex-evals.mjs --runs 3 --model gpt-6-luna --judge-model gpt-6-luna
+node evals/run-codex-evals.mjs --runs 3 --model gpt-6.1-terra --judge-model gpt-6.1-sol
 node evals/gate.mjs --codex evals/results/codex-<timestamp>/summary.json --min-runs 3
 ```
 
@@ -138,7 +138,7 @@ node evals/build-claude-cases.mjs
 claude plugin eval ./ --eval-dir evals/claude-cases --keep-temp --case <id> --model claude-sonnet-5-5 --judge-model claude-opus-5-5 --runs 3 --ablation none --scaffold --trust-plugin
 
 # Codex
-node evals/run-codex-evals.mjs --case <id> --runs 3 --model gpt-6-luna --judge-model gpt-6-luna
+node evals/run-codex-evals.mjs --case <id> --runs 3 --model gpt-6.1-terra --judge-model gpt-6.1-sol
 ```
 
 A single run is noisy.
