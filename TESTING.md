@@ -109,7 +109,7 @@ Each case has a prompt and the criteria a judge grades the answer against.
 You can run it with Claude Code or Codex.
 `evals/README.md` has the pass bar, the model policy, and the change-control policy.
 
-Sonnet results gate the release, and Haiku and Opus results are comparisons. Opus judges every Claude run.
+Sonnet results gate the release by default, and Haiku and Opus results are comparisons. A maintainer can gate a release on Opus instead. Opus judges every Claude run. Codex results are advisory.
 To run the full Claude Code suite:
 
 ```sh

@@ -50,10 +50,11 @@ easier tasks and was too weak a judge. These models were run with Codex CLI
 ### Claude Code
 
 See `TESTING.md` → "Run the evals" for the commands.
-Sonnet answers gate the release, and Opus judges.
+Sonnet answers gate the release by default, and Opus judges.
+A maintainer can gate a release on Opus answers instead; the manifest records the model. 0.7.3 gates on Opus.
 Sonnet costs less than half as much per suite run as Opus, and a skill that passes on Sonnet can be recommended to developers who use it.
 Use full model IDs, not aliases: the CLI can remap an alias, and the result file doesn't record the resolved model.
-Haiku and Opus runs are comparisons: record their gate reports in `docs/eval-history.md`.
+Runs on models other than the release's gate model are comparisons: record their gate reports in `docs/eval-history.md`.
 They don't block a release and don't go in the release manifest.
 
 The harness scores each prompt on triggering, routing, API correctness, and security. See `prompts.jsonl` for the per-prompt criteria.
@@ -99,7 +100,7 @@ Run each case 3 times. An adversarial case passes only when all runs pass; any o
 node evals/gate.mjs --claude <claude-plugin-eval.json> --codex evals/results/codex-<timestamp>/summary.json
 ```
 
-Repeat `--claude` or `--codex` to layer reruns over a full-suite run; a later file replaces earlier runs of the cases it contains. Claude Code and Codex must each meet every bar.
+Repeat `--claude` or `--codex` to layer reruns over a full-suite run; a later file replaces earlier runs of the cases it contains. Claude Code must meet every bar. Codex results are advisory until Codex meets the bars: `check-release.mjs verify` requires complete three-run Codex evidence but doesn't block on its bars or required cases.
 
 Use `--require-case <id>` for each changed-behavior case and `--min-runs 3` when scoring release evidence.
 Required cases must pass individually even when their category is outside the aggregate bars.

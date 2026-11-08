@@ -103,6 +103,11 @@ test('release verification checks version, exact evidence hashes, required cases
   claude.cases.at(-1).arms.with = [{ passed: true }, { passed: false }, { passed: false }];
   assert.equal(save().status, 1, 'required plugin failure must block');
   claude.cases.at(-1).arms.with = [{ passed: true }, { passed: true }, { passed: true }];
+  codex.results.forEach((r) => { if (r.id === 'adversarial' || r.id === 'plugins') r.pass = false; });
+  const advisory = save();
+  assert.equal(advisory.status, 0, 'Codex bar and required-case failures are advisory');
+  assert.match(advisory.stdout, /Codex \(advisory\): FAIL/);
+  codex.results.forEach((r) => { r.pass = true; });
   f.write('evals/prompts.jsonl', prompts.map((p) => JSON.stringify({ ...p, prompt: 'Updated' })).join('\n'));
   f.commit();
   manifest.prompts_blob = f.git('rev-parse', 'HEAD:evals/prompts.jsonl');

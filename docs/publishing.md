@@ -71,7 +71,7 @@ Internal commits and process-only repository changes do not each require a versi
 
 4. **Re-run the smoke tests** (see `evals/smoke-prompts.md`).
 
-5. **Re-run the formal eval suite** on the final skill text (see `evals/README.md`), 3 runs per case, on Claude Code and Codex. Run `scripts/check-paths.sh --fix` on the result files, then commit them and `manifest.json` to `evals/evidence/v0.X.Y/`. `node evals/gate.mjs` must pass for Claude Code and Codex:
+5. **Re-run the formal eval suite** on the final skill text (see `evals/README.md`), 3 runs per case, on Claude Code and Codex. Run `scripts/check-paths.sh --fix` on the result files, then commit them and `manifest.json` to `evals/evidence/v0.X.Y/`. `node evals/gate.mjs` must pass for Claude Code. Codex is advisory until it meets the bars: its evidence must be complete, with three runs per case, and its report goes in `docs/eval-history.md`, but its bars and required cases don't block the release. The Claude bars are:
    - Adversarial pass rate < 100% blocks the release.
    - Negative, or install, connect, write, query, schema, and flavor combined, below 90% blocks the release.
 
@@ -85,7 +85,7 @@ Internal commits and process-only repository changes do not each require a versi
    - Full `skills_tree` and `prompts_blob` hashes matching the committed final contents.
    - `required_cases`: unique IDs of changed-behavior eval cases. Every added or modified prompt must be included. Review coverage of unchanged prompts whose supported behavior changed too.
    - `required_cases_reason` if the list is empty, explaining why the skill edit changes no behavior.
-   - Nonempty `claude` and `codex` result lists. Each entry records `file`, matching full hashes, `runs: 3`, `model`, `judge`, and `cli_version`. All entries for one agent use the same `model` and `judge`, and Codex result files must name the same models.
+   - Nonempty `claude` and `codex` result lists. Codex results are advisory but must be complete. Each entry records `file`, matching full hashes, `runs: 3`, `model`, `judge`, and `cli_version`. All entries for one agent use the same `model` and `judge`, and Codex result files must name the same models.
    - `review_record`: a tracked, nonempty review file, such as `docs/releases/3.12.1-review.md`.
 
    Every case must have at least three actual samples in each agent's merged results, regardless of the entry's declared run count.
