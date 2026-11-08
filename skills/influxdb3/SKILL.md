@@ -29,11 +29,12 @@ Application code in Python, JavaScript/TypeScript, Go, Java, C#, and raw HTTP, p
 |---|---|
 | InfluxDB 3 Core, InfluxDB 3 Enterprise | Full guidance. |
 | InfluxDB 3 Cloud (hosted InfluxDB 3 Enterprise) | Enterprise guidance for writes, queries, and tokens, only where the InfluxDB 3 Cloud docs confirm it. |
-| InfluxDB Cloud Serverless, InfluxDB Cloud Dedicated, InfluxDB Clustered | Not covered. They have no `/api/v3` endpoints, and their tokens and databases work differently. Answer from the product's docs in [`references/doc-urls.md`](references/doc-urls.md), with none of this skill's commands or endpoints. |
+| InfluxDB Cloud Serverless, InfluxDB Cloud Dedicated, InfluxDB Clustered | Not covered. They have no `/api/v3` endpoints, and their tokens and databases work differently. Give only a link to the product's docs from [`references/doc-urls.md`](references/doc-urls.md): no steps, commands, UI paths, or endpoints from this skill or from memory. |
 
 **Use the full product name.**
 "Cloud" or "InfluxDB Cloud" alone can mean InfluxDB 3 Cloud, InfluxDB Cloud Serverless, InfluxDB Cloud Dedicated, or InfluxDB Cloud (TSM).
 If the developer doesn't name the product, identify it from the host or `/ping` ([§3](#3-flavor-detection)), and ask only when no signal matches.
+When you ask, give token or setup steps only for InfluxDB 3 Cloud, and only a docs link for each other candidate.
 
 ### Other InfluxDB products
 
@@ -136,8 +137,8 @@ Env var rules and `.env` loaders for each language: [`references/connecting.md`]
 - **Check that the database exists before the first write** ([§2](#2-setup-checklist)).
 - **Write line protocol,** the only format InfluxDB 3 ingests. Build it from untrusted values as [§13](#13-untrusted-input) describes.
 - **Batch writes:** up to 10,000 lines or 10 MB per request, with a timed flush (for example, every second) for live streams.
-- **Write the event's own timestamp.** Without one, the server assigns its receive time, so a retried write lands as a second point.
-- **Use second precision by default.** Points that share a table, tag set, and timestamp merge, and which field value survives isn't guaranteed ([`references/quirks.md` entry 13](references/quirks.md#13-overwriting-a-point-isnt-deterministic)). If one series can have more than one point per second, use finer precision.
+- **Write the event's own timestamp.** Without one, the server assigns its receive time, so a retried write lands as a second point. With one, the retry merges into the first point; it doesn't reliably replace it.
+- **Use second precision by default.** Points that share a table, tag set, and timestamp merge, and which field value survives isn't guaranteed. Describe this as a merge with no guaranteed winner, never as one point overwriting another ([`references/quirks.md` entry 13](references/quirks.md#13-overwriting-a-point-isnt-deterministic)). If one series can have more than one point per second, use finer precision.
 - **Retry 5xx, 429, and no response with backoff and jitter; surface 400, 401, 403, 404, and 413.** A retry may help; it doesn't make repeating a write safe.
 - **A 400 from `/api/v3/write_lp` can be a partial write.** With the default `accept_partial=true`, the valid lines are stored, and the response body lists the rejected ones (the `data` array, with each `line_number`). Resend only the corrected rejected lines, matching on the status and that list rather than the message text.
 - **On the compatibility endpoints (`/api/v2/write` and `/write`), one invalid line rejects the whole batch.** Fix it and resend the whole batch.
@@ -231,6 +232,7 @@ These rules apply to every answer that uses a token, including the commands in t
 - **The create response shows a token's secret once.** Save it right away in an environment variable, such as `INFLUXDB_ADMIN_TOKEN` in a `.env` file. The server can't return it later.
 - **On Core, create named admin tokens for applications.** Core has no `--permission` flag or resource-token API ([`references/tokens.md` → "InfluxDB 3 Core: admin tokens only"](references/tokens.md#influxdb-3-core-admin-tokens-only)).
 - Rotate in this order: **create the new token with the same permissions, swap the secret or env var, confirm every consumer uses the replacement, then revoke the old token.** A fixed wait alone doesn't show that consumers switched, so keep revocation a separate step that runs after that confirmation.
+  When the developer pastes a token, give both commands in the same reply: `influxdb3 create token` for the replacement and `influxdb3 delete token --token-name <name> --token "$INFLUXDB_ADMIN_TOKEN"` for the exposed token, and link [`references/tokens.md` → "Token rotation pattern"](references/tokens.md#token-rotation-pattern).
 
 | Goal | Read |
 |---|---|

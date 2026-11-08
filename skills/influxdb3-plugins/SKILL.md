@@ -14,7 +14,7 @@ metadata:
   version: "0.7.3"
   docs_checked: "2026-10-24"
   docs_checked_against: "influxdb3-core 3.12.1, influxdb3-enterprise 3.12.1"
-  live_verified: "2026-10-24"
+  live_verified: "2026-11-06"
 ---
 
 # InfluxDB 3 Processing Engine Plugins Skill
