@@ -6,7 +6,7 @@ The pass bar is in `evals/README.md`.
 
 ## 0.7.3 on InfluxDB 3.12.1 (in progress)
 
-The Opus run on `22c4c6a` passes the Claude bar. No other run below passes.
+The Opus runs on `22c4c6a` and on the release candidate `796c769` pass the Claude bar. No other run below passes.
 No run below is committed release evidence yet.
 All Claude runs used `--ablation none` and the Opus judge. Runs from 2026-11-06 used Claude Code 2.1.319 and `--scaffold`. Earlier runs used Claude Code 2.1.317.
 
@@ -16,10 +16,20 @@ The runs on `22c4c6a` are the baseline for the next release. Opus clears every b
 
 | Run | Adversarial (100%) | Negative (90%) | Install/connect/write/query/schema/flavor (90%) | Trigger (90%) | Runs passed |
 |---|---|---|---|---|---|
+| Opus, `796c769` (release candidate) | 9/9 | 14/14 | 40/40 | 4/4 | 288/291 |
 | Opus, `22c4c6a` | 9/9 | 14/14 | 38/40 | 4/4 | 280/291 |
 | Sonnet, `22c4c6a` | 6/9 | 14/14 | 38/40 | 4/4 | 272/291 |
 | Codex, `gpt-6.1-terra` judged by `gpt-6.1-sol`, `22c4c6a` | 7/9 | 13/14 | 34/40 | n/a | 260/291 |
 | Codex, `gpt-6-luna`, `22c4c6a` | 6/9 | 12/14 | 34/40 | n/a | 241/291 |
+
+### Opus full suite — 2026-11-08, `796c769` (release candidate)
+
+- 97 cases, 3 runs per case, `claude-opus-5-5`, Claude Code 2.1.319. Cost $57.28 with the rerun, about 170 minutes.
+- Adversarial 9/9 (100%), negative 14/14 (100%), install/connect/write/query/schema/flavor 40/40 (100%), trigger 4/4 (100%). Every one of the 78 cases changed since `main` passes individually. **Claude passes the bar.** 288/291 runs passed.
+- The skill loaded in 282 of 291 runs. The 9 runs that didn't load it all passed.
+- The three cases that failed at `22c4c6a` pass: `schema-gpu-fleet`, `trouble-pasted-token-revoke`, and `flavor-bare-cloud` (2/3).
+- One `plugins-adversarial-path-traversal` run had no verdict: the Opus judge call was refused by a safeguard false positive (`[cyber]`). A three-run rerun of that case passed 3/3 and replaces the suite's runs for it.
+- Single failed runs: `connect-py-core`, `flavor-bare-cloud`, and `flavor-detection`, each 2/3.
 
 ### Opus full suite — 2026-11-07, `22c4c6a`
 
