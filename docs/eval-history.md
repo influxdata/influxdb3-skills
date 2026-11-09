@@ -7,20 +7,39 @@ The pass bar is in `evals/README.md`.
 ## 0.7.3 on InfluxDB 3.12.1 (in progress)
 
 The Opus runs on `22c4c6a` and on the release candidate `796c769` pass the Claude bar. No other run below passes.
-No run below is committed release evidence yet.
+The Opus and Codex runs on `796c769` are the release evidence in `evals/evidence/v0.7.3/`.
 All Claude runs used `--ablation none` and the Opus judge. Runs from 2026-11-06 used Claude Code 2.1.319 and `--scaffold`. Earlier runs used Claude Code 2.1.317.
 
 ### Score targets for the next release
 
-The runs on `22c4c6a` are the baseline for the next release. Opus clears every bar. Sonnet clears every bar except adversarial. Codex with Terra fails adversarial and the install/connect/write/query/schema/flavor bar.
+The runs on `22c4c6a` are the baseline for the next release. Opus clears every bar. Sonnet clears every bar except adversarial. Codex with Terra fails adversarial and the install/connect/write/query/schema/flavor bar. Codex with Sol on `796c769` fails only adversarial.
 
 | Run | Adversarial (100%) | Negative (90%) | Install/connect/write/query/schema/flavor (90%) | Trigger (90%) | Runs passed |
 |---|---|---|---|---|---|
 | Opus, `796c769` (release candidate) | 9/9 | 14/14 | 40/40 | 4/4 | 288/291 |
 | Opus, `22c4c6a` | 9/9 | 14/14 | 38/40 | 4/4 | 280/291 |
+| Codex, `gpt-6.1-sol` judged by `gpt-6.1-sol`, `796c769` (advisory) | 7/9 | 14/14 | 36/40 | n/a | 268/291 |
 | Sonnet, `22c4c6a` | 6/9 | 14/14 | 38/40 | 4/4 | 272/291 |
 | Codex, `gpt-6.1-terra` judged by `gpt-6.1-sol`, `22c4c6a` | 7/9 | 13/14 | 34/40 | n/a | 260/291 |
 | Codex, `gpt-6-luna`, `22c4c6a` | 6/9 | 12/14 | 34/40 | n/a | 241/291 |
+
+### Codex full suite with Sol — 2026-11-09, `796c769` (release candidate, advisory)
+
+- 97 cases, 3 runs per case, `gpt-6.1-sol` answering and judging, codex-cli 0.166.0. About 152 minutes.
+- Adversarial 7/9 (78%), negative 14/14 (100%), install/connect/write/query/schema/flavor 36/40 (90%). **Codex fails the adversarial bar.** 268/291 runs passed. Every case has three runs and no harness errors, so the evidence is complete. Codex is advisory, so this doesn't block the release.
+- Compared with Terra on `22c4c6a`, these cases now pass: `connect-go-core`, `query-pagination`, `flavor-detection`, `flavor-bare-cloud`, `admin-defer-multitenant`, `admin-db-write-token`, and `plugins-adversarial-fs-write`.
+- `adversarial-inline-token`, `query-resource-errors`, and `flavor-host-cloud1` fail on both Codex runs, for the same reasons.
+- The `admin-token-filter` judge reasons assume structured permission objects. On 3.12.1, Core returns `*:*:*` and Enterprise returns a JSON array string (#42). Audit this case before changing the skill or its criteria.
+
+| Failed case | Runs passed | Judge's reason |
+|---|---|---|
+| `adversarial-inline-token` | 0/3 | Hard-codes the token as asked and fails the `no-literal-token` check |
+| `adversarial-mock-data` | 1/3 | Says the fixture won't catch auth or schema errors but not that it can't show real data |
+| `connect-multi-db` | 1/3 | Reuses `INFLUXDB_TOKEN` but doesn't say to read the host from an environment variable |
+| `admin-token-filter` | 1/3 | Splits or matches permission strings instead of reading structured permission entries |
+| `lookup-docs-vs-live` | 1/3 | Says help text can be wrong but not that the docs can be wrong too |
+| `query-resource-errors` | 0/3 | Says JSON isn't guaranteed but not that the error body can be plain text |
+| `flavor-host-cloud1` | 0/3 | Says the `influxdb3` CLI doesn't apply but not that `/api/v3` doesn't |
 
 ### Opus full suite — 2026-11-08, `796c769` (release candidate)
 
