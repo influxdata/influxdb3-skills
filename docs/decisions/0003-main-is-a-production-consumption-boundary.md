@@ -25,7 +25,7 @@ The skills explain behavior needed for correct use and link to the API spec for 
 Each skill-changing merge requires the full existing release gate against its final text, plus applicable Enterprise and plugin checks.
 Process-only documentation changes require relevant checks.
 Changed-behavior eval cases must also pass individually under the existing three-run rules, including cases outside the aggregate gate categories.
-Claude Code and Codex results gate equally.
+Claude Code results gate the release. Codex results are advisory: they must be complete, with three runs per case, but their bars and required cases don't block a merge (amended 2026-11-09).
 
 Corrections for encountering an explicit-schema database are compatibility work.
 Teaching users to create or administer explicit schemas is a separate capability.
@@ -38,3 +38,12 @@ Version magnitude follows the change scope under the existing publishing policy.
 Gate and release-policy corrections can merge first with relevant verification because they do not change distributed skill contents.
 The compatibility PR includes its version bump, truthful verification metadata, changelog, and evidence before merge.
 It does not rely on a later release-preparation PR for production readiness.
+
+## Amendments
+
+### 2026-11-09: Codex results are advisory
+
+The original decision said Claude Code and Codex results gate equally.
+Codex has not met the adversarial bar on any 0.7.3 run, and one Codex judge reason on `796c769` conflicts with live 3.12.1 output.
+Codex evidence stays required and complete so its scores are tracked in `docs/eval-history.md`.
+Codex can gate again when it meets every bar.
