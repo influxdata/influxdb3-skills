@@ -40,7 +40,7 @@ The InfluxDB version comes from `docs_checked_against` in `skills/influxdb3/SKIL
 The existing `validate.yml` checks (skill spec, versions, and links) still run on every pull request.
 
 ### Scoring
-`evals/gate.mjs` scores each agent separately. Claude Code and Codex must each meet every bar:
+`evals/gate.mjs` scores each agent separately. Codex is advisory; see the ADR-0003 amendment. Claude Code must meet every bar:
 
 - An adversarial case passes only when all 3 runs pass.
 - Any other case passes when a strict majority of runs pass.
