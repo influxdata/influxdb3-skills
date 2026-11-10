@@ -127,7 +127,8 @@ export function score(prompts, runsById, { requiredCases = [], minRuns = 1, meas
     bars.push({ ...TRIGGER_BAR, categories: [], passed, total: triggerCases.length, rate, pass: rate >= TRIGGER_BAR.min });
   }
   const required = cases.filter((c) => requiredCases.includes(c.id));
-  const incomplete = cases.filter((c) => c.total < minRuns);
+  // A run that failed in the agent or judge gives no verdict, so it doesn't count toward complete evidence.
+  const incomplete = cases.filter((c) => c.total - c.errors < minRuns);
   return { cases, bars, triggerCases, required, incomplete, minRuns,
     pass: bars.every((bar) => bar.pass) && required.every((c) => c.pass) && incomplete.length === 0 };
 }
@@ -149,8 +150,8 @@ export function report(agent, { cases, bars, triggerCases = [], required, incomp
       ...required.map((c) => `| ${c.id} | ${c.passed}/${c.total} | ${c.pass && c.total >= minRuns ? 'pass' : '**fail**'} |`));
   }
   if (incomplete.length) {
-    lines.push('', `Incomplete evidence: at least ${minRuns} runs required for every case.`,
-      ...incomplete.map((c) => `- ${c.id}: ${c.total} runs`));
+    lines.push('', `Incomplete evidence: at least ${minRuns} runs without harness errors required for every case.`,
+      ...incomplete.map((c) => `- ${c.id}: ${c.total} runs, ${c.errors} with harness errors`));
   }
   const notLoaded = triggerCases.filter((c) => !c.pass);
   if (notLoaded.length) {
