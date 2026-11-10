@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 // Plan release verification and validate the evidence consumed by the existing gate.
 import { execFileSync } from 'node:child_process';
-import { readFileSync, realpathSync, appendFileSync } from 'node:fs';
+import { existsSync, readFileSync, realpathSync, appendFileSync } from 'node:fs';
 import { basename, resolve, sep } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
 import { uncitedLiveVerified } from './changelog-claims.mjs';
 import { readPrompts, mergeRuns, score, report } from './gate.mjs';
-import { RUNS_FORMAT } from './slim-evidence.mjs';
+import { RUNS_FORMAT, slimRuns } from './slim-evidence.mjs';
 
 function git(...args) {
   return execFileSync('git', args, { encoding: 'utf8' }).trim();
@@ -18,11 +18,48 @@ function changesSince(base) {
   return git('diff', '--no-renames', '--name-only', `${base}...HEAD`).split('\n').filter(Boolean);
 }
 
+const atBase = (base, path) => git('ls-tree', '--name-only', base, '--', path) === path;
+const showAtBase = (base, path) => execFileSync('git', ['show', `${base}:${path}`], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+
+// A full result file may leave released evidence only when the runs file that
+// replaces it holds exactly the runs recomputed from it.
+function slimmedExactly(base, full) {
+  const runsPath = full.replace(/\.json$/, '.runs.json');
+  if (!atBase(base, full) || existsSync(full) || atBase(base, runsPath) || !existsSync(runsPath)) return false;
+  const runs = JSON.parse(readFileSync(runsPath, 'utf8'));
+  const text = showAtBase(base, full);
+  return isDeepStrictEqual(runs, slimRuns(runs.agent, text, { validateRuns: false }));
+}
+
+// A released manifest may change only by pointing its entries at slimmed runs files.
+function manifestOnlySlimmed(base, path) {
+  if (!atBase(base, path) || !existsSync(path)) return false;
+  const dir = path.slice(0, path.lastIndexOf('/') + 1);
+  const before = JSON.parse(showAtBase(base, path));
+  const after = JSON.parse(readFileSync(path, 'utf8'));
+  for (const agent of ['claude', 'codex']) {
+    for (const [i, entry] of (after[agent] ?? []).entries()) {
+      const old = before[agent]?.[i];
+      if (!old || entry.file === old.file) continue;
+      const runsPath = `${dir}${entry.file}`.replace(/\/[^/]+\/\.\.\//g, '/');
+      if (entry.file !== old.file.replace(/\.json$/, '.runs.json') || !existsSync(runsPath) ||
+          entry.source_sha256 !== JSON.parse(readFileSync(runsPath, 'utf8')).source_sha256) return false;
+      after[agent][i] = { ...entry, file: old.file };
+      delete after[agent][i].source_sha256;
+    }
+  }
+  return isDeepStrictEqual(before, after);
+}
+
 function immutableEvidence(base, changed) {
   if (!base) return;
-  const dirs = new Set(changed.map((p) => p.match(/^evals\/evidence\/[^/]+\//)?.[0]).filter(Boolean));
-  for (const dir of dirs) {
-    if (git('ls-tree', '-r', '--name-only', base, '--', dir)) throw new Error(`released evidence is immutable: ${dir}`);
+  for (const path of changed) {
+    const dir = path.match(/^evals\/evidence\/[^/]+\//)?.[0];
+    if (!dir || !git('ls-tree', '-r', '--name-only', base, '--', dir)) continue;
+    const allowed = path.endsWith('/manifest.json') ? manifestOnlySlimmed(base, path)
+      : path.endsWith('.runs.json') ? slimmedExactly(base, path.replace(/\.runs\.json$/, '.json'))
+      : slimmedExactly(base, path);
+    if (!allowed) throw new Error(`released evidence is immutable: ${dir}`);
   }
 }
 

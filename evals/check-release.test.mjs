@@ -169,6 +169,33 @@ test('an evidence-only PR cannot rewrite any released version', (t) => {
   assert.match(r.stderr, /immutable/);
 });
 
+test('released evidence can only be replaced by the exact runs recomputed from it', (t) => {
+  const f = fixture(t);
+  const full = JSON.stringify({ model: 'm', judgeModel: 'j', results: [1, 2, 3].map((run) => ({ id: 'plugins', run, pass: run > 1 })) });
+  f.write('evals/evidence/v0.7.0/codex.json', full);
+  f.write('evals/evidence/v0.7.0/manifest.json', JSON.stringify({ release: 'v0.7.0', claude: [], codex: [{ file: 'codex.json', runs: 3 }] }));
+  f.commit();
+  const base = f.git('rev-parse', 'HEAD');
+  const slim = slimRuns('codex', full);
+  f.git('rm', '-q', 'evals/evidence/v0.7.0/codex.json');
+  f.write('evals/evidence/v0.7.0/codex.runs.json', JSON.stringify(slim));
+  f.write('evals/evidence/v0.7.0/manifest.json', JSON.stringify({ release: 'v0.7.0', claude: [],
+    codex: [{ file: 'codex.runs.json', runs: 3, source_sha256: slim.source_sha256 }] }));
+  f.commit();
+  const exact = f.run('plan', '--base', base);
+  assert.equal(exact.status, 0, exact.stderr);
+  slim.cases.plugins[0].passed = true;
+  f.write('evals/evidence/v0.7.0/codex.runs.json', JSON.stringify(slim));
+  f.commit();
+  assert.match(f.run('plan', '--base', base).stderr, /immutable/, 'edited runs must not replace released evidence');
+  slim.cases.plugins[0].passed = false;
+  f.write('evals/evidence/v0.7.0/codex.runs.json', JSON.stringify(slim));
+  f.write('evals/evidence/v0.7.0/manifest.json', JSON.stringify({ release: 'v0.7.0', claude: [],
+    codex: [{ file: 'codex.runs.json', runs: 1, source_sha256: slim.source_sha256 }] }));
+  f.commit();
+  assert.match(f.run('plan', '--base', base).stderr, /immutable/, 'other manifest edits stay blocked');
+});
+
 test('release verification rejects Live-verified changelog lines without a claim ID', (t) => {
   const f = fixture(t);
   f.write('plugin.json', '{"version":"0.7.3"}');

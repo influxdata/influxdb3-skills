@@ -5,64 +5,70 @@
   "run_by": "jstirnaman",
   "claude": [
     {
-      "file": "claude-full-suite.json",
+      "file": "claude-full-suite.runs.json",
       "date": "2026-09-28",
       "cases": "all 65",
       "runs": 3,
       "judge": "haiku",
       "claude_code": "2.1.283",
       "skills_tree": "fd06f78",
-      "prompts_blob": "7a83d94"
+      "prompts_blob": "7a83d94",
+      "source_sha256": "89c9c22279df8dd496e68b52572977a89d77dc108d8cfe18f46491023d1ff976"
     },
     {
-      "file": "claude-reruns.json",
+      "file": "claude-reruns.runs.json",
       "date": "2026-09-28",
       "cases": "6 cases changed by 6d17b4e and 1a0538f",
       "runs": 3,
       "judge": "sonnet",
       "claude_code": "2.1.284",
       "skills_tree": "12d6ecb",
-      "prompts_blob": "0519bec"
+      "prompts_blob": "0519bec",
+      "source_sha256": "117f1847129d8877c7a665d5f6a3ff0f475d4431be1693a14e7de279a12f5564"
     },
     {
-      "file": "claude-rerun-revoke.json",
+      "file": "claude-rerun-revoke.runs.json",
       "date": "2026-09-28",
       "cases": "trouble-pasted-token-revoke",
       "runs": 3,
       "judge": "sonnet",
       "claude_code": "2.1.284",
       "skills_tree": "10f40c3",
-      "prompts_blob": "0519bec"
+      "prompts_blob": "0519bec",
+      "source_sha256": "aefbd189d2ff67f50a65a5545fc8d95bfd2f941358a5d0a99defe97bb32ad2f4"
     }
   ],
   "codex": [
     {
-      "file": "codex-full-suite.json",
+      "file": "codex-full-suite.runs.json",
       "date": "2026-09-28",
       "cases": "all 65",
       "runs": 1,
       "model": "gpt-5.6-terra",
       "judge": "gpt-5.6-luna",
       "skills_tree": "fd06f78",
-      "prompts_blob": "7a83d94"
+      "prompts_blob": "7a83d94",
+      "source_sha256": "9c82aed71f7c0f5f9b1a55ecb3bed110b9ee1702c06e59e83e6efe9bc8fc4a03"
     },
     {
-      "file": "codex-write-batch.json",
+      "file": "codex-write-batch.runs.json",
       "date": "2026-09-28",
       "cases": "write-batch-csharp, write-batch-python",
       "runs": 3,
       "model": "gpt-5.6-terra",
       "judge": "gpt-5.6-luna",
-      "skills_tree": "before 1a0538f; write-batch-python ran before the python.md example"
+      "skills_tree": "before 1a0538f; write-batch-python ran before the python.md example",
+      "source_sha256": "0c599aa1cffecc4429f7e62aed3270c39d2dd85ef57beb422b6ac6dd64c27e38"
     },
     {
-      "file": "codex-reruns.json",
+      "file": "codex-reruns.runs.json",
       "date": "2026-09-28",
       "cases": "6 cases changed by 6d17b4e and 1a0538f",
       "runs": 3,
       "model": "gpt-5.6-terra",
       "judge": "gpt-5.6-luna",
-      "skills_tree": "12d6ecb for the first 12 runs; 10f40c3 for trouble-pasted-token-revoke and write-batch-python"
+      "skills_tree": "12d6ecb for the first 12 runs; 10f40c3 for trouble-pasted-token-revoke and write-batch-python",
+      "source_sha256": "a40a45043547997bfba979466447c5359fe86a51bcade453dc153c401b9b1aff"
     }
   ]
 }

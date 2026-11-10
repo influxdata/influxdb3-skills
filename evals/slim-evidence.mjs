@@ -14,11 +14,12 @@ import { runsFromClaude, runsFromCodex } from './gate.mjs';
 export const RUNS_FORMAT = 'runs-v1';
 
 // Validates run identities against the full file, then keeps one {passed, error, loaded?} entry per run.
-export function slimRuns(agent, text) {
+// Evidence from before the identity rules (0.7.0) is slimmed with validateRuns: false.
+export function slimRuns(agent, text, { validateRuns = true } = {}) {
   const result = JSON.parse(text);
   let runs;
-  if (agent === 'claude') runs = runsFromClaude(result, { validateRuns: true });
-  else if (agent === 'codex') runs = runsFromCodex(result, { validateRuns: true });
+  if (agent === 'claude') runs = runsFromClaude(result, { validateRuns });
+  else if (agent === 'codex') runs = runsFromCodex(result, { validateRuns });
   else throw new Error(`unknown agent: ${agent}`);
   return {
     format: RUNS_FORMAT,
