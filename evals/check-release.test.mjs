@@ -5,6 +5,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync, renameSync } from 'node:
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { uncitedLiveVerified } from './changelog-claims.mjs';
+import { slimRuns } from './slim-evidence.mjs';
 
 const command = resolve('evals/check-release.mjs');
 
@@ -62,7 +63,7 @@ test('release verification checks version, exact evidence hashes, required cases
   };
   f.write('docs/review.md', 'Reviewed.\n');
   for (const agent of ['claude', 'codex']) {
-    manifest[agent] = [{ file: `${agent}.json`, skills_tree: manifest.skills_tree, prompts_blob: manifest.prompts_blob, runs: 3,
+    manifest[agent] = [{ file: `${agent}.runs.json`, skills_tree: manifest.skills_tree, prompts_blob: manifest.prompts_blob, runs: 3,
       model: 'fixed-answer-model', judge: 'fixed-judge', cli_version: '1.0' }];
   }
   const save = () => {
@@ -70,21 +71,30 @@ test('release verification checks version, exact evidence hashes, required cases
       r.startedAt ??= new Date(1700000000000 + i * 1000).toISOString();
       r.tracePath ??= `/tmp/${c.name}/session-${i}/trace.jsonl`;
     });
+    for (const [agent, full] of [['claude', claude], ['codex', codex]]) {
+      const slim = slimRuns(agent, JSON.stringify(full));
+      manifest[agent][0].source_sha256 = slim.source_sha256;
+      f.write(`evals/evidence/v0.7.3/${agent}.runs.json`, JSON.stringify(slim));
+    }
     f.write('evals/evidence/v0.7.3/manifest.json', JSON.stringify(manifest));
-    f.write('evals/evidence/v0.7.3/claude.json', JSON.stringify(claude));
-    f.write('evals/evidence/v0.7.3/codex.json', JSON.stringify(codex));
     f.commit();
     return f.run('verify', '--base', f.base);
   };
   const good = save();
   assert.equal(good.status, 0, good.stderr);
+  f.write('evals/evidence/v0.7.3/codex.runs.json', JSON.stringify({ ...slimRuns('codex', JSON.stringify(codex)), source_sha256: 'f'.repeat(64) }));
+  f.commit();
+  assert.match(f.run('verify', '--base', f.base).stderr, /source_sha256 does not match/);
+  f.write('evals/evidence/v0.7.3/claude.runs.json', JSON.stringify(claude));
+  f.commit();
+  assert.match(f.run('verify', '--base', f.base).stderr, /not a claude runs-v1 file/);
   manifest.review_record = 'docs/missing.md';
   assert.match(save().stderr, /review_record/);
   manifest.review_record = 'docs/review.md';
   codex.judgeModel = 'other-judge';
   assert.match(save().stderr, /result models do not match/);
   codex.judgeModel = 'fixed-judge';
-  manifest.claude.push({ ...manifest.claude[0], file: 'claude.json', judge: 'other-judge' });
+  manifest.claude.push({ ...manifest.claude[0], judge: 'other-judge' });
   assert.match(save().stderr, /model changed during measurement/);
   manifest.claude.pop();
   manifest.skills_tree = '0'.repeat(40);

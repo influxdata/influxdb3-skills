@@ -5,7 +5,8 @@ import { readFileSync, realpathSync, appendFileSync } from 'node:fs';
 import { basename, resolve, sep } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
 import { uncitedLiveVerified } from './changelog-claims.mjs';
-import { readPrompts, mergeRuns, runsFromClaude, runsFromCodex, score, report } from './gate.mjs';
+import { readPrompts, mergeRuns, score, report } from './gate.mjs';
+import { RUNS_FORMAT } from './slim-evidence.mjs';
 
 function git(...args) {
   return execFileSync('git', args, { encoding: 'utf8' }).trim();
@@ -73,7 +74,7 @@ function verify(base, changed) {
       throw new Error(`${agent} answer or judge model changed during measurement`);
     }
     const maps = manifest[agent].map((entry) => {
-      if (typeof entry.file !== 'string' || basename(entry.file) !== entry.file || !entry.file.endsWith('.json')) {
+      if (typeof entry.file !== 'string' || basename(entry.file) !== entry.file || !entry.file.endsWith('.runs.json')) {
         throw new Error(`invalid ${agent} evidence filename`);
       }
       const file = realpathSync(`${dir}/${entry.file}`);
@@ -81,14 +82,19 @@ function verify(base, changed) {
       if (entry.skills_tree !== manifest.skills_tree || entry.prompts_blob !== manifest.prompts_blob) {
         throw new Error(`${entry.file}: evidence hashes do not match manifest`);
       }
-      if (!entry.model || !entry.judge || !(entry.cli_version || entry.claude_code || entry.codex_cli) || entry.runs !== 3) {
+      if (!entry.model || !entry.judge || !entry.cli_version || entry.runs !== 3) {
         throw new Error(`${entry.file}: record model, judge, CLI version, and three runs per case`);
       }
+      if (!/^[0-9a-f]{64}$/.test(entry.source_sha256 ?? '')) throw new Error(`${entry.file}: record the full result file's source_sha256`);
       const result = JSON.parse(readFileSync(file, 'utf8'));
+      if (result.format !== RUNS_FORMAT || result.agent !== agent || typeof result.cases !== 'object') {
+        throw new Error(`${entry.file}: not a ${agent} ${RUNS_FORMAT} file from evals/slim-evidence.mjs`);
+      }
+      if (result.source_sha256 !== entry.source_sha256) throw new Error(`${entry.file}: source_sha256 does not match the manifest`);
       if (agent === 'codex' && (result.model !== entry.model || result.judgeModel !== entry.judge)) {
         throw new Error(`${entry.file}: result models do not match the manifest`);
       }
-      return agent === 'claude' ? runsFromClaude(result, { validateRuns: true }) : runsFromCodex(result, { validateRuns: true });
+      return new Map(Object.entries(result.cases));
     });
     const scored = score(prompts, mergeRuns(maps), { requiredCases: manifest.required_cases, minRuns: 3, measuresTrigger: agent === 'claude' });
     // Codex is advisory until it meets the bars: its results must be complete, but its bars and required cases don't block.

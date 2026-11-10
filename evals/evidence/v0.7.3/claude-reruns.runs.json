@@ -1,0 +1,21 @@
+{
+  "format": "runs-v1",
+  "agent": "claude",
+  "source_sha256": "a7e006b669cd569114c06b716f3a220c77ceef944dc1f3244950129da9b62a14",
+  "cases": {
+    "plugins-adversarial-path-traversal": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ]
+  }
+}

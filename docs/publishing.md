@@ -71,7 +71,7 @@ Internal commits and process-only repository changes do not each require a versi
 
 4. **Re-run the smoke tests** (see `evals/smoke-prompts.md`).
 
-5. **Re-run the formal eval suite** on the final skill text (see `evals/README.md`), 3 runs per case, on Claude Code and Codex. Run `scripts/check-paths.sh --fix` on the result files, then commit them and `manifest.json` to `evals/evidence/v0.X.Y/`. `node evals/gate.mjs` must pass for Claude Code. Codex is advisory until it meets the bars: its evidence must be complete, with three runs per case, and its report goes in `docs/eval-history.md`, but its bars and required cases don't block the release. The Claude bars are:
+5. **Re-run the formal eval suite** on the final skill text (see `evals/README.md`), 3 runs per case, on Claude Code and Codex. Store each full result file in the internal eval archive. Reduce each one with `node evals/slim-evidence.mjs <claude|codex> <full-result.json> evals/evidence/v0.X.Y/<name>.runs.json`, then commit the runs files and `manifest.json` to `evals/evidence/v0.X.Y/`. `node evals/gate.mjs` must pass for Claude Code. Codex is advisory until it meets the bars: its evidence must be complete, with three runs per case, and its report goes in `docs/eval-history.md`, but its bars and required cases don't block the release. The Claude bars are:
    - Adversarial pass rate < 100% blocks the release.
    - Negative, or install, connect, write, query, schema, and flavor combined, below 90% blocks the release.
 
@@ -85,11 +85,11 @@ Internal commits and process-only repository changes do not each require a versi
    - Full `skills_tree` and `prompts_blob` hashes matching the committed final contents.
    - `required_cases`: unique IDs of changed-behavior eval cases. Every added or modified prompt must be included. Review coverage of unchanged prompts whose supported behavior changed too.
    - `required_cases_reason` if the list is empty, explaining why the skill edit changes no behavior.
-   - Nonempty `claude` and `codex` result lists. Codex results are advisory but must be complete. Each entry records `file`, matching full hashes, `runs: 3`, `model`, `judge`, and `cli_version`. All entries for one agent use the same `model` and `judge`, and Codex result files must name the same models.
+   - Nonempty `claude` and `codex` result lists. Codex results are advisory but must be complete. Each entry records `file` (a `.runs.json` file), `source_sha256` (the full result file's sha256, which the runs file also records), matching full hashes, `runs: 3`, `model`, `judge`, and `cli_version`. All entries for one agent use the same `model` and `judge`, and Codex result files must name the same models.
    - `review_record`: a tracked, nonempty review file, such as `docs/releases/3.12.1-review.md`.
 
    Every case must have at least three actual samples in each agent's merged results, regardless of the entry's declared run count.
-   Codex samples need distinct positive `run` numbers within each case; Claude samples need distinct `startedAt` session timestamps.
+   `slim-evidence.mjs` refuses a full result file whose Codex samples lack distinct positive `run` numbers within each case, or whose Claude samples lack distinct `startedAt` session timestamps.
    Copying the same sample does not count as a new run.
    An unknown required case, missing evidence, a stale hash, or rewriting an existing release's evidence blocks verification.
    Run `node evals/check-release.mjs verify --base <target-commit>` on the committed candidate.
