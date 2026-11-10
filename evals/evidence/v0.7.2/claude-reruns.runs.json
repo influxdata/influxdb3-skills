@@ -1,0 +1,77 @@
+{
+  "format": "runs-v1",
+  "agent": "claude",
+  "source_sha256": "3e1fcd7ddc633220a60620a584a77e4e550bf725ccb238ba414b73fea7f5f6cc",
+  "cases": {
+    "install-other-methods": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "admin-defer-airgapped": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "trouble-defer-cluster-plugin": [
+      {
+        "passed": false,
+        "error": null
+      },
+      {
+        "passed": false,
+        "error": null
+      },
+      {
+        "passed": false,
+        "error": null
+      }
+    ],
+    "http-curl-cloud-dedicated": [
+      {
+        "passed": false,
+        "error": null
+      },
+      {
+        "passed": false,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "write-precision": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ]
+  }
+}
