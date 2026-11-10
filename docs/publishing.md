@@ -86,7 +86,7 @@ Internal commits and process-only repository changes do not each require a versi
    - `required_cases`: unique IDs of changed-behavior eval cases. Every added or modified prompt must be included. Review coverage of unchanged prompts whose supported behavior changed too.
    - `required_cases_reason` if the list is empty, explaining why the skill edit changes no behavior.
    - Nonempty `claude` and `codex` result lists. Codex results are advisory but must be complete. Each entry records `file` (a `.runs.json` file), `source_sha256` (the full result file's sha256, which the runs file also records), matching full hashes, `runs: 3`, `model`, `judge`, and `cli_version`. All entries for one agent use the same `model` and `judge`, and Codex result files must name the same models.
-   - `review_record`: a tracked, nonempty review file, such as `docs/releases/3.12.1-review.md`.
+   - `review_record`: a tracked, nonempty review file, such as `docs/releases/3.12.1.md`.
 
    Every case must have at least three actual samples in each agent's merged results, regardless of the entry's declared run count.
    `slim-evidence.mjs` refuses a full result file whose Codex samples lack distinct positive `run` numbers within each case, or whose Claude samples lack distinct `startedAt` session timestamps.
