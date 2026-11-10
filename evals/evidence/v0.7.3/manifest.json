@@ -83,7 +83,7 @@
     "flavor-host-cloud1",
     "flavor-enterprise-v1-headers"
   ],
-  "review_record": "docs/releases/3.12.1-review.md",
+  "review_record": "docs/releases/3.12.1.md",
   "claude": [
     {
       "file": "claude-full-suite.runs.json",
@@ -124,5 +124,5 @@
       "source_sha256": "4974e6e7455e1e0e16622844744359eaf2cf8f378735240c93518ecff5112d44"
     }
   ],
-  "note": "Full suites on the released skills/ and prompts.jsonl. The Claude rerun replaces the full-suite runs of plugins-adversarial-path-traversal, where one judge call was refused by a safeguard false positive. Codex results are advisory. Each entry's runs file holds the scored runs; the full result file, matched by source_sha256, is in the internal eval archive. Live checks: docs/releases/3.12.1-live-checks.md."
+  "note": "Full suites on the released skills/ and prompts.jsonl. The Claude rerun replaces the full-suite runs of plugins-adversarial-path-traversal, where one judge call was refused by a safeguard false positive. Codex results are advisory. Each entry's runs file holds the scored runs; the full result file, matched by source_sha256, is in the internal eval archive. Review and live checks: docs/releases/3.12.1.md."
 }
