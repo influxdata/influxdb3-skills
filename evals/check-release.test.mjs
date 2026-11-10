@@ -117,6 +117,11 @@ test('release verification checks version, exact evidence hashes, required cases
   const advisory = save();
   assert.equal(advisory.status, 0, 'Codex bar and required-case failures are advisory');
   assert.match(advisory.stdout, /Codex \(advisory\): FAIL/);
+  codex.results.find((r) => r.id === 'plugins').reason = 'judge failed: no verdict';
+  const harnessError = save();
+  assert.equal(harnessError.status, 1, 'advisory Codex evidence still needs three runs without harness errors');
+  assert.match(harnessError.stdout, /plugins: 3 runs, 1 with harness errors/);
+  delete codex.results.find((r) => r.id === 'plugins').reason;
   codex.results.forEach((r) => { r.pass = true; });
   f.write('evals/prompts.jsonl', prompts.map((p) => JSON.stringify({ ...p, prompt: 'Updated' })).join('\n'));
   f.commit();
