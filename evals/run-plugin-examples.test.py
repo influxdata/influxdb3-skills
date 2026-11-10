@@ -61,5 +61,47 @@ class CleanupTests(unittest.TestCase):
             self.assertFalse(saved["cleanup"][0]["passed"])
 
 
+class OfflineTestCaseTests(unittest.TestCase):
+    def runner(self, directory, cases):
+        (directory / ".influxdb3-core-admin-token.json").write_text('{"token":"fixture-only-token"}')
+        with patch.object(Path, "home", return_value=directory):
+            return runner_module.Runner("core", directory, 5, 30, cases)
+
+    def test_offline_test_is_staged_through_the_api_not_docker_cp(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            runner = self.runner(Path(temporary), ["offline_test"])
+            copied = []
+
+            def run(command, **kwargs):
+                if command[:2] == ["docker", "cp"]:
+                    copied.extend(path.name for path in Path(command[2]).rglob("*"))
+                return subprocess.CompletedProcess(command, 1 if "test" in command else 0, "", "")
+
+            with patch.object(subprocess, "run", side_effect=run):
+                runner.stage()
+            self.assertEqual(copied, [])
+            self.assertTrue(runner.staged)
+
+    def test_cli_test_passes_the_token_only_through_the_environment(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            runner = self.runner(Path(temporary), ["offline_test"])
+            stdout = '{"log_lines": [], "database_writes": {}, "errors": []}'
+            with patch.object(subprocess, "run", return_value=subprocess.CompletedProcess([], 0, stdout, "")) as run:
+                runner.cli_test("wal_plugin", "db", "offline_test/plugin.py", "--lp", "m f=1")
+            command, kwargs = run.call_args.args[0], run.call_args.kwargs
+            self.assertNotIn("fixture-only-token", " ".join(command))
+            self.assertEqual(kwargs["env"]["INFLUXDB3_AUTH_TOKEN"], "fixture-only-token")
+            self.assertEqual(command[-1], runner.prefix + "/offline_test/plugin.py")
+            self.assertNotIn("fixture-only-token", runner.output.read_text())
+
+    def test_cli_test_fails_when_the_plugin_reports_errors(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            runner = self.runner(Path(temporary), ["offline_test"])
+            stdout = '{"log_lines": [], "database_writes": {}, "errors": ["boom"]}'
+            with patch.object(subprocess, "run", return_value=subprocess.CompletedProcess([], 0, stdout, "")), \
+                    self.assertRaises(AssertionError):
+                runner.cli_test("wal_plugin", "db", "offline_test/plugin.py")
+
+
 if __name__ == "__main__":
     unittest.main()
