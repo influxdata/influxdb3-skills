@@ -108,7 +108,7 @@ Incomplete three-run coverage blocks either agent.
 Existing `must_pass` markers do not select required cases automatically.
 The release manifest's explicit `required_cases` list selects them for CI.
 
-For every skill-changing merge, commit result files and `manifest.json` under the new shared package version.
+For every skill-changing merge, store the full result files in the internal eval archive, and commit their runs files from `evals/slim-evidence.mjs` and `manifest.json` under the new shared package version.
 See `docs/publishing.md` for the current manifest fields; historical manifests do not satisfy the new requirements automatically.
 The release workflow runs even without a label and validates versioning, immutable evidence, full hashes, required cases, and three-run coverage through `node evals/check-release.mjs verify --base <target-commit>`.
 It also runs Core application examples; Enterprise and plugin checks remain separate recorded obligations.

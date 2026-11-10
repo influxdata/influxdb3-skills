@@ -101,3 +101,13 @@ Evidence files are committed publicly, so strip local paths from them. The only 
 - Bumping the pinned `claude-code` or `codex` CLI version is a deliberate change that can move scores. Record it in `eval-history.md`.
 - `run-codex-evals.mjs` passes the judge only the case's own prompt, not the earlier turn a `follows` case includes. Fix that before trusting Codex verdicts on `follows` cases.
 - Scoring a 3-run suite with these rules is stricter than the harness's own `casesPassed` for adversarial cases, and looser for the rest.
+
+## Amendments
+
+### 2026-11-10: Commit scored runs, not full result files
+
+From 0.7.3, the evidence directory holds a `.runs.json` file per result file instead of the result file itself.
+`evals/slim-evidence.mjs` writes it: each run's pass, harness error, and skill-loaded values, the Codex models, and the sha256 of the full result file.
+The full result files, with answers, traces, and judge reasons, go to the internal eval archive, matched by that sha256.
+The full files were up to 1.1 MB each and don't belong in the published plugin, and release verification needs only the scored runs.
+Evidence for 0.7.0 through 0.7.2 stays as committed, because released evidence is immutable.

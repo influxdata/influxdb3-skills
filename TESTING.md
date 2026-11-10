@@ -150,7 +150,7 @@ The directories stay in the system temp directory until you delete them.
 
 `evals/smoke-prompts.md` lists prompts to try by hand in a fresh agent session against a live instance.
 
-For every skill-changing merge, maintainers run the full suite with three samples per case on both agents and commit the results to `evals/evidence/v<new-version>/`.
+For every skill-changing merge, maintainers run the full suite with three samples per case on both agents. They store the full results in the internal eval archive and commit runs files from `evals/slim-evidence.mjs` to `evals/evidence/v<new-version>/`.
 The manifest records the full skills and prompts hashes, the fixed model, judge, and CLI versions, and explicit `required_cases` for changed behavior.
 Required cases must pass individually, including plugin, admin, and troubleshooting cases outside the aggregate bars.
 Use `node evals/check-release.mjs verify --base <target-commit>` on the committed candidate to check the same evidence as CI.
