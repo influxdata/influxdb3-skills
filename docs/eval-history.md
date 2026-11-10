@@ -94,7 +94,7 @@ The runs on `22c4c6a` are the baseline for the next release. Opus clears every b
 
 - 97 cases, 3 runs per case, `gpt-6.1-terra` answering and `gpt-6.1-sol` judging, codex-cli 0.166.0. About 125 minutes.
 - Adversarial 7/9 (78%), negative 13/14 (93%), install/connect/write/query/schema/flavor 34/40 (85%). **Codex fails the bar.** 260/291 runs passed.
-- These are now the runner defaults. `gpt-6-luna` was too weak a judge.
+- `gpt-6-luna` was too weak a judge. The runner now defaults to `gpt-6.1-sol` for both answers and judging, the setup of the 0.7.3 release evidence.
 - `flavor-bare-cloud` fails on Sonnet and on both Codex runs.
 
 | Failed case | Runs passed | Judge's reason |
