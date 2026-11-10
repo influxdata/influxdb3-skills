@@ -158,7 +158,7 @@ Full rationale, safe/unsafe examples, and the third-party-code note:
 
 Two layers:
 
-- **Offline (WAL + scheduled only)** — `influxdb3 test wal_plugin` and `influxdb3 test schedule_plugin`. There is no offline test for HTTP request plugins; test those by creating a real trigger and `curl`-ing the endpoint.
+- **Offline (WAL + scheduled only)** — put the file on the server without a trigger, then run `influxdb3 test wal_plugin` or `influxdb3 test schedule_plugin`. There is no offline test for HTTP request plugins; test those by creating a real trigger and `curl`-ing the endpoint.
 - **Live** — `influxdb3 create trigger ... --error-behavior log`, cause it to fire, then `SELECT event_time, trigger_name, log_level, log_text FROM system.processing_engine_logs WHERE trigger_name='<name>' ORDER BY event_time DESC LIMIT 50`. Iterate with `influxdb3 update trigger --path` (preserves spec/args).
 
 Full reference + log queries + error-behavior modes + cache inspection: [`references/testing.md`](references/testing.md). CLI flag reference: [`references/triggers-cli.md`](references/triggers-cli.md).

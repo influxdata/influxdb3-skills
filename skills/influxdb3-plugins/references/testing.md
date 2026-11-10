@@ -19,7 +19,14 @@ Two subcommands (HTTP request plugins are tested via real triggers):
 influxdb3 test wal_plugin [OPTIONS] --database <DATABASE> <FILENAME>
 ```
 
-The `<FILENAME>` is the plugin's filename **as it lives on the server** under `<plugin-dir>/<filename>` — the test command does NOT have `--upload`. The plugin file must already be in the server's plugin-dir (or created through `POST /api/v3/plugins/files` with JSON filename and source text). For local development, deploy first via a real `influxdb3 create trigger ... --upload`, or use the HTTP API to create the file alone.
+The `<FILENAME>` is the plugin's path relative to the server's plugin directory. The test command has no `--upload`, so put the file on the server first, without a trigger:
+
+- **Over HTTP:** `POST /api/v3/plugins/files` with JSON `plugin_name` and `content` creates the file. See [`installing.md`](installing.md) for the request. A `plugin_name` such as `dev/my_plugin.py` creates a subfolder.
+- **On the server:** copy the file into the plugin directory, for example through a container volume.
+
+Then run the offline test. Create the trigger only after the test passes.
+Don't create a trigger just to get the file onto the server: the trigger runs the untested code on live writes or on its schedule.
+There is no HTTP delete for plugin files. Remove a file you staged only for testing from the plugin directory on the server.
 
 Common flags:
 
