@@ -91,7 +91,7 @@ Internal commits and process-only repository changes do not each require a versi
    Every case must have at least three actual samples in each agent's merged results, regardless of the entry's declared run count.
    `slim-evidence.mjs` refuses a full result file whose Codex samples lack distinct positive `run` numbers within each case, or whose Claude samples lack distinct `startedAt` session timestamps.
    Copying the same sample does not count as a new run.
-   An unknown required case, missing evidence, a stale hash, or rewriting an existing release's evidence blocks verification.
+   An unknown required case, missing evidence, a stale hash, or rewriting an existing release's evidence blocks verification. The one allowed change replaces a released full result file with the runs file recomputed from it.
    Run `node evals/check-release.mjs verify --base <target-commit>` on the committed candidate.
 
 6. **Update `CHANGELOG.md`.** Separate packaging changes, documentation-grounded changes, and live-verified behavior changes.

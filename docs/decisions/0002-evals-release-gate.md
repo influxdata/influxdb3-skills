@@ -110,4 +110,4 @@ From 0.7.3, the evidence directory holds a `.runs.json` file per result file ins
 `evals/slim-evidence.mjs` writes it: each run's pass, harness error, and skill-loaded values, the Codex models, and the sha256 of the full result file.
 The full result files, with answers, traces, and judge reasons, go to the internal eval archive, matched by that sha256.
 The full files were up to 1.1 MB each and don't belong in the published plugin, and release verification needs only the scored runs.
-Evidence for 0.7.0 through 0.7.2 stays as committed, because released evidence is immutable.
+Evidence for 0.7.0 through 0.7.2 was slimmed the same way. Released evidence otherwise stays immutable: `check-release.mjs` accepts a released full result file's removal only when the runs file that replaces it equals the runs recomputed from it, and a released manifest change only when it points the same entries at those runs files.
