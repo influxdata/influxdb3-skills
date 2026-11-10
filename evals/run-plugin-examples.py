@@ -12,6 +12,7 @@ import base64
 import datetime as dt
 import hashlib
 import json
+import os
 import pathlib
 import re
 import shutil
@@ -31,7 +32,9 @@ PRODUCTS = {
     "core": ("http://127.0.0.1:8282", "influxdb3-core"),
     "enterprise": ("http://127.0.0.1:8181", "influxdb3-enterprise"),
 }
-CASES = ("wal", "scheduled", "request", "cache_counter", "multifile_alert", "toml_config")
+CASES = ("wal", "scheduled", "request", "cache_counter", "multifile_alert", "offline_test", "toml_config")
+# Cases that upload their own files through the plugin files API instead of docker cp.
+API_STAGED = {"offline_test"}
 
 
 def now():
@@ -39,7 +42,7 @@ def now():
 
 
 class Runner:
-    def __init__(self, product, output, cadence, timeout, examples):
+    def __init__(self, product, output, cadence, timeout, examples, cli="influxdb3"):
         self.product = product
         self.url, self.container = PRODUCTS[product]
         token_file = pathlib.Path.home() / f".influxdb3-{product}-admin-token.json"
@@ -49,6 +52,7 @@ class Runner:
         self.output = output / f"{self.prefix}-{product}.json"
         self.cadence, self.timeout = cadence, timeout
         self.cases = examples
+        self.cli = cli
         self.toml_config_bytes = None
         self.databases, self.triggers = [], []
         self.staged = False
@@ -63,6 +67,7 @@ class Runner:
                 f"Scheduled triggers use every:{cadence}s for bounded verification; cadence is trigger configuration, not a source edit.",
                 "Request trigger uses a unique route instead of the README's shared echo route.",
                 "Multifile fixtures are staged with docker cp; this does not test CLI directory upload.",
+                "offline_test uploads the WAL and scheduled example files through POST /api/v3/plugins/files, runs influxdb3 test on them, and only then creates a trigger.",
                 "Enterprise is reached through node0 on the running cluster; this is not a distributed-execution or replay certification.",
             ],
         }
@@ -162,7 +167,10 @@ class Runner:
     def stage(self):
         with tempfile.TemporaryDirectory(prefix="skills-plugin-fixture-") as temporary:
             fixture = pathlib.Path(temporary) / self.prefix
+            fixture.mkdir()
             for case in self.cases:
+                if case in API_STAGED:
+                    continue
                 for source in sorted((EXAMPLES / case).iterdir()):
                     if source.suffix not in (".py", ".toml"):
                         continue
@@ -236,6 +244,61 @@ class Runner:
                   lambda rows: bool(rows) and all(r["host"] == "server01" and r["field"] == "temp" and
                                                 r["value"] == 82.5 and r["threshold"] == 75.0 for r in rows))
         self.log_contains(db, trigger, "emitted 1 alert(s) from sensors_demo")
+
+    def upload(self, case, source):
+        """Create a plugin file through the plugin files API, without a trigger."""
+        name = f"{self.prefix}/{case}/{source.name}"
+        content = source.read_text()
+        self.data["fixture_sha256"][source.relative_to(ROOT).as_posix()] = hashlib.sha256(content.encode()).hexdigest()
+        result = self.http("POST", "/api/v3/plugins/files", {"plugin_name": name, "content": content})
+        self.check(f"{case}: {source.name} uploaded without a trigger", result["status"] == 200, result)
+        return f"{case}/{source.name}"
+
+    def cli_test(self, kind, database, filename, *options):
+        """Run `influxdb3 test <kind>` and return its parsed JSON output."""
+        # The token goes through the environment so it never appears in argv.
+        env = {**os.environ, "INFLUXDB3_AUTH_TOKEN": self.token}
+        command = [self.cli, "test", kind, "--host", self.url, "--database", database, *options,
+                   self.prefix + "/" + filename]
+        completed = subprocess.run(command, capture_output=True, text=True, env=env, timeout=60, check=False)
+        event = {"at": now(), "command": command, "exit_code": completed.returncode,
+                 "stdout": completed.stdout, "stderr": completed.stderr}
+        self.data["events"].append(event)
+        self.save()
+        start = completed.stdout.find("{")
+        output = json.loads(completed.stdout[start:]) if completed.returncode == 0 and start >= 0 else None
+        self.check(f"offline_test: test {kind} ran without errors",
+                   output is not None and output.get("errors") == [], event)
+        return output
+
+    def triggers_in(self, database):
+        return self.query(database, "SELECT trigger_name FROM system.processing_engine_triggers")
+
+    def offline_test(self):
+        db = self.database("offline_test")
+        wal = self.upload("offline_test", EXAMPLES / "wal/process_writes_hello.py")
+        scheduled = self.upload("offline_test", EXAMPLES / "scheduled/process_scheduled_call_hello.py")
+        self.check("offline_test: no trigger exists before the offline test", self.triggers_in(db) == [], self.triggers_in(db))
+        self.write(db, 72.4)
+
+        output = self.cli_test("wal_plugin", db, wal, "--lp", "sensors_demo,host=server01 temp=72.4")
+        self.check("offline_test: wal log line", "WAL hello: 1 rows from sensors_demo" in " ".join(output["log_lines"]), output)
+        self.check("offline_test: wal reports its write", any(line.startswith("processed_summary") for line in output["database_writes"].get(db, [])), output)
+        output = self.cli_test("schedule_plugin", db, scheduled)
+        self.check("offline_test: scheduled log line", "sensor rows in last minute" in " ".join(output["log_lines"]), output)
+        self.check("offline_test: scheduled reports its write", any(line.startswith("scheduled_heartbeat") for line in output["database_writes"].get(db, [])), output)
+
+        for table in ("processed_summary", "scheduled_heartbeat"):
+            self.check(f"offline_test: no {table} table after the offline test",
+                       self.query(db, f"SELECT * FROM {table}") is None, table)
+        self.check("offline_test: still no trigger after the offline test", self.triggers_in(db) == [], self.triggers_in(db))
+
+        trigger = self.trigger(db, "offline_test", wal, "table:sensors_demo")
+        self.write(db, 72.4)
+        self.poll("offline_test: trigger on the uploaded file writes its row",
+                  lambda: self.query(db, "SELECT source_table, row_count FROM processed_summary"),
+                  lambda rows: rows is not None and any(r["source_table"] == "sensors_demo" for r in rows))
+        self.log_contains(db, trigger, "WAL hello: 1 rows from sensors_demo")
 
     def toml_config(self):
         db = self.database("toml_config")
@@ -326,11 +389,12 @@ def main():
     parser.add_argument("--timeout", type=float, default=45)
     parser.add_argument("--include-toml", action="store_true", help="also run the optional TOML configuration example")
     parser.add_argument("--examples", nargs="+", choices=CASES, default=list(CASES[:-1]))
+    parser.add_argument("--cli", default="influxdb3", help="influxdb3 CLI used by the offline_test case")
     args = parser.parse_args()
     if args.cadence < 1 or args.timeout < 2 * args.cadence:
         parser.error("timeout must cover at least two positive scheduled cadences")
     examples = list(dict.fromkeys(args.examples + (["toml_config"] if args.include_toml else [])))
-    return int(any([Runner(product, args.out.resolve(), args.cadence, args.timeout, examples).run() for product in args.products]))
+    return int(any([Runner(product, args.out.resolve(), args.cadence, args.timeout, examples, args.cli).run() for product in args.products]))
 
 
 if __name__ == "__main__":
