@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { deterministicChecks } from './run-codex-evals.mjs';
+import { codexCommand, deterministicChecks, parseArgs } from './run-codex-evals.mjs';
 
 test('Codex applies regex checks on the final message and skips the rest', () => {
   const testCase = {
@@ -22,4 +22,25 @@ test('Codex applies regex checks on the final message and skips the rest', () =>
   ]);
   assert.equal(deterministicChecks(testCase, 'token tok_123')[0].pass, false);
   assert.deepEqual(deterministicChecks({ id: 'plain' }, 'anything'), []);
+});
+
+test('Codex runs ignore the user config and pass every scored setting explicitly', () => {
+  const command = codexCommand({ prompt: 'p', outputPath: 'out.txt', model: 'm', effort: 'high', verbosity: 'medium' });
+  assert.ok(command.includes('--ignore-user-config'));
+  assert.deepEqual(command.slice(command.indexOf('--model'), command.indexOf('--model') + 2), ['--model', 'm']);
+  assert.ok(command.includes('model_reasoning_effort="high"'));
+  assert.ok(command.includes('model_verbosity="medium"'));
+  assert.equal(command.at(-1), 'p');
+  const noVerbosity = codexCommand({ prompt: 'p', outputPath: 'out.txt', model: 'm', effort: 'low' });
+  assert.ok(!noVerbosity.some((part) => part.startsWith('model_verbosity')));
+});
+
+test('Codex runs require an answer and judge effort', () => {
+  assert.throws(() => parseArgs([]), /--effort and --judge-effort are required/);
+  assert.throws(() => parseArgs(['--effort', 'high']), /--effort and --judge-effort are required/);
+  assert.throws(() => parseArgs(['--effort', 'loud', '--judge-effort', 'high']), /--effort must be one of/);
+  const options = parseArgs(['--effort', 'medium', '--judge-effort', 'high', '--runs', '3']);
+  assert.equal(options.effort, 'medium');
+  assert.equal(options.judgeEffort, 'high');
+  assert.equal(options.verbosity, null);
 });

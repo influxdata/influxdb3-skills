@@ -12,6 +12,7 @@ import { fileURLToPath } from 'node:url';
 import { runsFromClaude, runsFromCodex } from './gate.mjs';
 
 export const RUNS_FORMAT = 'runs-v1';
+const CODEX_SETTINGS = ['model', 'judgeModel', 'effort', 'judgeEffort', 'verbosity'];
 
 // Validates run identities against the full file, then keeps one {passed, error, loaded?} entry per run.
 // Evidence from before the identity rules (0.7.0) is slimmed with validateRuns: false.
@@ -25,7 +26,9 @@ export function slimRuns(agent, text, { validateRuns = true } = {}) {
     format: RUNS_FORMAT,
     agent,
     source_sha256: createHash('sha256').update(text).digest('hex'),
-    ...(agent === 'codex' ? { model: result.model, judgeModel: result.judgeModel } : {}),
+    // Older Codex summaries have no effort fields; copy only the settings a summary records,
+    // so released evidence still recomputes exactly.
+    ...(agent === 'codex' ? Object.fromEntries(CODEX_SETTINGS.filter((key) => key in result).map((key) => [key, result[key]])) : {}),
     cases: Object.fromEntries(runs),
   };
 }
