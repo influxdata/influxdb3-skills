@@ -3,8 +3,12 @@
 // second, structured Codex pass. Output is intentionally kept in evals/results/.
 //
 // Examples:
-//   node evals/run-codex-evals.mjs --case admin-db-create --runs 1
-//   node evals/run-codex-evals.mjs --runs 3 --model gpt-6.1-sol --judge-model gpt-6.1-sol
+//   node evals/run-codex-evals.mjs --case admin-db-create --runs 1 --effort medium --judge-effort medium
+//   node evals/run-codex-evals.mjs --runs 3 --model gpt-6.1-sol --judge-model gpt-6.1-sol --effort medium --judge-effort medium
+//
+// Every run ignores ~/.codex/config.toml, so a maintainer's personal model, effort,
+// verbosity, and installed plugins can't change the scores. Effort is required;
+// verbosity is optional and uses the model default when unset.
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -14,24 +18,40 @@ const repoDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const evalsDir = join(repoDir, 'evals');
 const rubricSchema = join(evalsDir, 'codex-rubric.schema.json');
 
+const USAGE = 'Usage: node evals/run-codex-evals.mjs --effort LEVEL --judge-effort LEVEL [--verbosity LEVEL] ' +
+  '[--case id[,id...]] [--runs N] [--model MODEL] [--judge-model MODEL]';
+const EFFORTS = ['low', 'medium', 'high', 'xhigh'];
+const VERBOSITIES = ['low', 'medium', 'high'];
+
 function usage(message) {
   if (message) console.error(`Error: ${message}\n`);
-  console.error('Usage: node evals/run-codex-evals.mjs [--case id[,id...]] [--runs N] [--model MODEL] [--judge-model MODEL]');
+  console.error(USAGE);
   process.exit(message ? 2 : 0);
 }
 
-function args(argv) {
-  const options = { caseIds: null, runs: 1, model: 'gpt-6.1-sol', judgeModel: 'gpt-6.1-sol' };
+export function parseArgs(argv) {
+  const options = { caseIds: null, runs: 1, model: 'gpt-6.1-sol', judgeModel: 'gpt-6.1-sol', effort: null, judgeEffort: null, verbosity: null };
   for (let i = 0; i < argv.length; i += 1) {
     const value = argv[i];
     if (value === '--case') options.caseIds = (argv[++i] ?? '').split(',').filter(Boolean);
     else if (value === '--runs') options.runs = Number(argv[++i]);
     else if (value === '--model') options.model = argv[++i];
     else if (value === '--judge-model') options.judgeModel = argv[++i];
-    else if (value === '--help' || value === '-h') usage();
-    else usage(`unknown argument '${value}'`);
+    else if (value === '--effort') options.effort = argv[++i];
+    else if (value === '--judge-effort') options.judgeEffort = argv[++i];
+    else if (value === '--verbosity') options.verbosity = argv[++i];
+    else if (value === '--help' || value === '-h') options.help = true;
+    else throw new Error(`unknown argument '${value}'`);
   }
-  if (!Number.isInteger(options.runs) || options.runs < 1) usage('--runs must be a positive integer');
+  if (options.help) return options;
+  if (!Number.isInteger(options.runs) || options.runs < 1) throw new Error('--runs must be a positive integer');
+  if (!options.effort || !options.judgeEffort) throw new Error('--effort and --judge-effort are required');
+  for (const [flag, level] of [['--effort', options.effort], ['--judge-effort', options.judgeEffort]]) {
+    if (!EFFORTS.includes(level)) throw new Error(`${flag} must be one of ${EFFORTS.join(', ')}`);
+  }
+  if (options.verbosity !== null && !VERBOSITIES.includes(options.verbosity)) {
+    throw new Error(`--verbosity must be one of ${VERBOSITIES.join(', ')}`);
+  }
   return options;
 }
 
@@ -91,13 +111,17 @@ function skillPrompt(testCase) {
     `Before answering, read skills/influxdb3/SKILL.md and any references it routes you to. `;
 }
 
-function runCodex({ prompt, tracePath, outputPath, model, schemaPath }) {
-  const command = ['exec', '--ephemeral', '--json', '--sandbox', 'read-only', '--cd', repoDir,
-    '--output-last-message', outputPath];
+export function codexCommand({ prompt, outputPath, model, effort, verbosity, schemaPath }) {
+  const command = ['exec', '--ephemeral', '--ignore-user-config', '--json', '--sandbox', 'read-only', '--cd', repoDir,
+    '--output-last-message', outputPath, '--model', model, '-c', `model_reasoning_effort="${effort}"`];
+  if (verbosity) command.push('-c', `model_verbosity="${verbosity}"`);
   if (schemaPath) command.push('--output-schema', schemaPath);
-  if (model) command.push('--model', model);
   command.push(prompt);
+  return command;
+}
 
+function runCodex({ tracePath, ...options }) {
+  const command = codexCommand(options);
   const result = spawnSync('codex', command, { cwd: repoDir, encoding: 'utf8', maxBuffer: 20 * 1024 * 1024 });
   writeFileSync(tracePath, result.stdout ?? '', 'utf8');
   if (result.stderr) writeFileSync(`${tracePath}.stderr`, result.stderr, 'utf8');
@@ -112,7 +136,7 @@ function evaluatorPrompt(testCase, response) {
     `Set pass to true only when every criterion passes. Evidence must cite the response without exposing any secret-like value.`;
 }
 
-function grade(testCase, response, resultDir, runNumber, judgeModel) {
+function grade(testCase, response, resultDir, runNumber, options) {
   const responsePath = join(resultDir, `${testCase.id}.run-${runNumber}.response.txt`);
   const judgePath = join(resultDir, `${testCase.id}.run-${runNumber}.judge.json`);
   writeFileSync(responsePath, response, 'utf8');
@@ -120,7 +144,8 @@ function grade(testCase, response, resultDir, runNumber, judgeModel) {
     prompt: evaluatorPrompt(testCase, response),
     tracePath: join(resultDir, `${testCase.id}.run-${runNumber}.judge.trace.jsonl`),
     outputPath: judgePath,
-    model: judgeModel,
+    model: options.judgeModel,
+    effort: options.judgeEffort,
     schemaPath: rubricSchema,
   });
   if (execution.exitCode !== 0 || !existsSync(judgePath)) {
@@ -139,7 +164,13 @@ function grade(testCase, response, resultDir, runNumber, judgeModel) {
 let byId;
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const options = args(process.argv.slice(2));
+  let options;
+  try {
+    options = parseArgs(process.argv.slice(2));
+  } catch (error) {
+    usage(error.message);
+  }
+  if (options.help) usage();
   const allCases = readCases();
   byId = new Map(allCases.map((testCase) => [testCase.id, testCase]));
   const cases = options.caseIds
@@ -158,6 +189,8 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
         tracePath: join(resultDir, `${testCase.id}.run-${runNumber}.trace.jsonl`),
         outputPath: join(resultDir, `${testCase.id}.run-${runNumber}.answer.txt`),
         model: options.model,
+        effort: options.effort,
+        verbosity: options.verbosity,
       });
       const answerPath = join(resultDir, `${testCase.id}.run-${runNumber}.answer.txt`);
       if (execution.exitCode !== 0 || !existsSync(answerPath)) {
@@ -166,7 +199,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
       }
       const response = readFileSync(answerPath, 'utf8');
       const checks = deterministicChecks(testCase, response);
-      const judged = grade(testCase, response, resultDir, runNumber, options.judgeModel);
+      const judged = grade(testCase, response, resultDir, runNumber, options);
       const checksPass = checks.every((check) => check.skipped || check.pass);
       results.push({ id: testCase.id, run: runNumber, ...judged, pass: judged.pass && checksPass, checks });
     }
@@ -174,8 +207,12 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
 
   const summary = {
     generatedAt: new Date().toISOString(),
-    model: options.model ?? 'Codex default',
-    judgeModel: options.judgeModel ?? 'Codex default',
+    model: options.model,
+    judgeModel: options.judgeModel,
+    effort: options.effort,
+    judgeEffort: options.judgeEffort,
+    // null: the model's default verbosity, with the user config ignored.
+    verbosity: options.verbosity,
     runs: options.runs,
     results,
   };
