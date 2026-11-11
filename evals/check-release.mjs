@@ -106,9 +106,10 @@ function verify(base, changed) {
   let passed = true;
   for (const agent of ['claude', 'codex']) {
     if (!Array.isArray(manifest[agent]) || manifest[agent].length === 0) throw new Error(`missing ${agent} full-suite evidence`);
-    // Prompts, criteria, and models stay frozen during measurement.
-    if (new Set(manifest[agent].map((entry) => `${entry.model}\0${entry.judge}`)).size > 1) {
-      throw new Error(`${agent} answer or judge model changed during measurement`);
+    // Prompts, criteria, models, and effort stay frozen during measurement.
+    const settings = (entry) => [entry.model, entry.judge, entry.effort, entry.judge_effort, entry.verbosity ?? null].join('\0');
+    if (new Set(manifest[agent].map(settings)).size > 1) {
+      throw new Error(`${agent} answer or judge model or effort changed during measurement`);
     }
     const maps = manifest[agent].map((entry) => {
       if (typeof entry.file !== 'string' || basename(entry.file) !== entry.file || !entry.file.endsWith('.runs.json')) {
@@ -119,8 +120,8 @@ function verify(base, changed) {
       if (entry.skills_tree !== manifest.skills_tree || entry.prompts_blob !== manifest.prompts_blob) {
         throw new Error(`${entry.file}: evidence hashes do not match manifest`);
       }
-      if (!entry.model || !entry.judge || !entry.cli_version || entry.runs !== 3) {
-        throw new Error(`${entry.file}: record model, judge, CLI version, and three runs per case`);
+      if (!entry.model || !entry.judge || !entry.effort || !entry.judge_effort || !entry.cli_version || entry.runs !== 3) {
+        throw new Error(`${entry.file}: record model, judge, effort, judge effort, CLI version, and three runs per case`);
       }
       if (!/^[0-9a-f]{64}$/.test(entry.source_sha256 ?? '')) throw new Error(`${entry.file}: record the full result file's source_sha256`);
       const result = JSON.parse(readFileSync(file, 'utf8'));
@@ -130,6 +131,11 @@ function verify(base, changed) {
       if (result.source_sha256 !== entry.source_sha256) throw new Error(`${entry.file}: source_sha256 does not match the manifest`);
       if (agent === 'codex' && (result.model !== entry.model || result.judgeModel !== entry.judge)) {
         throw new Error(`${entry.file}: result models do not match the manifest`);
+      }
+      // The Codex runner records its settings; Claude Code's result file doesn't, so the manifest is the record.
+      if (agent === 'codex' && (result.effort !== entry.effort || result.judgeEffort !== entry.judge_effort ||
+          (result.verbosity ?? null) !== (entry.verbosity ?? null))) {
+        throw new Error(`${entry.file}: result settings do not match the manifest (effort, judge effort, verbosity)`);
       }
       return new Map(Object.entries(result.cases));
     });

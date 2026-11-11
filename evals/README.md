@@ -43,7 +43,10 @@ See `TESTING.md` → "Run the evals" for the commands.
 
 Codex must already be authenticated (`codex login status`). The runner defaults
 to `gpt-6.1-sol` for both answers and judging; use `--model <model>`
-and `--judge-model <model>` to override them. `gpt-6-luna` is a fast model for
+and `--judge-model <model>` to override them. `--effort` and `--judge-effort` are
+required, and `--verbosity` is optional. The runner passes `--ignore-user-config`,
+so `~/.codex/config.toml` can't change the model, effort, verbosity, or plugins;
+an unset verbosity uses the model default. `summary.json` records each setting. `gpt-6-luna` is a fast model for
 easier tasks and was too weak a judge. These models were run with Codex CLI
 0.166.0; update older clients before running the suite.
 
@@ -54,6 +57,7 @@ Sonnet answers gate the release by default, and Opus judges.
 A maintainer can gate a release on Opus answers instead; the manifest records the model. 0.7.3 gates on Opus.
 Sonnet costs less than half as much per suite run as Opus, and a skill that passes on Sonnet can be recommended to developers who use it.
 Use full model IDs, not aliases: the CLI can remap an alias, and the result file doesn't record the resolved model.
+Set `CLAUDE_CODE_EFFORT_LEVEL` for every run. It sets the answering agent's effort: on one case, `low` used 115 thinking tokens and `max` used 12,729. The judge's cost rose about six times on the same pair of runs, so it likely sets the judge's effort too; `claude plugin eval` has no separate judge effort option. Without the variable, Opus 5.5 runs at `medium`. The result file records neither, so record the level in the manifest.
 Runs on models other than the release's gate model are comparisons: record their gate reports in `docs/eval-history.md`.
 They don't block a release and don't go in the release manifest.
 
@@ -117,7 +121,7 @@ Run the eval tooling tests with `node --test evals/*.test.mjs`.
 ## Change-control policy
 
 Treat a one-run result as a diagnostic signal, not proof of an eval or skill defect.
-Keep the prompt, criteria, answer model, and judge model fixed while you measure reliability.
+Keep the prompt, criteria, answer model, judge model, and effort fixed while you measure reliability.
 
 1. Run a changed or failing case three times before changing the skill or its criteria.
 2. Change a criterion only when it tests an unsupported or incorrect product behavior.
@@ -135,7 +139,7 @@ Don't ask the judge whether code works or is correct beyond the stated condition
 When a condition depends on data, give concrete inputs and the expected result, such as a value the code must keep and one it must drop.
 Record in the changelog which stored verdicts the rewrite targets, and re-score those answers before the release that uses it.
 
-To compare answer models, keep the rubric and judge model fixed.
+To compare answer models, keep the rubric, judge model, and judge effort fixed.
 Audit disagreements with another judge or a human before changing a release decision.
 
 ## Compare judges
