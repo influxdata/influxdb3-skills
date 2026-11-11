@@ -115,18 +115,20 @@ To run the full Claude Code suite:
 ```sh
 mkdir -p evals/results
 node evals/build-claude-cases.mjs
-claude plugin eval ./ --eval-dir evals/claude-cases --keep-temp --model claude-sonnet-5-5 --judge-model claude-opus-5-5 --runs 3 --ablation none --scaffold --trust-plugin --json > evals/results/claude-sonnet.json
+CLAUDE_CODE_EFFORT_LEVEL=medium claude plugin eval ./ --eval-dir evals/claude-cases --keep-temp --model claude-sonnet-5-5 --judge-model claude-opus-5-5 --runs 3 --ablation none --scaffold --trust-plugin --json > evals/results/claude-sonnet.json
 node evals/gate.mjs --claude evals/results/claude-sonnet.json --min-runs 3
-claude plugin eval ./ --eval-dir evals/claude-cases --keep-temp --model claude-haiku-5-5 --judge-model claude-opus-5-5 --runs 3 --ablation none --scaffold --trust-plugin --json > evals/results/claude-haiku.json
+CLAUDE_CODE_EFFORT_LEVEL=medium claude plugin eval ./ --eval-dir evals/claude-cases --keep-temp --model claude-haiku-5-5 --judge-model claude-opus-5-5 --runs 3 --ablation none --scaffold --trust-plugin --json > evals/results/claude-haiku.json
 node evals/gate.mjs --claude evals/results/claude-haiku.json --min-runs 3
-claude plugin eval ./ --eval-dir evals/claude-cases --keep-temp --model claude-opus-5-5 --judge-model claude-opus-5-5 --runs 3 --ablation none --scaffold --trust-plugin --json > evals/results/claude-opus.json
+CLAUDE_CODE_EFFORT_LEVEL=medium claude plugin eval ./ --eval-dir evals/claude-cases --keep-temp --model claude-opus-5-5 --judge-model claude-opus-5-5 --runs 3 --ablation none --scaffold --trust-plugin --json > evals/results/claude-opus.json
 node evals/gate.mjs --claude evals/results/claude-opus.json --min-runs 3
 ```
+
+Pin effort on every run, and record it in the release manifest. In Claude Code, `CLAUDE_CODE_EFFORT_LEVEL` sets the answering agent's effort and likely the judge's; `claude plugin eval` has no separate judge effort option, and the result file records neither. The Codex runner requires `--effort` and `--judge-effort`, ignores `~/.codex/config.toml`, and records both in `summary.json`. The commands use `medium` until a judging decision sets the levels (#49).
 
 To run the full Codex suite:
 
 ```sh
-node evals/run-codex-evals.mjs --runs 3 --model gpt-6.1-sol --judge-model gpt-6.1-sol
+node evals/run-codex-evals.mjs --runs 3 --model gpt-6.1-sol --judge-model gpt-6.1-sol --effort medium --judge-effort medium
 node evals/gate.mjs --codex evals/results/codex-<timestamp>/summary.json --min-runs 3
 ```
 
@@ -135,10 +137,10 @@ To rerun one case while you iterate:
 ```sh
 # Claude Code
 node evals/build-claude-cases.mjs
-claude plugin eval ./ --eval-dir evals/claude-cases --keep-temp --case <id> --model claude-sonnet-5-5 --judge-model claude-opus-5-5 --runs 3 --ablation none --scaffold --trust-plugin
+CLAUDE_CODE_EFFORT_LEVEL=medium claude plugin eval ./ --eval-dir evals/claude-cases --keep-temp --case <id> --model claude-sonnet-5-5 --judge-model claude-opus-5-5 --runs 3 --ablation none --scaffold --trust-plugin
 
 # Codex
-node evals/run-codex-evals.mjs --case <id> --runs 3 --model gpt-6.1-sol --judge-model gpt-6.1-sol
+node evals/run-codex-evals.mjs --case <id> --runs 3 --model gpt-6.1-sol --judge-model gpt-6.1-sol --effort medium --judge-effort medium
 ```
 
 A single run is noisy.
