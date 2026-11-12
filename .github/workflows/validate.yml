@@ -20,7 +20,7 @@ jobs:
         with:
           node-version: 22
           package-manager-cache: false
-      - run: node --test evals/gate.test.mjs evals/check-release.test.mjs evals/build-claude-cases.test.mjs evals/run-codex-evals.test.mjs evals/rescore.test.mjs scripts/check-claim-policy.test.mjs scripts/check-shared-blocks.test.mjs scripts/check-file-links.test.mjs
+      - run: node --test evals/gate.test.mjs evals/check-release.test.mjs evals/build-claude-cases.test.mjs evals/run-codex-evals.test.mjs evals/rescore.test.mjs evals/judge.test.mjs scripts/check-claim-policy.test.mjs scripts/check-shared-blocks.test.mjs scripts/check-file-links.test.mjs
       - run: python3 evals/run-plugin-examples.test.py
 
   skills:

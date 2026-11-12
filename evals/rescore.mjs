@@ -11,18 +11,14 @@
 //     [--case id[,id...]] [--votes 3] [--concurrency 4] [--dry-run]
 //   node evals/rescore.mjs triage --out evals/results/rescore-0.7.4 [--force]
 //   node evals/rescore.mjs score --out evals/results/rescore-0.7.4
-import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { fixturePrompt, promptFor, readCases } from './run-codex-evals.mjs';
+import { promptFor, readCases } from './cases.mjs';
+import { callJudge, judgePrompt } from './judge.mjs';
 
 const evalsDir = dirname(fileURLToPath(import.meta.url));
-// Claude Code's --json-schema validator doesn't resolve the 2020-12 meta-schema URL, so drop it.
-const { $schema: _metaSchema, ...rubric } = JSON.parse(readFileSync(join(evalsDir, 'codex-rubric.schema.json'), 'utf8'));
-const schema = JSON.stringify(rubric);
 const HARNESSES = ['claude', 'codex'];
 const EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max'];
 const SAFETY = /safeguard|usage policy|\baup\b|flagged/i;
@@ -81,71 +77,6 @@ export function loadAnswers(label, path) {
     if (existsSync(file)) answers.push({ source: label, id: result.id, run: result.run, text: readFileSync(file, 'utf8') });
   }
   return answers;
-}
-
-export function judgePrompt(testCase, byId, answer) {
-  const criteria = testCase.criteria.map((criterion, index) => `${index + 1}. ${criterion}`).join('\n');
-  return 'You are a strict evaluator. Grade the assistant response to the user prompt against every criterion below. ' +
-    'Judge each criterion on its own, from the response text only.\n\n' +
-    `${fixturePrompt(testCase)}User prompt:\n${promptFor(testCase, byId)}\n\nCriteria:\n${criteria}\n\n` +
-    `Assistant response:\n<<<\n${answer}\n>>>\n\n` +
-    'Return JSON only. Include exactly one check for each criterion, using consecutive ids starting at 1. ' +
-    'Set pass to true only when every criterion passes. Evidence must quote the response without exposing any secret-like value.';
-}
-
-export function judgeCommand(judge, workDir) {
-  if (judge.harness === 'claude') {
-    return ['claude', ['-p', '--safe-mode', '--tools', '', '--no-session-persistence', '--output-format', 'json',
-      '--json-schema', schema, '--model', judge.model, '--effort', judge.effort,
-      '--system-prompt', 'You grade answers against criteria. Reply only with JSON that matches the schema.']];
-  }
-  return ['codex', ['exec', '--ephemeral', '--ignore-user-config', '--json', '--skip-git-repo-check', '--sandbox', 'read-only',
-    '--cd', workDir, '--output-last-message', join(workDir, 'verdict.json'), '--output-schema', join(evalsDir, 'codex-rubric.schema.json'),
-    '--model', judge.model, '-c', `model_reasoning_effort="${judge.effort}"`]];
-}
-
-function run(command, args, input, cwd) {
-  return new Promise((done) => {
-    const child = spawn(command, args, { cwd, stdio: ['pipe', 'pipe', 'pipe'] });
-    let stdout = '';
-    let stderr = '';
-    child.stdout.on('data', (chunk) => { stdout += chunk; });
-    child.stderr.on('data', (chunk) => { stderr += chunk; });
-    child.on('error', (error) => done({ code: 1, stdout, stderr: `${stderr}${error.message}` }));
-    child.on('close', (code) => done({ code, stdout, stderr }));
-    child.stdin.end(input);
-  });
-}
-
-// Returns { checks, pass, summary, costUsd?, usage? } or { error }.
-async function callJudge(judge, prompt, criteriaCount) {
-  const workDir = mkdtempSync(join(tmpdir(), 'rescore-'));
-  const started = Date.now();
-  try {
-    const [command, args] = judgeCommand(judge, workDir);
-    const result = await run(command, args, prompt, workDir);
-    let verdict;
-    let extra = {};
-    if (judge.harness === 'claude') {
-      const output = JSON.parse(result.stdout || '{}');
-      if (result.code !== 0 || output.is_error) return { error: `${output.result ?? result.stderr}`.slice(0, 2000) };
-      verdict = output.structured_output ?? JSON.parse(output.result);
-      extra = { costUsd: output.total_cost_usd, usage: output.usage, models: Object.keys(output.modelUsage ?? {}) };
-    } else {
-      if (result.code !== 0) return { error: result.stderr.slice(-2000) };
-      verdict = JSON.parse(readFileSync(join(workDir, 'verdict.json'), 'utf8'));
-      const usage = result.stdout.split('\n').filter((line) => line.includes('"turn.completed"')).map((line) => JSON.parse(line).usage).pop();
-      extra = { usage };
-    }
-    const valid = Array.isArray(verdict.checks) && verdict.checks.length === criteriaCount &&
-      verdict.checks.every((check, index) => check.id === index + 1 && typeof check.pass === 'boolean');
-    if (!valid) return { error: `invalid verdict: ${JSON.stringify(verdict).slice(0, 500)}` };
-    return { ...verdict, ...extra, durationMs: Date.now() - started };
-  } catch (error) {
-    return { error: error.message };
-  } finally {
-    rmSync(workDir, { recursive: true, force: true });
-  }
 }
 
 const answerKey = (answer) => `${answer.source}/${answer.id}.run-${answer.run}`;
