@@ -70,7 +70,9 @@ code has no reason to. Specifically:
 
 If a plugin needs a credential for an outbound call, take it from an explicit
 trigger argument (`args`) the operator sets, not by scraping the server's own
-environment.
+environment. Use a key created for this plugin alone, with only the
+permissions its call needs, because anyone who can query system tables can
+read trigger arguments.
 
 ## 4. Don't write state or secrets to the filesystem
 
