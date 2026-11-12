@@ -123,12 +123,12 @@ CLAUDE_CODE_EFFORT_LEVEL=medium claude plugin eval ./ --eval-dir evals/claude-ca
 node evals/gate.mjs --claude evals/results/claude-opus.json --min-runs 3
 ```
 
-Pin effort on every run, and record it in the release manifest. In Claude Code, `CLAUDE_CODE_EFFORT_LEVEL` sets the answering agent's effort and likely the judge's; `claude plugin eval` has no separate judge effort option, and the result file records neither. The Codex runner requires `--effort` and `--judge-effort`, ignores `~/.codex/config.toml`, and records both in `summary.json`. The commands use `medium` until a judging decision sets the levels (#49).
+Pin effort on every run, and record it in the release manifest. In Claude Code, `CLAUDE_CODE_EFFORT_LEVEL` sets the answering agent's effort and likely the judge's; `claude plugin eval` has no separate judge effort option, and the result file records neither. The Codex runner requires `--effort` and `--judge-effort`, ignores `~/.codex/config.toml`, and records both in `summary.json`. ADR-0004 sets the judge to `claude-opus-5-5` at `medium` for both agents, so the Claude Code commands set `medium`, and the Codex runner judges with the same model and effort.
 
 To run the full Codex suite:
 
 ```sh
-node evals/run-codex-evals.mjs --runs 3 --model gpt-6.1-sol --judge-model gpt-6.1-sol --effort medium --judge-effort medium
+node evals/run-codex-evals.mjs --runs 3 --model gpt-6.1-sol --judge-model claude-opus-5-5 --effort medium --judge-effort medium
 node evals/gate.mjs --codex evals/results/codex-<timestamp>/summary.json --min-runs 3
 ```
 
@@ -140,7 +140,7 @@ node evals/build-claude-cases.mjs
 CLAUDE_CODE_EFFORT_LEVEL=medium claude plugin eval ./ --eval-dir evals/claude-cases --keep-temp --case <id> --model claude-sonnet-5-5 --judge-model claude-opus-5-5 --runs 3 --ablation none --scaffold --trust-plugin
 
 # Codex
-node evals/run-codex-evals.mjs --case <id> --runs 3 --model gpt-6.1-sol --judge-model gpt-6.1-sol --effort medium --judge-effort medium
+node evals/run-codex-evals.mjs --case <id> --runs 3 --model gpt-6.1-sol --judge-model claude-opus-5-5 --effort medium --judge-effort medium
 ```
 
 A single run is noisy.
