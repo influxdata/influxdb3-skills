@@ -1,7 +1,7 @@
 # ADR-0004: Judge both agents' eval answers with Opus 5.5 at high effort
 
 ## Status
-Proposed
+Accepted
 
 ## Date
 2026-11-12
