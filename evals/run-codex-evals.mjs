@@ -35,7 +35,7 @@ function args(argv) {
   return options;
 }
 
-function readCases() {
+export function readCases() {
   return readFileSync(join(evalsDir, 'prompts.jsonl'), 'utf8')
     .split('\n')
     .filter((line) => line.trim())
@@ -48,7 +48,7 @@ function readCases() {
     });
 }
 
-function promptFor(testCase, byId) {
+export function promptFor(testCase, byId) {
   if (!testCase.follows) return testCase.prompt;
   const parent = byId.get(testCase.follows);
   if (!parent) throw new Error(`${testCase.id}: follows unknown case '${testCase.follows}'`);
@@ -57,7 +57,7 @@ function promptFor(testCase, byId) {
 
 // The Codex sandbox is read-only, so a fixture is shown in the prompt instead
 // of written to the working directory.
-function fixturePrompt(testCase) {
+export function fixturePrompt(testCase) {
   const files = Object.entries(testCase.fixture?.files ?? {});
   if (!files.length) return '';
   return `The developer's project contains these files:\n\n` +
