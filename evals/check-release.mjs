@@ -144,6 +144,9 @@ function verify(base, changed) {
     passed &&= agent === 'claude' ? scored.pass : scored.incomplete.length === 0;
     sections.push(report(agent === 'claude' ? 'Claude Code' : 'Codex (advisory)', scored));
   }
+  // ADR-0004: one judge model and effort grades both agents, so their scores can be compared.
+  const judgeOf = (agent) => `${manifest[agent][0].judge}\0${manifest[agent][0].judge_effort}`;
+  if (judgeOf('claude') !== judgeOf('codex')) throw new Error('claude and codex evidence must use the same judge model and judge effort');
   const output = `## Release verification: ${passed ? 'PASS' : 'FAIL'}\n\n${sections.join('\n\n')}\n`;
   console.log(output);
   if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, output);
