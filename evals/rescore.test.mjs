@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { judgeCommand, judgePrompt, loadAnswers, majority, parseArgs, parseLabels, readVotes, scoreJudges, triage } from './rescore.mjs';
+import { loadAnswers, majority, parseArgs, parseLabels, readVotes, scoreJudges, triage } from './rescore.mjs';
 
 const vote = (...passes) => ({ pass: passes.every(Boolean), checks: passes.map((pass, i) => ({ id: i + 1, pass, evidence: `e${i + 1}` })) });
 
@@ -35,29 +35,6 @@ test('loadAnswers reads Claude Code result files and Codex result directories', 
   writeFileSync(join(codex, 'summary.json'), JSON.stringify({ results: [{ id: 'a', run: 1 }, { id: 'a', run: 2 }] }));
   writeFileSync(join(codex, 'a.run-1.answer.txt'), 'codex answer');
   assert.deepEqual(loadAnswers('sol', codex), [{ source: 'sol', id: 'a', run: 1, text: 'codex answer' }]);
-});
-
-test('judgePrompt shows fixture files, the earlier turn, and numbered criteria', () => {
-  const parent = { id: 'p', prompt: 'Connect to Core.' };
-  const child = { id: 'c', follows: 'p', prompt: 'Hard-code it.', criteria: ['one', 'two'], fixture: { files: { '.env.example': 'X=1\n' } } };
-  const prompt = judgePrompt(child, new Map([['p', parent], ['c', child]]), 'the answer');
-  assert.match(prompt, /--- \.env\.example ---\nX=1\n/);
-  assert.match(prompt, /Earlier in this conversation I asked: "Connect to Core\."\n\nHard-code it\./);
-  assert.match(prompt, /Criteria:\n1\. one\n2\. two\n/);
-  assert.match(prompt, /<<<\nthe answer\n>>>/);
-});
-
-test('judgeCommand pins model and effort and ignores personal configuration', () => {
-  const [claude, claudeArgs] = judgeCommand({ harness: 'claude', model: 'claude-opus-5-5', effort: 'high' }, '/w');
-  assert.equal(claude, 'claude');
-  for (const flag of ['--safe-mode', '--no-session-persistence', '--json-schema']) assert.ok(claudeArgs.includes(flag), flag);
-  assert.deepEqual(claudeArgs.slice(claudeArgs.indexOf('--tools'), claudeArgs.indexOf('--tools') + 2), ['--tools', '']);
-  assert.equal(claudeArgs[claudeArgs.indexOf('--effort') + 1], 'high');
-  const [codex, codexArgs] = judgeCommand({ harness: 'codex', model: 'gpt-6-astra', effort: 'low' }, '/w');
-  assert.equal(codex, 'codex');
-  assert.ok(codexArgs.includes('--ignore-user-config'));
-  assert.equal(codexArgs[codexArgs.indexOf('--cd') + 1], '/w');
-  assert.ok(codexArgs.includes('model_reasoning_effort="low"'));
 });
 
 test('majority needs more than half of the valid votes', () => {

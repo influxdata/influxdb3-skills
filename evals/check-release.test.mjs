@@ -56,7 +56,7 @@ test('release verification checks version, exact evidence hashes, required cases
   f.commit();
   const prompts = ['adversarial', 'negative', 'connect', 'plugins'].map((category) => ({ id: category, category }));
   const claude = { cases: prompts.map(({ id }) => ({ name: id, arms: { with: [true, true, true].map((passed) => ({ passed })) } })) };
-  const codex = { model: 'fixed-answer-model', judgeModel: 'fixed-judge', effort: 'medium', judgeEffort: 'high', verbosity: null,
+  const codex = { model: 'fixed-answer-model', judgeModel: 'fixed-judge', effort: 'medium', judgeEffort: 'medium', verbosity: null,
     results: prompts.flatMap(({ id }) => [1, 2, 3].map((run) => ({ id, run, pass: true }))) };
   const manifest = { release: 'v0.7.3', skills_tree: f.git('rev-parse', 'HEAD:skills'), prompts_blob: f.git('rev-parse', 'HEAD:evals/prompts.jsonl'),
     required_cases: ['plugins'], review_record: 'docs/review.md',
@@ -64,7 +64,7 @@ test('release verification checks version, exact evidence hashes, required cases
   f.write('docs/review.md', 'Reviewed.\n');
   for (const agent of ['claude', 'codex']) {
     manifest[agent] = [{ file: `${agent}.runs.json`, skills_tree: manifest.skills_tree, prompts_blob: manifest.prompts_blob, runs: 3,
-      model: 'fixed-answer-model', judge: 'fixed-judge', effort: 'medium', judge_effort: agent === 'codex' ? 'high' : 'medium',
+      model: 'fixed-answer-model', judge: 'fixed-judge', effort: 'medium', judge_effort: 'medium',
       ...(agent === 'codex' ? { verbosity: null } : {}), cli_version: '1.0' }];
   }
   const save = () => {
@@ -110,6 +110,11 @@ test('release verification checks version, exact evidence hashes, required cases
   codex.verbosity = 'low';
   assert.match(save().stderr, /result settings do not match/);
   codex.verbosity = null;
+  codex.judgeEffort = 'high';
+  manifest.codex[0].judge_effort = 'high';
+  assert.match(save().stderr, /same judge model and judge effort/);
+  codex.judgeEffort = 'medium';
+  manifest.codex[0].judge_effort = 'medium';
   assert.equal(save().status, 0);
   manifest.skills_tree = '0'.repeat(40);
   const mismatch = save();
