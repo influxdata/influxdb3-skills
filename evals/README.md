@@ -129,6 +129,11 @@ Move one only when the check gives the judge's per-criterion verdict on stored a
 Record the comparison in the changelog.
 Keep a criterion with the judge when an answer could name the string only to warn against it, or when the criterion allows equivalents that a pattern can't list.
 
+Rewrite a judged criterion when judges, or a judge and a maintainer, read it differently on the same answer.
+State one condition that a reader can check in the answer, and match what the skill teaches.
+When a condition depends on data, give concrete inputs and the expected result, such as a value the code must keep and one it must drop.
+Record in the changelog which stored verdicts the rewrite targets, and re-score those answers before the release that uses it.
+
 To compare answer models, keep the rubric and judge model fixed.
 Audit disagreements with another judge or a human before changing a release decision.
 
