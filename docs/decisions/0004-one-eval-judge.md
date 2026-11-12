@@ -1,4 +1,4 @@
-# ADR-0004: Judge both agents' eval answers with Opus 5.5 at high effort
+# ADR-0004: Judge both agents' eval answers with Opus 5.5 at medium effort
 
 ## Status
 Accepted
@@ -53,11 +53,11 @@ After #52 narrowed three of those cases, the same six judges re-scored the cases
 Once each criterion stated one condition, the choice of judge stopped changing any verdict.
 
 ## Decision
-`claude-opus-5-5` at effort `high` judges every release suite, for both agents.
+`claude-opus-5-5` at effort `medium` judges every release suite, for both agents. See the 2026-11-12 amendment: the decision was `high` when accepted.
 
-- **Claude Code runs:** `claude plugin eval --judge-model claude-opus-5-5`, with the effort pinned through `CLAUDE_CODE_EFFORT_LEVEL` (#50).
-- **Codex runs:** the Codex runner judges each answer with the same Claude call that `evals/rescore.mjs` makes: `--safe-mode`, no tools, no session persistence, the rubric schema, and the model and effort pinned.
-- **Manifest:** each evidence entry records the judge model and effort. All entries in a release use the same judge.
+- **Claude Code runs:** `CLAUDE_CODE_EFFORT_LEVEL=medium claude plugin eval --judge-model claude-opus-5-5`. The variable sets the answering agent's effort and the judge's together (#50).
+- **Codex runs:** the Codex runner judges each answer with the same Claude call that `evals/rescore.mjs` makes, from `evals/judge.mjs`: `--safe-mode`, no tools, no session persistence, the rubric schema, and the model and effort pinned.
+- **Manifest:** each evidence entry records the judge model and effort. All entries in a release, for both agents, use the same judge model and judge effort, and `evals/check-release.mjs verify` enforces it.
 - **Audit judge:** before an adversarial failure blocks a release, or before a criterion changes because of a verdict, re-score the disputed answers with `gpt-6.1-sol` at `medium` through `evals/rescore.mjs`. When the two judges split, a maintainer labels the split, as ADR-0002 requires for judge disagreements.
 
 When judges disagree on a criterion, narrow the criterion first. A criterion states one condition a reader can check in the answer, and doesn't ask the judge whether code works. A judge can't run code, and the skill can only point the agent to working examples, which the live example checks run.
@@ -79,10 +79,10 @@ When judges disagree on a criterion, narrow the criterion first. A criterion sta
 - Cons: about twice the cost of Opus. #49 accepts moving above Opus only if the larger model agrees with the labels where Opus at higher effort doesn't, and both Opus efforts matched all 9.
 - Rejected.
 
-### Opus 5.5 at `medium`
-- Pros: matched the same 9 labels as `high`. It is most likely the effort the Claude Code judge inherited before effort was pinned (#45).
-- Cons: cost more on both runs: $6.40 against $5.70, and $2.55 against $1.87. Returned 3 invalid verdicts against 2. The cause of the cost difference isn't known.
-- Rejected. The two efforts gave the same verdicts, so cost and invalid verdicts decided.
+### Opus 5.5 at `high`
+- Pros: matched the same 9 labels as `medium`. Cost less on both runs: $5.70 against $6.40, and $1.87 against $2.55. Returned 2 invalid verdicts against 3. The cause of the cost difference isn't known.
+- Cons: `claude plugin eval` has no judge effort option. `CLAUDE_CODE_EFFORT_LEVEL=high` would also run the answering agent at `high`, which changes what the suite measures, or the Claude Code runs would need a separate judging step.
+- Accepted first, then replaced by `medium`. See the amendment.
 
 ### Label every answer by hand
 - Pros: a full answer key.
@@ -96,3 +96,12 @@ When judges disagree on a criterion, narrow the criterion first. A criterion sta
 - Pin the number of checks in each judge call's schema to the case's criteria count, so an Opus verdict with too few checks is rejected by the schema instead of becoming an error.
 - Re-score the 0.7.3 evidence and the 796c769 answers with the chosen judge, so `docs/eval-history.md` and #46 stay comparable. Record old and new scores for the same answers, so a change caused by grading isn't read as a skill regression.
 - A permanent set of reference labels stays deferred. Add it if the same disputed cases come back across releases.
+
+## Amendments
+
+### 2026-11-12: Judge at `medium`, not `high`
+
+The ADR was accepted with Opus at `high`. Wiring it showed that `claude plugin eval` 2.1.322 has no judge effort option: `CLAUDE_CODE_EFFORT_LEVEL` sets the answering agent's effort and the judge's together.
+Judging at `high` would have meant answering at `high` too, or adding a separate judging step for the Claude Code runs.
+`medium` and `high` gave the same verdict on every criterion in both re-scores, so the judge runs at `medium` and the Claude Code answers stay at `medium`.
+`medium` cost more on both re-scores and returned one more invalid verdict. The judge schema now fixes the number of checks, so a verdict that skips a criterion no longer validates.
