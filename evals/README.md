@@ -131,7 +131,7 @@ Keep a criterion with the judge when an answer could name the string only to war
 
 Rewrite a judged criterion when judges, or a judge and a maintainer, read it differently on the same answer.
 State one condition that a reader can check in the answer, and match what the skill teaches.
-Don't ask the judge whether code works or is correct beyond the stated condition: a judge can't run the code, and the live example checks cover that.
+Don't ask the judge whether code works or is correct beyond the stated condition: a judge can't run the code, and the skill can only point the agent to working examples, which the live example checks run.
 When a condition depends on data, give concrete inputs and the expected result, such as a value the code must keep and one it must drop.
 Record in the changelog which stored verdicts the rewrite targets, and re-score those answers before the release that uses it.
 
