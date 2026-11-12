@@ -138,6 +138,29 @@ Record in the changelog which stored verdicts the rewrite targets, and re-score 
 To compare answer models, keep the rubric and judge model fixed.
 Audit disagreements with another judge or a human before changing a release decision.
 
+## Compare judges
+
+`evals/rescore.mjs` re-scores stored answers with candidate judges, so a judge comparison keeps the answers and criteria fixed and pays only for judge calls.
+Every candidate gets the same prompt and the rubric schema in `codex-rubric.schema.json`, with its model and effort pinned. Claude judges run with `--safe-mode` and no tools; Codex judges run with `--ignore-user-config` in an empty directory.
+
+1. `judge` grades each answer's criteria from the current `prompts.jsonl`, `--votes` times per judge (default 3), and writes one file per vote under `--out`. Rerunning the same command skips the votes already written and retries the ones that failed. Pass `--dry-run` to print the number of judge calls without making any.
+2. `triage` takes each judge's majority verdict on each criterion and writes `split.md`: every criterion where the judges disagree, or where one judge has no majority. It shows each judge's quoted evidence as a numbered reader, in a different order for each item, so the sheet doesn't name the judge.
+3. A maintainer writes `Label: P` or `Label: F` under each item in `split.md`.
+4. `score` writes `report.md`. For each judge it reports agreement with the labels, agreement with the other judges' shared verdict on the criteria that didn't split, how often all its votes agree, its errors and safety-classifier refusals, and its cost.
+
+```sh
+node evals/rescore.mjs judge --out evals/results/rescore-<name> \
+  --answers opus-79dee1f=evals/results/claude-opus-79dee1f.json \
+  --answers sol-79dee1f=evals/results/codex-<timestamp> \
+  --judge claude:claude-opus-5-5:medium --judge codex:gpt-6-astra:low \
+  [--case id[,id...]] [--concurrency 4] [--dry-run]
+node evals/rescore.mjs triage --out evals/results/rescore-<name>
+node evals/rescore.mjs score --out evals/results/rescore-<name>
+```
+
+`--answers` takes a Claude Code result file or a Codex result directory, with an optional `label=` prefix.
+`triage` refuses to replace a `split.md` that already has labels unless you pass `--force`.
+
 ## Recording results
 
 Per-run results go in `evals/results/`. The folder is gitignored, but a release-bar summary is committed under `docs/eval-history.md` (see `docs/publishing.md`).
