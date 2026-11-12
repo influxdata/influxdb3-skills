@@ -7,7 +7,7 @@ Accepted
 2026-11-12
 
 ## Context
-Until 0.7.4, each agent's answers were judged by a model from its own family, at whatever effort the harness inherited:
+Until 0.7.3, each agent's answers were judged by a model from its own family, at whatever effort the harness inherited:
 
 | Run | Answers | Judge |
 |---|---|---|
