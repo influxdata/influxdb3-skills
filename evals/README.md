@@ -124,6 +124,11 @@ Keep the prompt, criteria, answer model, and judge model fixed while you measure
 3. Change the skill only when at least two runs expose the same gap in supported guidance.
 4. Record remaining misses as model reliability results. Don't expand the skill to address a single answer variation.
 
+Moving a criterion from the judge to a `regex` check doesn't change what the case tests, so rule 2 doesn't apply to it.
+Move one only when the check gives the judge's per-criterion verdict on stored answers from at least two answer models.
+Record the comparison in the changelog.
+Keep a criterion with the judge when an answer could name the string only to warn against it, or when the criterion allows equivalents that a pattern can't list.
+
 To compare answer models, keep the rubric and judge model fixed.
 Audit disagreements with another judge or a human before changing a release decision.
 

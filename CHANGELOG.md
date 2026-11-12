@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Claim IDs (`claim-YYYYMMDD-NNNN`) refer to InfluxData's internal verification ledger. They aren't publicly resolvable and need no action.
 
+## [0.7.4] — Unreleased
+
+### Packaging and verification
+
+- Thirty judged criteria in 23 cases moved to 40 `regex` checks, because each one names a string the answer must contain or must not contain: a client library, a CLI command or flag, a trigger spec, a plugin function signature, an endpoint, or the processing-engine log columns. Both agents now apply the same pattern every run, and the judge reads only the criteria that need reading ([#49](https://github.com/influxdata/influxdb3-skills/issues/49)). Against nine stored suites (Opus 796c769, 79dee1f, and 22c4c6a; Sonnet 22c4c6a and 96fbe22; `gpt-6.1-sol` 796c769 and 79dee1f; `gpt-6.1-terra`; `gpt-6-luna`), the checks matched all 480 per-criterion Codex verdicts, and no check failed a Claude run that the judge passed. No stored run changes its verdict. Two candidates stayed with the judge because a pattern can't decide them: `query-aggregation-sql` allows an equivalent interval, and `admin-token-filter` requires parsing instead of matching raw text. A third, `plugins-error-behavior-case`, stayed because answers quote the capitalized values to warn against them. `plugins-scheduled-with-cache` keeps its cache criterion with the judge, so every case still has one judged criterion. `evals/README.md` now states when a criterion can move.
+
 ## [0.7.3] — Unreleased
 
 ### Packaging and verification
