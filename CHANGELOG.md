@@ -17,6 +17,7 @@ Claim IDs (`claim-YYYYMMDD-NNNN`) refer to InfluxData's internal verification le
 ### Plugin guidance
 
 - The plugins skill now tells the agent to say, before the setup steps, that anyone who can query system tables can read a key passed as a trigger argument, and to recommend a new key for that plugin alone, not one that another app, person, or plugin already uses. In two stored answers to `plugins-secret-trigger-arg`, the warning came after the setup steps, and "revoke it on its own" only implied a dedicated key, so judges split on whether the answer recommended one.
+- The same bullet no longer ends with a sentence about Core tokens. Once the bullet was about a third-party key, that sentence didn't say what changes on Core. The skill's tokens reference still covers Core's admin-only tokens.
 
 ## [0.7.3] — Unreleased
 
