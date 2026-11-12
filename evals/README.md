@@ -36,14 +36,15 @@ want to evaluate.
 
 The Codex runner answers each prompt using the checked-out skill source in a
 read-only Codex session, captures the JSONL trace, and grades every criterion
-with a second Codex session constrained to a JSON schema. It writes all traces,
-answers, and results to the gitignored `evals/results/` directory.
+with the release judge from ADR-0004, in a call that can't read the repository.
+It writes all traces, answers, and results to the gitignored `evals/results/` directory.
 
 See `TESTING.md` → "Run the evals" for the commands.
 
-Codex must already be authenticated (`codex login status`). The runner defaults
-to `gpt-6.1-sol` for both answers and judging; use `--model <model>`
-and `--judge-model <model>` to override them. `--effort` and `--judge-effort` are
+Codex must already be authenticated (`codex login status`), and Claude Code too, because the
+default judge is `claude-opus-5-5`. The runner defaults to `gpt-6.1-sol` for answers;
+use `--model <model>` and `--judge-model <model>` to override them. A judge model whose name
+starts with `claude-` runs in Claude Code; any other runs in Codex. `--effort` and `--judge-effort` are
 required, and `--verbosity` is optional. The runner passes `--ignore-user-config`,
 so `~/.codex/config.toml` can't change the model, effort, verbosity, or plugins;
 an unset verbosity uses the model default. `summary.json` records each setting. `gpt-6-luna` is a fast model for
@@ -145,7 +146,7 @@ Audit disagreements with another judge or a human before changing a release deci
 ## Compare judges
 
 `evals/rescore.mjs` re-scores stored answers with candidate judges, so a judge comparison keeps the answers and criteria fixed and pays only for judge calls.
-Every candidate gets the same prompt and the rubric schema in `codex-rubric.schema.json`, with its model and effort pinned. Claude judges run with `--safe-mode` and no tools; Codex judges run with `--ignore-user-config` in an empty directory.
+Every candidate gets the same judge call as the Codex runner, from `evals/judge.mjs`: the same prompt, a schema that fixes the number of checks to the case's criteria, and the model and effort pinned. Claude judges run with `--safe-mode` and no tools; Codex judges run with `--ignore-user-config` in an empty directory.
 
 1. `judge` grades each answer's criteria from the current `prompts.jsonl`, `--votes` times per judge (default 3), and writes one file per vote under `--out`. Rerunning the same command skips the votes already written and retries the ones that failed. Pass `--dry-run` to print the number of judge calls without making any.
 2. `triage` takes each judge's majority verdict on each criterion and writes `split.md`: every criterion where the judges disagree, or where one judge has no majority. It shows each judge's quoted evidence as a numbered reader, in a different order for each item, so the sheet doesn't name the judge.

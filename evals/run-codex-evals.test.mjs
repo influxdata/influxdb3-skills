@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { codexCommand, deterministicChecks, parseArgs } from './run-codex-evals.mjs';
+import { codexCommand, deterministicChecks, judgeHarness, parseArgs } from './run-codex-evals.mjs';
 
 test('Codex applies regex checks on the final message and skips the rest', () => {
   const testCase = {
@@ -43,4 +43,12 @@ test('Codex runs require an answer and judge effort', () => {
   assert.equal(options.effort, 'medium');
   assert.equal(options.judgeEffort, 'high');
   assert.equal(options.verbosity, null);
+});
+
+test('Codex runs default to the ADR-0004 judge and check judge effort for its harness', () => {
+  assert.equal(parseArgs(['--effort', 'medium', '--judge-effort', 'medium']).judgeModel, 'claude-opus-5-5');
+  assert.equal(judgeHarness('claude-opus-5-5'), 'claude');
+  assert.equal(judgeHarness('gpt-6.1-sol'), 'codex');
+  assert.equal(parseArgs(['--effort', 'medium', '--judge-effort', 'max']).judgeEffort, 'max');
+  assert.throws(() => parseArgs(['--effort', 'medium', '--judge-model', 'gpt-6.1-sol', '--judge-effort', 'max']), /--judge-effort must be one of/);
 });

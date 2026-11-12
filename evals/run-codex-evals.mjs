@@ -1,26 +1,30 @@
 #!/usr/bin/env node
-// Run the harness-neutral prompts with Codex and grade every criterion using a
-// second, structured Codex pass. Output is intentionally kept in evals/results/.
+// Run the harness-neutral prompts with Codex and grade every criterion with the
+// release judge from ADR-0004. Output is intentionally kept in evals/results/.
 //
 // Examples:
 //   node evals/run-codex-evals.mjs --case admin-db-create --runs 1 --effort medium --judge-effort medium
-//   node evals/run-codex-evals.mjs --runs 3 --model gpt-6.1-sol --judge-model gpt-6.1-sol --effort medium --judge-effort medium
+//   node evals/run-codex-evals.mjs --runs 3 --model gpt-6.1-sol --judge-model claude-opus-5-5 --effort medium --judge-effort medium
 //
-// Every run ignores ~/.codex/config.toml, so a maintainer's personal model, effort,
+// Every Codex run ignores ~/.codex/config.toml, so a maintainer's personal model, effort,
 // verbosity, and installed plugins can't change the scores. Effort is required;
-// verbosity is optional and uses the model default when unset.
+// verbosity is optional and uses the model default when unset. A judge model whose
+// name starts with claude- runs in Claude Code; any other judge model runs in Codex.
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { fixturePrompt, promptFor, readCases } from './cases.mjs';
+import { callJudge, judgePrompt } from './judge.mjs';
 
 const repoDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const evalsDir = join(repoDir, 'evals');
-const rubricSchema = join(evalsDir, 'codex-rubric.schema.json');
 
 const USAGE = 'Usage: node evals/run-codex-evals.mjs --effort LEVEL --judge-effort LEVEL [--verbosity LEVEL] ' +
   '[--case id[,id...]] [--runs N] [--model MODEL] [--judge-model MODEL]';
 const EFFORTS = ['low', 'medium', 'high', 'xhigh'];
+// Claude Code accepts max as well.
+const JUDGE_EFFORTS = { claude: [...EFFORTS, 'max'], codex: EFFORTS };
 const VERBOSITIES = ['low', 'medium', 'high'];
 
 function usage(message) {
@@ -30,7 +34,7 @@ function usage(message) {
 }
 
 export function parseArgs(argv) {
-  const options = { caseIds: null, runs: 1, model: 'gpt-6.1-sol', judgeModel: 'gpt-6.1-sol', effort: null, judgeEffort: null, verbosity: null };
+  const options = { caseIds: null, runs: 1, model: 'gpt-6.1-sol', judgeModel: 'claude-opus-5-5', effort: null, judgeEffort: null, verbosity: null };
   for (let i = 0; i < argv.length; i += 1) {
     const value = argv[i];
     if (value === '--case') options.caseIds = (argv[++i] ?? '').split(',').filter(Boolean);
@@ -46,42 +50,17 @@ export function parseArgs(argv) {
   if (options.help) return options;
   if (!Number.isInteger(options.runs) || options.runs < 1) throw new Error('--runs must be a positive integer');
   if (!options.effort || !options.judgeEffort) throw new Error('--effort and --judge-effort are required');
-  for (const [flag, level] of [['--effort', options.effort], ['--judge-effort', options.judgeEffort]]) {
-    if (!EFFORTS.includes(level)) throw new Error(`${flag} must be one of ${EFFORTS.join(', ')}`);
-  }
+  if (!EFFORTS.includes(options.effort)) throw new Error(`--effort must be one of ${EFFORTS.join(', ')}`);
+  const judgeEfforts = JUDGE_EFFORTS[judgeHarness(options.judgeModel)];
+  if (!judgeEfforts.includes(options.judgeEffort)) throw new Error(`--judge-effort must be one of ${judgeEfforts.join(', ')}`);
   if (options.verbosity !== null && !VERBOSITIES.includes(options.verbosity)) {
     throw new Error(`--verbosity must be one of ${VERBOSITIES.join(', ')}`);
   }
   return options;
 }
 
-export function readCases() {
-  return readFileSync(join(evalsDir, 'prompts.jsonl'), 'utf8')
-    .split('\n')
-    .filter((line) => line.trim())
-    .map((line, index) => {
-      try {
-        return JSON.parse(line);
-      } catch (error) {
-        throw new Error(`prompts.jsonl line ${index + 1}: ${error.message}`);
-      }
-    });
-}
-
-export function promptFor(testCase, byId) {
-  if (!testCase.follows) return testCase.prompt;
-  const parent = byId.get(testCase.follows);
-  if (!parent) throw new Error(`${testCase.id}: follows unknown case '${testCase.follows}'`);
-  return `Earlier in this conversation I asked: "${promptFor(parent, byId)}"\n\n${testCase.prompt}`;
-}
-
-// The Codex sandbox is read-only, so a fixture is shown in the prompt instead
-// of written to the working directory.
-export function fixturePrompt(testCase) {
-  const files = Object.entries(testCase.fixture?.files ?? {});
-  if (!files.length) return '';
-  return `The developer's project contains these files:\n\n` +
-    files.map(([path, contents]) => `--- ${path} ---\n${contents}${contents.endsWith('\n') ? '' : '\n'}`).join('\n') + '\n';
+export function judgeHarness(model) {
+  return model.startsWith('claude-') ? 'claude' : 'codex';
 }
 
 // Regex checks on the final message run here too. Other checks (tool use,
@@ -111,11 +90,10 @@ function skillPrompt(testCase) {
     `Before answering, read skills/influxdb3/SKILL.md and any references it routes you to. `;
 }
 
-export function codexCommand({ prompt, outputPath, model, effort, verbosity, schemaPath }) {
+export function codexCommand({ prompt, outputPath, model, effort, verbosity }) {
   const command = ['exec', '--ephemeral', '--ignore-user-config', '--json', '--sandbox', 'read-only', '--cd', repoDir,
     '--output-last-message', outputPath, '--model', model, '-c', `model_reasoning_effort="${effort}"`];
   if (verbosity) command.push('-c', `model_verbosity="${verbosity}"`);
-  if (schemaPath) command.push('--output-schema', schemaPath);
   command.push(prompt);
   return command;
 }
@@ -128,37 +106,16 @@ function runCodex({ tracePath, ...options }) {
   return { exitCode: result.status ?? 1, error: result.error?.message };
 }
 
-function evaluatorPrompt(testCase, response) {
-  const numberedCriteria = testCase.criteria.map((criterion, index) => `${index + 1}. ${criterion}`).join('\n');
-  return `You are a strict evaluator. Grade the assistant response to the user prompt against every criterion below.\n\n` +
-    `User prompt:\n${promptFor(testCase, byId)}\n\nCriteria:\n${numberedCriteria}\n\nAssistant response:\n${response}\n\n` +
-    `Return JSON only. Include exactly one check for each criterion, using consecutive ids starting at 1. ` +
-    `Set pass to true only when every criterion passes. Evidence must cite the response without exposing any secret-like value.`;
-}
-
-function grade(testCase, response, resultDir, runNumber, options) {
-  const responsePath = join(resultDir, `${testCase.id}.run-${runNumber}.response.txt`);
-  const judgePath = join(resultDir, `${testCase.id}.run-${runNumber}.judge.json`);
-  writeFileSync(responsePath, response, 'utf8');
-  const execution = runCodex({
-    prompt: evaluatorPrompt(testCase, response),
-    tracePath: join(resultDir, `${testCase.id}.run-${runNumber}.judge.trace.jsonl`),
-    outputPath: judgePath,
-    model: options.judgeModel,
-    effort: options.judgeEffort,
-    schemaPath: rubricSchema,
-  });
-  if (execution.exitCode !== 0 || !existsSync(judgePath)) {
-    return { pass: false, reason: `judge failed (exit ${execution.exitCode})`, execution };
-  }
-  try {
-    const judgement = JSON.parse(readFileSync(judgePath, 'utf8'));
-    const validChecks = Array.isArray(judgement.checks) && judgement.checks.length === testCase.criteria.length &&
-      judgement.checks.every((check, index) => check.id === index + 1 && typeof check.pass === 'boolean');
-    return { pass: validChecks && judgement.pass === true && judgement.checks.every((check) => check.pass), judgement };
-  } catch (error) {
-    return { pass: false, reason: `invalid judge JSON: ${error.message}` };
-  }
+// A judge that fails or returns an invalid verdict is a harness error, which
+// evals/gate.mjs reports separately from a failing answer.
+async function grade(testCase, response, resultDir, runNumber, options) {
+  writeFileSync(join(resultDir, `${testCase.id}.run-${runNumber}.response.txt`), response, 'utf8');
+  const judge = { harness: judgeHarness(options.judgeModel), model: options.judgeModel, effort: options.judgeEffort };
+  const verdict = await callJudge(judge, judgePrompt(testCase, byId, response), testCase.criteria.length);
+  writeFileSync(join(resultDir, `${testCase.id}.run-${runNumber}.judge.json`), `${JSON.stringify(verdict, null, 2)}\n`, 'utf8');
+  if (verdict.error) return { pass: false, reason: `judge failed: ${verdict.error.slice(0, 500)}` };
+  const { pass, checks, summary } = verdict;
+  return { pass: pass === true && checks.every((check) => check.pass), judgement: { pass, checks, summary } };
 }
 
 let byId;
@@ -199,7 +156,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
       }
       const response = readFileSync(answerPath, 'utf8');
       const checks = deterministicChecks(testCase, response);
-      const judged = grade(testCase, response, resultDir, runNumber, options);
+      const judged = await grade(testCase, response, resultDir, runNumber, options);
       const checksPass = checks.every((check) => check.skipped || check.pass);
       results.push({ id: testCase.id, run: runNumber, ...judged, pass: judged.pass && checksPass, checks });
     }
