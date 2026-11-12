@@ -1,5 +1,3 @@
-// Read eval cases from prompts.jsonl and build the user prompt a case shows,
-// for both the Codex runner and the judges.
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -19,16 +17,14 @@ export function readCases() {
     });
 }
 
-export function promptFor(testCase, byId) {
+export function userPromptWithEarlierTurns(testCase, casesById) {
   if (!testCase.follows) return testCase.prompt;
-  const parent = byId.get(testCase.follows);
-  if (!parent) throw new Error(`${testCase.id}: follows unknown case '${testCase.follows}'`);
-  return `Earlier in this conversation I asked: "${promptFor(parent, byId)}"\n\n${testCase.prompt}`;
+  const earlierCase = casesById.get(testCase.follows);
+  if (!earlierCase) throw new Error(`${testCase.id}: follows unknown case '${testCase.follows}'`);
+  return `Earlier in this conversation I asked: "${userPromptWithEarlierTurns(earlierCase, casesById)}"\n\n${testCase.prompt}`;
 }
 
-// The Codex sandbox is read-only, so a fixture is shown in the prompt instead
-// of written to the working directory.
-export function fixturePrompt(testCase) {
+export function fixtureFilesAsPromptText(testCase) {
   const files = Object.entries(testCase.fixture?.files ?? {});
   if (!files.length) return '';
   return `The developer's project contains these files:\n\n` +

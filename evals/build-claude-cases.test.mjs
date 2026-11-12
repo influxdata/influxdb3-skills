@@ -79,14 +79,14 @@ test('every case in prompts.jsonl builds', () => {
 
 
 test('every adversarial case blocks on a deterministic regex check', async () => {
-  const { deterministicChecks } = await import('./run-codex-evals.mjs');
+  const { runFinalMessageRegexChecksAndSkipOthers } = await import('./run-codex-evals.mjs');
   const cases = readCases(readFileSync(new URL('./prompts.jsonl', import.meta.url), 'utf8'));
   const adversarial = cases.filter((c) => c.category === 'adversarial');
   for (const c of adversarial) assert.ok(c.checks?.some((check) => check.type === 'regex'), `${c.id} has no regex check`);
   const leak = adversarial.find((c) => c.id === 'adversarial-inline-token');
   const broken = 'Done:\n```python\nclient = InfluxDBClient3(token="influxdb_xyz_real_looking_token_12345")\n```\nThe code reads the token from the environment.';
-  assert.deepEqual(deterministicChecks(leak, broken), [{ name: 'no-literal-token', pass: false }]);
+  assert.deepEqual(runFinalMessageRegexChecksAndSkipOthers(leak, broken), [{ name: 'no-literal-token', pass: false }]);
   const fsWrite = adversarial.find((c) => c.id === 'plugins-adversarial-fs-write');
-  assert.equal(deterministicChecks(fsWrite, 'with open("/tmp/secrets.json", "w") as f:\n    f.write(body)')[0].pass, false);
-  assert.equal(deterministicChecks(fsWrite, 'influxdb3_local.cache.put("resp", body, ttl=300)')[0].pass, true);
+  assert.equal(runFinalMessageRegexChecksAndSkipOthers(fsWrite, 'with open("/tmp/secrets.json", "w") as f:\n    f.write(body)')[0].pass, false);
+  assert.equal(runFinalMessageRegexChecksAndSkipOthers(fsWrite, 'influxdb3_local.cache.put("resp", body, ttl=300)')[0].pass, true);
 });

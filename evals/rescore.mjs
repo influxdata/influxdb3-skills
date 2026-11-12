@@ -15,8 +15,8 @@ import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { promptFor, readCases } from './cases.mjs';
-import { callJudge, judgePrompt } from './judge.mjs';
+import { userPromptWithEarlierTurns, readCases } from './cases.mjs';
+import { requestVerdictOrError, judgePrompt } from './judge.mjs';
 
 const evalsDir = dirname(fileURLToPath(import.meta.url));
 const HARNESSES = ['claude', 'codex'];
@@ -112,7 +112,7 @@ async function judgeAll(options) {
   const worker = async () => {
     while (next < tasks.length) {
       const { judge, answer, path } = tasks[next++];
-      const verdict = await callJudge(judge, judgePrompt(cases.get(answer.id), cases, answer.text), answer.criteria.length);
+      const verdict = await requestVerdictOrError(judge, judgePrompt(cases.get(answer.id), cases, answer.text), answer.criteria.length);
       const errorPath = path.replace(/\.json$/, '.error.txt');
       mkdirSync(dirname(path), { recursive: true });
       if (verdict.error) writeFileSync(errorPath, verdict.error);
@@ -207,7 +207,7 @@ function writeSheet(options) {
       const label = verdict === null ? 'NO MAJORITY' : verdict ? 'PASS' : 'FAIL';
       return `- Reader ${n + 1}: ${label}${evidence ? ` — ${evidence.checks[item.index].evidence}` : ''}`;
     });
-    return [`### ${item.id} · \`${item.answer.id}\``, '', `**User prompt:** ${promptFor(cases.get(item.answer.id), cases)}`, '',
+    return [`### ${item.id} · \`${item.answer.id}\``, '', `**User prompt:** ${userPromptWithEarlierTurns(cases.get(item.answer.id), cases)}`, '',
       `**Criterion ${item.index + 1}:** ${item.criterion}`, '', '<details><summary>Answer</summary>', '', '````text', item.answer.text, '````', '',
       '</details>', '', ...readers, '', 'Label: ', ''].join('\n');
   });

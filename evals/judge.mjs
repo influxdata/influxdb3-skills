@@ -1,19 +1,10 @@
-// Grade one answer against a case's criteria with a pinned judge model and
-// effort (ADR-0004). The Codex runner and evals/rescore.mjs both call this, so
-// every judge gets the same prompt, schema, and isolation.
-//
-// A judge is { harness: 'claude' | 'codex', model, effort }. Claude judges run
-// with --safe-mode and no tools; Codex judges ignore the user config and run in
-// an empty directory. Neither can read the repository.
 import { spawn } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { fixturePrompt, promptFor } from './cases.mjs';
+import { fixtureFilesAsPromptText, userPromptWithEarlierTurns } from './cases.mjs';
 
-// The schema fixes the number of checks, so a verdict that skips a criterion
-// doesn't validate.
-export function rubricSchema(criteriaCount) {
+export function verdictSchemaWithOneCheckPerCriterion(criteriaCount) {
   return {
     type: 'object',
     properties: {
@@ -36,68 +27,74 @@ export function rubricSchema(criteriaCount) {
   };
 }
 
-export function judgePrompt(testCase, byId, answer) {
-  const criteria = testCase.criteria.map((criterion, index) => `${index + 1}. ${criterion}`).join('\n');
+export function judgePrompt(testCase, casesById, answerText) {
+  const numberedCriteria = testCase.criteria.map((criterion, index) => `${index + 1}. ${criterion}`).join('\n');
   return 'You are a strict evaluator. Grade the assistant response to the user prompt against every criterion below. ' +
     'Judge each criterion on its own, from the response text only.\n\n' +
-    `${fixturePrompt(testCase)}User prompt:\n${promptFor(testCase, byId)}\n\nCriteria:\n${criteria}\n\n` +
-    `Assistant response:\n<<<\n${answer}\n>>>\n\n` +
+    `${fixtureFilesAsPromptText(testCase)}User prompt:\n${userPromptWithEarlierTurns(testCase, casesById)}\n\n` +
+    `Criteria:\n${numberedCriteria}\n\nAssistant response:\n<<<\n${answerText}\n>>>\n\n` +
     'Return JSON only. Include exactly one check for each criterion, using consecutive ids starting at 1. ' +
     'Set pass to true only when every criterion passes. Evidence must quote the response without exposing any secret-like value.';
 }
 
-export function judgeCommand(judge, workDir, criteriaCount) {
-  if (judge.harness === 'claude') {
+export function isolatedJudgeCommand(judgeSettings, emptyWorkDir, criteriaCount) {
+  if (judgeSettings.harness === 'claude') {
     return ['claude', ['-p', '--safe-mode', '--tools', '', '--no-session-persistence', '--output-format', 'json',
-      '--json-schema', JSON.stringify(rubricSchema(criteriaCount)), '--model', judge.model, '--effort', judge.effort,
+      '--json-schema', JSON.stringify(verdictSchemaWithOneCheckPerCriterion(criteriaCount)),
+      '--model', judgeSettings.model, '--effort', judgeSettings.effort,
       '--system-prompt', 'You grade answers against criteria. Reply only with JSON that matches the schema.']];
   }
   return ['codex', ['exec', '--ephemeral', '--ignore-user-config', '--json', '--skip-git-repo-check', '--sandbox', 'read-only',
-    '--cd', workDir, '--output-last-message', join(workDir, 'verdict.json'), '--output-schema', join(workDir, 'schema.json'),
-    '--model', judge.model, '-c', `model_reasoning_effort="${judge.effort}"`]];
+    '--cd', emptyWorkDir, '--output-last-message', join(emptyWorkDir, 'verdict.json'),
+    '--output-schema', join(emptyWorkDir, 'schema.json'),
+    '--model', judgeSettings.model, '-c', `model_reasoning_effort="${judgeSettings.effort}"`]];
 }
 
-function run(command, args, input, cwd) {
+function runWithStdin(command, args, stdinText, cwd) {
   return new Promise((done) => {
     const child = spawn(command, args, { cwd, stdio: ['pipe', 'pipe', 'pipe'] });
     let stdout = '';
     let stderr = '';
     child.stdout.on('data', (chunk) => { stdout += chunk; });
     child.stderr.on('data', (chunk) => { stderr += chunk; });
-    child.on('error', (error) => done({ code: 1, stdout, stderr: `${stderr}${error.message}` }));
-    child.on('close', (code) => done({ code, stdout, stderr }));
-    child.stdin.end(input);
+    child.on('error', (error) => done({ exitCode: 1, stdout, stderr: `${stderr}${error.message}` }));
+    child.on('close', (exitCode) => done({ exitCode, stdout, stderr }));
+    child.stdin.end(stdinText);
   });
 }
 
-// Returns { pass, checks, summary, costUsd?, usage?, models?, durationMs } or { error }.
-export async function callJudge(judge, prompt, criteriaCount) {
-  const workDir = mkdtempSync(join(tmpdir(), 'eval-judge-'));
-  const started = Date.now();
+export async function requestVerdictOrError(judgeSettings, prompt, criteriaCount) {
+  const emptyWorkDir = mkdtempSync(join(tmpdir(), 'eval-judge-'));
+  const startedAtMs = Date.now();
   try {
-    if (judge.harness === 'codex') writeFileSync(join(workDir, 'schema.json'), JSON.stringify(rubricSchema(criteriaCount)));
-    const [command, args] = judgeCommand(judge, workDir, criteriaCount);
-    const result = await run(command, args, prompt, workDir);
-    let verdict;
-    let extra = {};
-    if (judge.harness === 'claude') {
-      const output = JSON.parse(result.stdout || '{}');
-      if (result.code !== 0 || output.is_error) return { error: `${output.result ?? result.stderr}`.slice(0, 2000) };
-      verdict = output.structured_output ?? JSON.parse(output.result);
-      extra = { costUsd: output.total_cost_usd, usage: output.usage, models: Object.keys(output.modelUsage ?? {}) };
-    } else {
-      if (result.code !== 0) return { error: result.stderr.slice(-2000) };
-      verdict = JSON.parse(readFileSync(join(workDir, 'verdict.json'), 'utf8'));
-      const usage = result.stdout.split('\n').filter((line) => line.includes('"turn.completed"')).map((line) => JSON.parse(line).usage).pop();
-      extra = { usage };
+    if (judgeSettings.harness === 'codex') {
+      writeFileSync(join(emptyWorkDir, 'schema.json'), JSON.stringify(verdictSchemaWithOneCheckPerCriterion(criteriaCount)));
     }
-    const valid = Array.isArray(verdict.checks) && verdict.checks.length === criteriaCount &&
+    const [command, args] = isolatedJudgeCommand(judgeSettings, emptyWorkDir, criteriaCount);
+    const processResult = await runWithStdin(command, args, prompt, emptyWorkDir);
+    let verdict;
+    let callDetails;
+    if (judgeSettings.harness === 'claude') {
+      const claudeOutput = JSON.parse(processResult.stdout || '{}');
+      if (processResult.exitCode !== 0 || claudeOutput.is_error) {
+        return { error: `${claudeOutput.result ?? processResult.stderr}`.slice(0, 2000) };
+      }
+      verdict = claudeOutput.structured_output ?? JSON.parse(claudeOutput.result);
+      callDetails = { costUsd: claudeOutput.total_cost_usd, usage: claudeOutput.usage, models: Object.keys(claudeOutput.modelUsage ?? {}) };
+    } else {
+      if (processResult.exitCode !== 0) return { error: processResult.stderr.slice(-2000) };
+      verdict = JSON.parse(readFileSync(join(emptyWorkDir, 'verdict.json'), 'utf8'));
+      const usage = processResult.stdout.split('\n').filter((line) => line.includes('"turn.completed"'))
+        .map((line) => JSON.parse(line).usage).pop();
+      callDetails = { usage };
+    }
+    const hasOneCheckPerCriterion = Array.isArray(verdict.checks) && verdict.checks.length === criteriaCount &&
       verdict.checks.every((check, index) => check.id === index + 1 && typeof check.pass === 'boolean');
-    if (!valid) return { error: `invalid verdict: ${JSON.stringify(verdict).slice(0, 500)}` };
-    return { ...verdict, ...extra, durationMs: Date.now() - started };
+    if (!hasOneCheckPerCriterion) return { error: `invalid verdict: ${JSON.stringify(verdict).slice(0, 500)}` };
+    return { ...verdict, ...callDetails, durationMs: Date.now() - startedAtMs };
   } catch (error) {
     return { error: error.message };
   } finally {
-    rmSync(workDir, { recursive: true, force: true });
+    rmSync(emptyWorkDir, { recursive: true, force: true });
   }
 }
