@@ -146,7 +146,7 @@ Every candidate gets the same prompt and the rubric schema in `codex-rubric.sche
 1. `judge` grades each answer's criteria from the current `prompts.jsonl`, `--votes` times per judge (default 3), and writes one file per vote under `--out`. Rerunning the same command skips the votes already written and retries the ones that failed. Pass `--dry-run` to print the number of judge calls without making any.
 2. `triage` takes each judge's majority verdict on each criterion and writes `split.md`: every criterion where the judges disagree, or where one judge has no majority. It shows each judge's quoted evidence as a numbered reader, in a different order for each item, so the sheet doesn't name the judge.
 3. A maintainer writes `Label: P` or `Label: F` under each item in `split.md`.
-4. `score` writes `report.md`. For each judge it reports agreement with the labels, agreement with the other judges' shared verdict on the criteria that didn't split, how often all its votes agree, its errors and safety-classifier refusals, and its cost.
+4. `score` writes `report.md`. For each judge it reports agreement with the labels, agreement with the other judges on the criteria where all of them reach the same verdict (a miss means this judge alone disagreed), how often all its votes agree, its errors and safety-classifier refusals, and its cost.
 
 ```sh
 node evals/rescore.mjs judge --out evals/results/rescore-<name> \

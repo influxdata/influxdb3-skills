@@ -235,7 +235,7 @@ export function triage(answers, votes) {
       const split = values.includes(null) || new Set(values).size > 1;
       const key = `${answerKey(answer)}#${index + 1}`;
       const id = `S-${createHash('sha256').update(key).digest('hex').slice(0, 8)}`;
-      items.push({ id, key, answer, index, criterion, verdicts, split, consensus: split ? null : values[0] });
+      items.push({ id, key, answer, index, criterion, verdicts, split });
     });
   }
   return { judges, items };
@@ -288,11 +288,13 @@ function writeSheet(options) {
 }
 
 // Per judge: agreement with the maintainer's labels on split items, agreement
-// with the consensus elsewhere, how often all its votes agree, errors, and cost.
+// with the other judges on criteria where they all reach the same verdict, how
+// often all its votes agree, errors, and cost. Comparing a judge with a
+// consensus that includes it would always agree, so the comparison leaves it out.
 export function scoreJudges(items, votes, labels) {
   const rows = {};
   for (const judge of Object.keys(votes).sort()) {
-    const row = { labeled: 0, agreeLabels: 0, consensus: 0, agreeConsensus: 0, multiVote: 0, unanimous: 0, calls: 0, errors: 0, safetyErrors: 0, costUsd: 0 };
+    const row = { labeled: 0, agreeLabels: 0, othersAgree: 0, matchesOthers: 0, multiVote: 0, unanimous: 0, calls: 0, errors: 0, safetyErrors: 0, costUsd: 0 };
     for (const list of Object.values(votes[judge])) {
       for (const vote of list) {
         row.calls += 1;
@@ -312,9 +314,11 @@ export function scoreJudges(items, votes, labels) {
       if (item.split && item.id in labels) {
         row.labeled += 1;
         if (verdict === labels[item.id]) row.agreeLabels += 1;
-      } else if (!item.split) {
-        row.consensus += 1;
-        if (verdict === item.consensus) row.agreeConsensus += 1;
+      }
+      const others = Object.entries(item.verdicts).filter(([other]) => other !== judge).map(([, value]) => value);
+      if (others.length && !others.includes(null) && new Set(others).size === 1) {
+        row.othersAgree += 1;
+        if (verdict === others[0]) row.matchesOthers += 1;
       }
     }
     rows[judge] = row;
@@ -331,11 +335,12 @@ function writeReport(options) {
   const splits = items.filter((item) => item.split).length;
   const rows = scoreJudges(items, votes, labels);
   const pct = (n, d) => (d ? `${n}/${d} (${Math.round((100 * n) / d)}%)` : 'n/a');
-  const table = ['| Judge | Matches labels | Matches consensus | All votes agree | Errors (safety) | Cost (USD) |', '|---|---|---|---|---|---|',
-    ...Object.entries(rows).map(([judge, row]) => `| \`${judge}\` | ${pct(row.agreeLabels, row.labeled)} | ${pct(row.agreeConsensus, row.consensus)} | ` +
+  const table = ['| Judge | Matches labels | Matches the other judges | All votes agree | Errors (safety) | Cost (USD) |', '|---|---|---|---|---|---|',
+    ...Object.entries(rows).map(([judge, row]) => `| \`${judge}\` | ${pct(row.agreeLabels, row.labeled)} | ${pct(row.matchesOthers, row.othersAgree)} | ` +
       `${pct(row.unanimous, row.multiVote)} | ${row.errors}/${row.calls} (${row.safetyErrors}) | ${row.costUsd ? row.costUsd.toFixed(2) : 'not reported'} |`)];
   const report = [`# Judge comparison`, '', `${items.length} criteria; ${splits} split; ${Object.keys(labels).length} labeled.`, '', ...table, '',
-    'Codex calls report token usage in the vote files, not dollars.', ''].join('\n');
+    '"Matches the other judges" counts the criteria where every other judge reached the same majority verdict. ' +
+    'A miss means this judge alone disagreed.', '', 'Codex calls report token usage in the vote files, not dollars.', ''].join('\n');
   writeFileSync(join(options.out, 'report.md'), report);
   console.log(report);
 }

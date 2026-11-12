@@ -76,7 +76,6 @@ test('triage splits a criterion when judges disagree or one has no majority', ()
   const { judges, items } = triage(answers, votes);
   assert.deepEqual(judges, ['j1', 'j2']);
   assert.equal(items[0].split, false);
-  assert.equal(items[0].consensus, true);
   assert.equal(items[1].split, true);
   assert.deepEqual(items[1].verdicts, { j1: false, j2: true });
   assert.match(items[1].id, /^S-[0-9a-f]{8}$/);
@@ -105,8 +104,20 @@ test('parseLabels and scoreJudges measure agreement, consistency, errors, and co
   const labels = parseLabels(`### ${items[1].id} · \`a\`\n\nLabel: p\n\n### S-00000000 · \`b\`\n\nLabel: \n`);
   assert.deepEqual(labels, { [items[1].id]: true });
   const rows = scoreJudges(items, votes, labels);
-  assert.deepEqual(rows.j1, { labeled: 1, agreeLabels: 0, consensus: 1, agreeConsensus: 1, multiVote: 2, unanimous: 1,
+  assert.deepEqual(rows.j1, { labeled: 1, agreeLabels: 0, othersAgree: 2, matchesOthers: 1, multiVote: 2, unanimous: 1,
     calls: 3, errors: 0, safetyErrors: 0, costUsd: 0.5 });
-  assert.deepEqual(rows.j2, { labeled: 1, agreeLabels: 1, consensus: 1, agreeConsensus: 1, multiVote: 2, unanimous: 2,
+  assert.deepEqual(rows.j2, { labeled: 1, agreeLabels: 1, othersAgree: 2, matchesOthers: 1, multiVote: 2, unanimous: 2,
     calls: 3, errors: 1, safetyErrors: 1, costUsd: 0 });
+});
+
+test('scoreJudges compares each judge with the other judges only where they all agree', () => {
+  const answers = [{ source: 's', id: 'a', run: 1, text: 't', criteria: ['c1', 'c2'] }];
+  const votes = {
+    j1: { 's/a.run-1': [vote(true, false)] },
+    j2: { 's/a.run-1': [vote(true, true)] },
+    j3: { 's/a.run-1': [vote(true, false)] },
+  };
+  const rows = scoreJudges(triage(answers, votes).items, votes, {});
+  assert.deepEqual([rows.j1.othersAgree, rows.j1.matchesOthers], [1, 1]);
+  assert.deepEqual([rows.j2.othersAgree, rows.j2.matchesOthers], [2, 1]);
 });
