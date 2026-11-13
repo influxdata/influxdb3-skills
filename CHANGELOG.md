@@ -59,7 +59,6 @@ The `influxdb3` skill covers fewer products, and rules that different files stat
   - `except QueryError` raises `NameError`, so catch `Exception` and check the type name.
   - `write()` and `write_to_db()` are documented queued writes.
     A rejected queued write surfaces after the run as an `ERROR` log row.
-  - A failed flush of the legacy `write()` and `write_to_db()` doesn't raise in the plugin and might appear only in the server log.
   - The skill no longer promises at-least-once plugin writes, or that `error()` is recorded in a return payload.
   - `process_request` can return a list, which the engine encodes as JSON.
 - For TOML configuration, set `PLUGIN_DIR` on the server, put the file there, and pass `config_file_path`.
@@ -100,7 +99,6 @@ The `influxdb3` skill covers fewer products, and rules that different files stat
 - The `influxdb3` body states the naming and reserved-word rules, and that `/ping` requires a token by default unless `--disable-authz` opts it out.
 - Use InfluxQL when the developer asks for it, and SQL otherwise.
 - The skill explains query timeouts and access to named system-table columns.
-- Core 3.12.2 returns 429 instead of 500 for most out-of-memory queries, per its release notes.
 
 ### Tokens and security
 
@@ -176,7 +174,7 @@ These changes make the skills work for a Sonnet-level model that reads the skill
 
 ### Live-verified behavior corrections
 
-- Query-memory exhaustion returns 429; earlier Core releases returned 500, a bug fixed in 3.12.2. Hidden databases can't be told apart from absent ones by an empty 403 alone. Query error bodies match the 3.12.1 claims. Claims: claim-20261015-0101, claim-20261015-0102, claim-20261015-0107, claim-20261015-0108, claim-20261015-0113, claim-20261015-0114, claim-20261015-0115.
+- On 3.12.1, query-memory exhaustion before the first row returns 429 on Enterprise and 500 on Core. The Core 3.12.2 release notes say Core now returns 429, except in some cases, such as running out of memory while deduplicating. Hidden databases can't be told apart from absent ones by an empty 403 alone. Query error bodies match the 3.12.1 claims. Claims: claim-20261015-0101, claim-20261015-0102, claim-20261015-0107, claim-20261015-0108, claim-20261015-0113, claim-20261015-0114, claim-20261015-0115.
 - Plugin files are created with a JSON POST, trigger settings are optional, a package install is verified beyond its HTTP status, and existing explicit schemas are handled. Claims: claim-20261024-0304, claim-20261024-0312, claim-20261024-0305, claim-20261024-0313, claim-20261024-0306, claim-20261024-0314, claim-20261024-0308, claim-20261024-0317, claim-20261024-0303, claim-20261024-0311.
 - TOML parsing belongs to plugin code, and `config_file_path` doesn't make the engine merge TOML values into trigger arguments. Claims: claim-20261024-0318, claim-20261024-0319.
 - After a 403 on a health route, the diagnostic toolkit checks permitted read access and reports limited read-side health. Claims: claim-20261024-0316.
