@@ -91,7 +91,7 @@ Three paths:
 
 Full reference + HTTP API equivalents + security: [`references/installing.md`](references/installing.md).
 
-**Security:** plugin upload, update, and trigger creation require an admin token, and plugin files must stay inside `--plugin-dir`: the server rejects paths that contain `..` or start with `/`, and symlinks that resolve outside it. To reuse a file from elsewhere, copy it under `--plugin-dir` or upload it with `--upload`. Details: [`references/installing.md` → "Security"](references/installing.md#security).
+**Security:** plugin upload, update, and trigger creation require an admin token, and plugin files must stay inside `--plugin-dir`: the server rejects paths that contain `..` or start with `/`, and symlinks that resolve outside it. To reuse a file from elsewhere, copy it under `--plugin-dir` or upload it with `--upload`. Don't mount another directory inside `--plugin-dir` to reach the file: it stays where it lives, and anyone who can write there changes the code the plugin runs. Details: [`references/installing.md` → "Security"](references/installing.md#security).
 
 ### Tokens
 

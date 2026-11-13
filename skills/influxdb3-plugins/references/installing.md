@@ -60,7 +60,7 @@ Use the [API reference](https://docs.influxdata.com/influxdb3/enterprise/api/v3/
 
 ### 2. Server-side placement (preferred for production)
 
-Copy the plugin file or directory into the server's `--plugin-dir` via your deploy tooling (rsync, container volume mount, file sync). Then create the trigger with the relative path:
+Copy the plugin file or directory into the server's `--plugin-dir` via your deploy tooling (rsync, file sync, a container image or a volume for the plugin directory itself). Copy a shared file in; don't mount its directory inside `--plugin-dir`, because the file stays where it lives and anyone who can write there changes the code the plugin runs. Then create the trigger with the relative path:
 
 ```bash
 influxdb3 create trigger \
