@@ -96,6 +96,8 @@ Generated code covers Python, JavaScript and TypeScript, Go, Java, C#, and raw H
 - **Detect Core or Enterprise:** probes `/ping` and reads the `x-influxdb-build` and `x-influxdb-version` response headers.
   If the result is ambiguous, the agent asks you.
 - **Identify other InfluxDB products:** reads the host name and the `/ping` version headers.
+  A host that ends in `enterprise.influxdb.io` is InfluxDB 3 Cloud, not a self-hosted Enterprise server.
+  If you say only "InfluxDB Cloud" and neither signal matches, the agent asks which product you mean.
   For a product the skill doesn't cover, the agent links to that product's docs instead of answering from memory.
 - **Write data:** line protocol, batching, retriable and non-retriable errors, and which write endpoints accept partial writes.
 - **Query data:** InfluxDB 3 SQL by default, InfluxQL when you ask for it, parameterized user input, pagination, and time-bucket queries.
@@ -145,6 +147,12 @@ For these topics, the skills point to the official docs instead of guessing:
 - **InfluxDB Cloud Serverless, InfluxDB Cloud Dedicated, and InfluxDB Clustered:**
   these products have no `/api/v3` endpoints and use different tokens and databases.
 - **InfluxDB Cloud (TSM), InfluxDB Cloud 1, InfluxDB OSS v1, and InfluxDB OSS v2.**
+
+Before 0.7.3, the `influxdb3` skill also covered InfluxDB Cloud Serverless, InfluxDB Cloud Dedicated, and InfluxDB Clustered.
+That guidance was thin and partly wrong.
+0.7.3 removed it, to make the skill shorter and its answers for the products it covers more reliable.
+The skill still names those products in its description, so it loads for them.
+It then identifies the product from the host name or the `/ping` version headers and links to that product's docs.
 
 ## Check the tested versions
 
