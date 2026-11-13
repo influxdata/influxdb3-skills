@@ -65,7 +65,8 @@ The `influxdb3` skill covers fewer products, and rules that different files stat
   The plugin reads and parses the file, keeping the path inside `PLUGIN_DIR`.
   The engine doesn't load it.
   This replaces the base64 trigger-argument workaround.
-- On Core and Enterprise 3.12.1, `update trigger` reads the local `--path` file and rejects `--upload`, and `delete trigger --force` deletes an active trigger.
+- `update trigger` reads the local `--path` file and rejects `--upload`, and `delete trigger --force` deletes an active trigger.
+  Tests on Core and Enterprise 3.12.1 established both, and the skill states them without a version.
 - HTTP `trigger_settings.error_behavior` values are lowercase.
   For other trigger settings, the skill points to the API reference or the InfluxDB Documentation MCP server.
 - `install package` and `enable trigger` take `--token` like every other admin command.
