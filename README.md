@@ -109,7 +109,13 @@ Generated code covers Python, JavaScript and TypeScript, Go, Java, C#, and raw H
 - **Run a diagnostic:** a Python script that produces a one-page health report.
   It checks `/ping`, detects the product, lists databases, and writes and queries a throwaway database.
   Run it when something seems wrong, before you paste an error into your agent.
-- **Fix common mistakes:** four broken-and-fixed example pairs for silent auto-creation, an admin token used on the data plane, `system.tokens.permissions` parsing, and `HEAD` requests to `/ping`.
+- **Fix common mistakes:** four examples, each with broken code and its fix:
+  - With the default settings, a write to a misspelled database name creates a new database.
+    Queries against the intended database return no rows.
+  - Application code writes with the admin token, which has full access to every database, instead of a token scoped to its database.
+  - A script treats `system.tokens.permissions` as a list.
+    The value is a string.
+  - A health check sends `HEAD /ping` and gets a 404, because `/ping` accepts only `GET`.
 
 ### `influxdb3-plugins`: Processing Engine plugins
 
