@@ -8,149 +8,219 @@ Claim IDs (`claim-YYYYMMDD-NNNN`) refer to InfluxData's internal verification le
 
 ## [0.7.3] — 2026-11-13
 
-### Packaging and verification
+Both skills move from InfluxDB 3 Core and Enterprise 3.11.5 to 3.12.1.
+The `influxdb3` skill covers fewer products, and rules that different files stated differently now each have one home.
 
-- Both existing skills remain one package. Every skill-changing main merge requires a new shared version and final-content evidence.
-- The eval suite has 98 cases, up from 72 in 0.7.2.
-- Release evidence includes a complete three-run Codex suite on the final skills. Codex results are advisory until Codex meets the bars: `check-release.mjs verify` reports them but blocks only on missing or incomplete Codex evidence. The skills serve both agents, and Codex has caught defects the Claude runs missed.
-- 0.7.3 gates on Opus answers, at the maintainer's choice, with Opus judging. Sonnet remains the default gate model; on the release candidate it failed the adversarial bar.
-- Release verification runs for unlabeled skill and prompt changes. Changed-behavior eval cases pass individually alongside aggregate bars, including plugin, admin, and troubleshooting cases.
-- Release review reads current docs-v2 master and production release notes, covering 3.12.1 and the intervening 3.12.0 release.
-- Codex follow-up cases supply the same conversation context to the judge and answer model; local skill-file reads are explicitly allowed during evaluations.
-- Eval cases can declare deterministic graders beside the judged criteria: `regex` checks on the final message, a trace, or a written file; `tool_used` checks; `skill_loaded` for the trigger bar; and a `fixture` of workspace files. The case builder writes the Claude Code grader files and scaffold, the Codex runner applies regex checks on the final message and shows fixtures in the prompt, and the gate passes a run only when every grader passed. `adversarial-inline-token` now fails on the literal token string whatever the judge says. Run Claude evals with `--scaffold`.
-- Every adversarial case blocks on a regex check that gives the same verdict every run: no pasted or literal token in the answer, no file-writing code in the plugin case, a warning about committing `.env`, a labeled stub, a legitimate plugin-file option, and an application-token recommendation. The judge keeps only criteria that need reading. Against earlier result files, the regexes agreed with the judge on every Sonnet run, and also failed Haiku and Opus answers that repeated the pasted token in prose, which the token rules forbid. The cache-lifetime and trigger-argument advice moved out of the adversarial bar into two new plugin cases, `plugins-cache-restart` and `plugins-secret-trigger-arg`. `plugins-adversarial-inline-token` now requires keeping the admin call outside the plugin as the first recommendation. An answer may still offer a token in a trigger argument if it says arguments are stored as plain text and readable through the system tables, and recommends a dedicated token over the operator's admin token. The docs neither endorse nor forbid that pattern, and the skill can't stop an operator from choosing it.
-- Five cases whose prompts don't name InfluxDB 3, or state no task, now run inside a project that uses it: `flavor-detection`, `schema-naming`, `write-batch-csharp`, `query-parameterize-java`, and `adversarial-skip-gitignore` each get an `.env.example` and a source file that imports an official client. A `skill-loaded` grader records whether the skill loaded. The gate reports a separate trigger bar for those cases, and a run that didn't load the skill no longer fails the content bars by itself. Without the project context, the cases measured whether the description fires on a bare question, which isn't how a developer meets the skill. `query-parameterize-java` keeps its fixture but is off the trigger bar until a later release: its prompt never names InfluxDB, and Sonnet didn't load the skill in any run before or after the fixture. The `influxdb3` description now says "question or task", because `adversarial-skip-gitignore` names InfluxDB 3 Core but states a task, and the skill didn't load for it.
-- The example runner fails on database setup or cleanup errors, and the HTTP example checks database visibility and fails on HTTP errors.
-- Thirty judged criteria in 23 cases moved to 40 `regex` checks, because each one names a string the answer must contain or must not contain: a client library, a CLI command or flag, a trigger spec, a plugin function signature, an endpoint, or the processing-engine log columns. Both agents now apply the same pattern every run, and the judge reads only the criteria that need reading ([#49](https://github.com/influxdata/influxdb3-skills/issues/49)). Against nine stored suites (Opus 796c769, 79dee1f, and 22c4c6a; Sonnet 22c4c6a and 96fbe22; `gpt-6.1-sol` 796c769 and 79dee1f; `gpt-6.1-terra`; `gpt-6-luna`), the checks matched all 480 per-criterion Codex verdicts, and no check failed a Claude run that the judge passed. No stored run changes its verdict. Two candidates stayed with the judge because a pattern can't decide them: `query-aggregation-sql` allows an equivalent interval, and `admin-token-filter` requires parsing instead of matching raw text. A third, `plugins-error-behavior-case`, stayed because answers quote the capitalized values to warn against them. `plugins-scheduled-with-cache` keeps its cache criterion with the judge, so every case still has one judged criterion. `evals/README.md` now states when a criterion can move.
-- Five judged criteria that judges read differently on the same answers now each state one condition a reader can check ([#49](https://github.com/influxdata/influxdb3-skills/issues/49)). `adversarial-inline-token` requires a `.gitignore` entry for `.env` before the `.env` exists, by checking, adding, or telling the user to add it, and no longer forbids changing "the user's existing secret setup": judges read that clause as forbidding advice to rotate the pasted token, which the skill gives. `plugins-secret-trigger-arg` accepts a key that only the plugin uses, with only the permissions its call needs, instead of "scoped to the one call". `admin-token-filter` names the inputs the filter must keep and drop, because a judge failed correct code on an assumed permissions shape. `flavor-detection` splits its fallback into two criteria: the code returns an unknown result instead of picking a product, and the answer says to get the product from the developer, as `references/flavor-detection.md` says. `plugins-adversarial-path-traversal` names the workarounds it forbids, including a mount of another directory inside `--plugin-dir`, because a mounted directory keeps the file where it already lives. The rewrites target 15 failing verdicts in the Opus and `gpt-6.1-sol` suites on 796c769 and 79dee1f; step 3 of #49 re-scored them. `evals/README.md` now states when to rewrite a judged criterion.
-- Three cases no longer ask the judge to decide whether generated code works ([#49](https://github.com/influxdata/influxdb3-skills/issues/49)). `adversarial-inline-token` asked for "working code that reads the token from an env var", and two of six candidate judges failed a correct script because they assumed a different response shape for `GET /api/v3/configure/database`. It now asks only whether the script reads the token from an environment variable. `adversarial-skip-gitignore` accepted code that reads three variables or questions asked first, and judges split on whether "What would you like next?" counts as asking. It now asks only that code it writes reads the token from an environment variable. `flavor-detection` drops the criterion that graded the code's fallback branches: judges split on whether a branch for a version outside 3.x picks a product, and the skill can point the agent to the documented checks but can't decide the code it writes. Its criterion that the answer identifies the flavor moved to a `regex` check for `x-influxdb-build` or `product_name`, which the 3.12.1 Core and Enterprise `/ping` responses return. The check matched the judges' pass on all 12 stored answers from Opus and `gpt-6.1-sol`; none of those answers fails it. `adversarial-inline-token` keeps a judged criterion because one `gpt-6.1-sol` answer hard-codes the token but names `os.environ["INFLUXDB_TOKEN"]` in a later instruction.
-- `evals/rescore.mjs` re-scores stored answers with candidate judges, Claude or Codex, each with its model and effort pinned. It writes a sheet of the criteria where the judges split, for a maintainer to label, and reports each judge's agreement with the labels, agreement across its own votes, errors, and cost ([#49](https://github.com/influxdata/influxdb3-skills/issues/49)). The answers and criteria stay fixed, so a judge comparison pays only for judge calls.
-- ADR-0004: `claude-opus-5-5` at `medium` effort judges both agents' release suites, with `gpt-6.1-sol` at `medium` as the audit judge before an adversarial failure blocks a release ([#49](https://github.com/influxdata/influxdb3-skills/issues/49)). After #52 narrowed the disputed criteria, six candidate judges gave the same verdict on every criterion of the narrowed cases. The ADR first chose `high`, which cost less, but `claude plugin eval` can't set the judge's effort apart from the answering agent's, so an amendment sets `medium`.
-- The Codex runner now judges with `claude-opus-5-5` by default, through the same call as `evals/rescore.mjs`, now shared in `evals/judge.mjs`. The judge can't read the repository, and its schema fixes the number of checks to the case's criteria, so a verdict that skips a criterion is rejected. A judge failure or invalid verdict is reported as a harness error instead of a failing answer. `check-release.mjs verify` requires both agents' evidence to use the same judge model and judge effort. `evals/codex-rubric.schema.json` is removed; `evals/judge.mjs` builds the schema ([#49](https://github.com/influxdata/influxdb3-skills/issues/49)).
+### Scope
 
-### Sonnet-level baseline
+- The `influxdb3` skill covers InfluxDB 3 Core, InfluxDB 3 Enterprise, and InfluxDB 3 Cloud only.
+  InfluxDB Cloud Serverless, InfluxDB Cloud Dedicated, and InfluxDB Clustered have no `/api/v3` endpoints and use different tokens and databases.
+  The skill's guidance for them was thin and partly wrong, so it's removed.
+  The description still names them, including a bare "InfluxDB Cloud", so the skill loads, identifies the product, and gives only a docs link: no steps, commands, or UI paths.
+- The skill identifies the product from the host name and the `/ping` version headers.
+  The signal table is in the `influxdb3` body, which agents read.
+  A host that ends in `enterprise.influxdb.io` is InfluxDB 3 Cloud.
+  The agent checks `x-influxdb-version` before `x-influxdb-build`, because InfluxDB Enterprise v1 also sends `x-influxdb-build: Enterprise`.
+- "Cloud" or "InfluxDB Cloud" alone is ambiguous.
+  The skill names the products it can mean, and the agent asks before giving product-specific steps.
+  When it asks, it gives token steps only for InfluxDB 3 Cloud.
+- The skills no longer contain version test notes, such as test outcomes and "on 3.12.1" qualifiers.
+  Where a test established a behavior the docs don't cover, the rule stays.
+  `docs_checked_against` in the frontmatter records the version baseline.
+- Testbench observations stay attributed to the product and version that produced them.
+  Earlier review edits had generalized Core 3.12.1 results, such as duplicate rows after rewrites, to every 3.12.1 deployment.
+- Explicit-schema administration and distributed plugin placement remain separate work.
 
-These changes make the skills usable by a Sonnet-level model that reads the skill body and few references.
+### Plugins
 
-- State one overwrite rule: points that share a table, tag set, and timestamp merge, and which field value survives isn't guaranteed ([line protocol docs](https://docs.influxdata.com/influxdb3/enterprise/reference/line-protocol/#overwrites-are-not-deterministic)). The schema reference's GPU example said such points "would overwrite each other", and the writing reference said a timestamped retry replaces the first point. Sonnet repeated both into answers that the overwrite criteria then failed.
-- Put the product signal table (host patterns and `/ping` version headers) in the `influxdb3` body's flavor section, ahead of the Core-versus-Enterprise probe. It lived only in `flavor-detection.md`, which agents rarely opened, so a `cloud2` host outside the Serverless regions got InfluxDB 3 answers. The reference keeps the detection flow and points at the body.
-- Move the plugin-runtime quirks (`table_batches` items are dicts, plugins see only the embedded venv, the processing-engine log columns) into the `influxdb3-plugins` runtime, dependencies, and testing references, and drop the cross-skill pointers to them. The plugins skill loads alone, so a plugin author never saw those facts. The `influxdb3` quirks reference keeps its numbering so existing links still resolve. The `table_batches` broken-and-fixed pair moves to the plugins skill's examples.
-- State the plugin credential rules positively in the plugins body: admin calls stay outside the plugin, and a key the plugin needs goes in a trigger argument the operator sets. Before the setup steps, the agent says that trigger arguments are stored as plain text and readable by anyone who can query system tables, and recommends a new key for that plugin alone, with only the permissions its call needs, never logged. In two stored answers to `plugins-secret-trigger-arg`, the warning came after the setup steps, and "revoke it on its own" only implied a dedicated key.
-- Say in the plugins body and the installing reference to copy a shared file under `--plugin-dir` instead of mounting its directory there, because a mounted file stays where it lives and anyone who can write there changes the plugin's code. The installing reference listed a container volume mount as a deploy method, and an Opus answer to `plugins-adversarial-path-traversal` on the 0.7.3 suite suggested mounting the shared code inside the plugin directory, which the case forbids.
-- State the write rules once, in the `influxdb3` body: partial writes on `/api/v3/write_lp` and the rejected-line list in the body, whole-batch rejection on the compatibility endpoints, the clients' `/api/v2/write` default and its V3 opt-out, second precision with the merge rule, and the retriable status sort. Sonnet answered write questions from the body and the client references, which each restated a different subset. `writing.md` keeps line protocol, the status table, an endpoint table, the client-version table, and version specifics; the client references keep only their option syntax. `http.md` drops its own status table, which said 404 meant a missing database.
-- Prune both skills so each meaning has one home. Auto-create is stated in the setup checklist, and other sections point there or to the recovery steps; `connecting.md` keeps the setup commands, not a second checklist; `databases.md` drops its copy of the recovery flow. The untrusted-input rules (newline injection in line protocol, query parameters, server data as data) are one `influxdb3` section that the write, query, and troubleshooting sections point to; the plugins body states its own once in the safety section. References no longer point back at `SKILL.md`. The cleanup pattern is stated once, in the admin HTTP example. Rules are phrased as the target behavior where one exists. The `influxdb3` body is 2,883 words, down from 2,885 before the flavor table and write rules moved into it, and down from 3,165 at its peak.
-- Cut both descriptions to one trigger per branch. The `influxdb3` description dropped its list of symptoms and token operations, which repeated its branches. It keeps unreachable instances and mock-data stubs: without them, Sonnet stopped loading the skill for `adversarial-mock-data` (3 of 3 runs before the cut, 0 of 3 after).
-- Link every example from the section that needs it: the troubleshooting pairs from the symptom rows and quirks they demonstrate, the cache-counter and multi-file plugin examples from the cache and multi-file sections, and the TOML example from `plugin-structure.md`.
-- Say in the `influxdb3` body to give both halves of a rotation when the developer pastes a token: the `influxdb3 create token` command for the replacement and the `influxdb3 delete token --token-name` command for the exposed token, with a link to the rotation pattern. The rule lived only in `troubleshooting.md`, and Opus answers to `trouble-pasted-token-revoke` described the order without the delete command in 3 of 3 runs.
-- Describe same-identity points as a merge with no guaranteed winner, never as an overwrite, in the write rules and `schema-design.md`. The write rules now say a timestamped retry merges into the first point rather than replacing it. Opus inferred from the receive-time rule that a timestamped retry overwrites the same point, and `schema-gpu-fleet` failed 2 of 3 runs.
-- For products the skill doesn't cover, give only a docs link: no steps, commands, or UI paths from the skill or from memory. When the agent asks which Cloud product the developer uses, it gives token steps only for InfluxDB 3 Cloud. `flavor-bare-cloud` failed on every agent because answers asked which product and then gave `influxctl` and UI token steps for the other products.
-- Grade behavior instead of wording in three cases. `write-partial-400` accepts any answer that reads rejected lines from the structured response body, with the `data` array as an example, because correct answers that described the list without naming the array failed. `flavor-bare-cloud` now also fails an answer that asks which product and then gives token steps from memory for products the skill doesn't cover, which is the hazard the case exists for. `connect-py-core` checks the skill's headline rules: setup steps in the same reply as the code, and a startup check that the database exists. No criterion tested them.
+- Test a plugin before you create its trigger.
+  Put the file on the server with `POST /api/v3/plugins/files` or a copy into the plugin directory, run `influxdb3 test wal_plugin` or `influxdb3 test schedule_plugin`, and then create the trigger (#44).
+- Admin calls stay outside the plugin.
+  A key the plugin needs goes in a trigger argument that the operator sets.
+  Before the setup steps, the agent says trigger arguments are stored as plain text and readable through `system.processing_engine_trigger_arguments`.
+  It recommends a new key for that plugin alone, with only the permissions its call needs, never logged.
+- To reuse a shared file, copy it under `--plugin-dir`.
+  Don't mount its directory inside `--plugin-dir`: the file stays where it lives, and anyone who can write there changes the plugin's code.
+- For a plugin error, check the server log first.
+  An uncaught exception can skip `system.processing_engine_logs`.
+- Trigger logs are in the trigger's database or in `_internal`.
+  Query `system.processing_engine_triggers` in `_internal` with the admin token, and filter plugin log queries by `trigger_name`.
+  `system.plugin_files.plugin_name` is the trigger name.
+- Cron trigger schedules use UTC and 6 fields, with an optional year; 5-field expressions are rejected.
+  Numeric weekdays start at `1` = Sunday, so `1-5` runs Sunday through Thursday.
+  The skill recommends day names.
+- Plugins use the embedded venv at `<PLUGIN_DIR>/.venv`, or the `--virtual-env-location` path.
+  Don't build it with system Python.
+  The skill names the venv path and the system-Python warning at the package install step, where agents read them.
+  The plugin import quirk applies to any package, not only pandas.
+  After a restart, the server reuses that venv, so a changed path or an unpersisted container volume gives an empty venv.
+- Runtime API corrections from the Python API reference:
+  - `query()` takes an optional `database`, and its `args` values must be strings.
+  - `except QueryError` raises `NameError`, so catch `Exception` and check the type name.
+  - `write()` and `write_to_db()` are documented queued writes.
+    A rejected queued write surfaces after the run as an `ERROR` log row.
+  - A failed flush of the legacy `write()` and `write_to_db()` doesn't raise in the plugin and might appear only in the server log.
+  - The skill no longer promises at-least-once plugin writes, or that `error()` is recorded in a return payload.
+  - `process_request` can return a list, which the engine encodes as JSON.
+- For TOML configuration, set `PLUGIN_DIR` on the server, put the file there, and pass `config_file_path`.
+  The plugin reads and parses the file, keeping the path inside `PLUGIN_DIR`.
+  The engine doesn't load it.
+  This replaces the base64 trigger-argument workaround.
+- On Core and Enterprise 3.12.1, `update trigger` reads the local `--path` file and rejects `--upload`, and `delete trigger --force` deletes an active trigger.
+- HTTP `trigger_settings.error_behavior` values are lowercase.
+  For other trigger settings, the skill points to the API reference or the InfluxDB Documentation MCP server.
+- `install package` and `enable trigger` take `--token` like every other admin command.
+- "Trigger doesn't fire" starts with the single-node scope note.
+  The scope note no longer names plugin placement flags, and it says single-node deployments don't have the routing problem.
+  The step that described trigger pinning on clusters is removed.
+  Agents repeated both as placement guidance.
+- The plugin-runtime quirks (`table_batches` items are dicts, plugins see only the embedded venv, and the log columns) moved into the plugins skill, which loads on its own.
 
-### Documentation-grounded corrections
+### Writes, queries, and schemas
 
-- Preserve existing capability boundaries. Explicit-schema administration and distributed plugin placement remain separate work.
-- Explain query timeouts and named system-table column access. Enterprise authentication is generally available and remains opt-in.
-- Link to the API reference for complete contracts instead of duplicating it.
-- Use InfluxQL when the developer asks for it, and default to SQL otherwise. InfluxDB 3 supports both, so the skill no longer argues against InfluxQL.
-- State in the skill body that `/ping` requires a token by default, how `--disable-authz` opts routes out, and the naming and reserved-word rules. Agents rarely opened the references that held them.
-- Distinguish InfluxDB 3 Cloud (hosted Enterprise) from the other Cloud products, and say `/api/v3/*` fails on InfluxDB Cloud Serverless and InfluxDB Cloud Dedicated.
-- Stop naming plugin placement flags in the scope note, which agents repeated as facts, and say single-node deployments don't have the routing problem.
-- Say that `INFLUXDB_TOKEN` and `INFLUXDB_ADMIN_TOKEN` are the skill's names, and that the `influxdb3` CLI reads `INFLUXDB3_AUTH_TOKEN` when `--token` is absent. The docs use only `INFLUXDB3_AUTH_TOKEN` and placeholders, so the skill states the difference instead of renaming. The admin lifecycle examples, the example runner, and CI now read the admin token from `INFLUXDB_ADMIN_TOKEN`.
-- Name `<PLUGIN_DIR>/.venv` and the system-Python warning at the package install step, where agents read them.
-- Put the single-node scope note at the top of the plugin "Trigger doesn't fire" steps, and remove the step that described trigger pinning on clusters. Agents repeated that step as placement guidance.
-- Correct the embedded venv path to `<PLUGIN_DIR>/.venv`, observed on Core 3.12.1 and 3.12.2.
-- Note that Core 3.12.2 returns 429 instead of 500 for most out-of-memory queries, per its release notes.
-- Say that a failed flush of the legacy `write()` and `write_to_db()` doesn't raise in the plugin and may appear only in the server log.
-- Keep testbench observations attributed to the product and version that produced them. The review edits had generalized Core 3.12.1 results, such as duplicate rows after rewrites, to every 3.12.1 deployment.
-- Say that `update trigger` on Core and Enterprise 3.12.1 reads the local `--path` file and rejects `--upload`, and that `delete trigger --force` permits deleting an active trigger.
-- Test a plugin before creating its trigger: put the file on the server through `POST /api/v3/plugins/files` or a copy into the plugin directory, run `influxdb3 test wal_plugin` or `influxdb3 test schedule_plugin`, then create the trigger. The testing reference told agents to create a trigger with `--upload` first, so smoke-run answers ran untested plugin code on a live trigger (#44). The live plugin runner's new `offline_test` case checks this order on Core and Enterprise 3.12.1, and the new `plugins-test-before-trigger` eval case checks that agents follow it.
-- Use `INFLUXDB_ADMIN_TOKEN` in every admin CLI command, including token creation and plugin and trigger management, and in the demos that manage databases, tokens, and triggers, so the admin token stays separate from the application's `INFLUXDB_TOKEN`.
-- State the lowercase HTTP values for `trigger_settings.error_behavior`, and point to the API reference or the InfluxDB Documentation MCP server for other settings.
-- Judge Claude evals with Opus. A diagnostic regrade showed the Sonnet judge failing correct answers on wording.
-- Revise eval criteria that conflicted with the skill or graded wording instead of behavior: separate admin-token variables, labeled fake-data stubs, `.env` handling that respects the user's setup, and ambiguous "Cloud" requests.
-- Advise instead of overruling the operator. For `.gitignore`, mock-data stubs, the database-existence check, and using the admin token for app writes, the agent explains the risk and then follows the operator's choice. It still never hard-codes a token in code it writes.
-- Recommend not repeating a pasted token, instead of scripting how to refer to it, and stop requiring rotation before diagnosis continues. The old wording assumed the token arrived in an error message.
-- Fix examples an agent would copy: `batch["rows"]` instead of `batch.rows`, a 6-field cron spec, a working engine check instead of invalid `jq`, a timeout-safe detection snippet, `.gitignore` before `.env` writes, and a 401 check that prints no token characters.
-- Correct facts: `serve` doesn't print a token, so create one with `create token --admin`; Core has admin tokens only; HTTP can update retention; the current write API is `write_sync`; and the skill no longer promises at-least-once plugin writes.
-- Use admin-token variables for admin examples, use only current license environment variable names, and add confirmed doc URLs.
-- Remove the Python and JavaScript snippets from `flavor-detection.md`. They repeated the decision flow in more detail than agents need.
-- Say that when only `--help` text disagrees with the docs, neither is proven. The agent recommends a behavior test or a support question and suggests reporting the discrepancy.
-- Tell agents not to build a plugin venv with system Python, and filter plugin log queries by `trigger_name`.
-- During token rotation, keep revocation a separate step after consumers confirm the switch. A fixed wait alone doesn't show they switched.
-- State the duplicate-tag-key fix per release line. "3.9.8+" read as covering 3.10.0 through 3.10.2, which still accept the point.
-- Revise eval criteria that required exact recall or one specific tool instead of the behavior: the secret manager in token rotation, the Authorization scheme, the timestamp-boundary wording, misspelled database names, candidate Cloud products, the duplicate-tag-key versions, and the plugin venv path.
-- Split eval cases that asked for several tasks or questions at once into one case per task. A compound case failed on any single miss, which hid which behavior the agent got wrong.
-- Give each eval criterion one check. Split criteria that bundled several checks, merge criteria that repeated each other, make vague criteria concrete, and drop criteria the prompt didn't ask for. The admin-token step after a Docker install and the reserved-word warning moved to their own cases.
-- Keep one copy of repeated rules (auto-create, retry and rewrite safety, `memory` object store, `gh:` trust boundary, redaction) and point to it elsewhere. Remove test-log narration, internal-source references, and filler.
-- Rewrite the CLI token quirk around passing `--token`. "Set both env vars" put the admin token in `INFLUXDB3_AUTH_TOKEN`, which the CLI then used for every command, and the fix named `INFLUXDB_ADMIN_TOKEN` without saying to set it.
-- Make the 401 checklist cover the admin token. It checked only `INFLUXDB_TOKEN`, so a 401 from an admin command went undiagnosed. The database-list `curl` now uses the admin token.
-- Correct lost-admin-token recovery. Regenerating the operator token isn't needed when another admin token works, and the docs' `--admin-token-recovery-http-bind` method replaces "follow the docs".
-- State where trigger logs live: the trigger's database or `_internal`, per the query-system-data docs. Query `system.processing_engine_triggers` in `_internal` with the admin token, as the system tables live there, and define `system.plugin_files.plugin_name` as the trigger name.
-- Lead the plugin error section with checking the server log. Uncaught exceptions can skip `system.processing_engine_logs`, and that rule was buried in test notes.
-- Rewrite the overwrite quirk from the line protocol docs: overwrites aren't deterministic, so write each change as a new point.
-- Generalize the plugin import quirk beyond pandas and name `--virtual-env-location` for a custom venv.
-- State the cron trigger format from the `influxdb` source and its `cron` 0.15.0 parser: UTC schedules, 6 fields with an optional year, 5-field expressions rejected, and numeric weekdays starting at `1` = Sunday. The docs' `0-7` numbering makes `1-5` look like Monday through Friday, but it runs Sunday through Thursday, so the skill recommends day names.
-- Explain venv reuse after restart from the startup source: the server reuses `<PLUGIN_DIR>/.venv` or the `--virtual-env-location` path, so a changed path or an unpersisted container volume gives an empty venv.
-- Drop eval criteria that checked for test narration instead of guidance: fresh-initialization duplicates, verified-versus-unverified versions, both editions tested, and a single-node remark the prompt didn't ask for. Keep the guidance those cases need: the filtered database list, the cross-node JWT check, checking every node's server log, and verifying repeat behavior on the target.
-- Save the bootstrap token as `INFLUXDB_ADMIN_TOKEN`, load `.env` before the verify step, and point to creating a separate application token. The install guide saved the admin token as `INFLUXDB_TOKEN`, and its verify step read a variable it never exported.
-- Name Docker beside DEB/RPM as the docs' production install routes, pin the Docker example to `3.12.1`, say the install script installs the latest release, and keep one copy of the license activation steps. Drop the unsourced `~/.influxdb/` binary path.
-- Accept pinned image tags in the Docker install criteria. The skill tells agents to pin a version, and the criteria failed them for doing it. Replace "verify the target behavior" in the rewrite cases with the docs' design rule, and let an administrator's check conclude a database is absent.
-- State what happens when points share a table, tag set, and timestamp: they merge, and which field value survives isn't guaranteed. "Share a logical identity" didn't say why an identifier must be a tag. Fold the 50,000-GPU example into the general rule, link the docs' schema design page, and remove hedging.
-- Put `--data-dir` in the local object-store recommendation, and check the meaning of an empty 403 instead of test wording in `trouble-hidden-database`.
-- Use the admin token for the database list and create calls in `connecting.md`. A scoped app token gets 403 on create and a filtered list.
-- Use `"$INFLUXDB_ADMIN_TOKEN"` instead of `<admin-token>` in admin commands, say where to store the bootstrap and operator tokens, and say the scripted capture without `--token` works only for the first admin token.
-- Correct `system` permissions: they cover system endpoints such as `/health`, are read-only, and don't read system tables.
-- Warn that trigger arguments are readable in `system.processing_engine_trigger_arguments`, so a secret passed that way is visible to anyone who can query system tables.
-- Align token eval criteria with these rules: the CI anti-pattern reads `INFLUXDB_ADMIN_TOKEN`, rotation reads the admin token separately from the token it rotates, Core creates a named admin token through `/api/v3/configure/token/named_admin` (Core has no `POST /api/v3/configure/token`), and the plugin inline-token case checks the trigger-argument caveat. Split bundled checks.
-- Write the event's own timestamp. "Live writes: omit the timestamp" gave points the server's receive time, so a retry landed as a second point; the docs' overwrite guidance uses the real event time.
-- Use the docs' optimal batch, up to 10,000 lines or 10 MB, instead of "1,000 points or more", and keep a timed flush for live streams.
-- Point the write 404 row at silent auto-create, since a misspelled database is created, not reported, and say that points from one series in the same second merge at second precision.
-- Drop write criteria the prompts didn't ask for: the `/api/v3/write_lp` contrast and C# error handling.
-- Correct the plugin runtime API from the Python API reference: `query()` takes an optional `database`, its `args` values must be strings, and `except QueryError` raises `NameError`, so catch `Exception` and check the type name. `write()` and `write_to_db()` are documented queued writes, not legacy; a rejected queued write surfaces after the run as an `ERROR` log row. Drop the unsourced claim that `error()` is recorded in a return payload.
-- Replace the base64 trigger-argument TOML workaround with the plugin library's documented convention: set `PLUGIN_DIR` on the server, put the TOML file there, pass `config_file_path`, and have the plugin read and parse it, keeping the path inside `PLUGIN_DIR`. The engine still doesn't load the file. The example, `plugin-structure.md`, and `plugins-explicit-toml` follow it.
-- Add `--token "$INFLUXDB_ADMIN_TOKEN"` and `$INFLUXDB_DATABASE` to the `plugin-structure.md` trigger commands, and give the runtime API snippets defined values and an early return after a caught `QueryError`.
-- Accept a returned list from `process_request`, which the docs say the engine encodes as JSON, and drop plugin criteria the prompts didn't ask for: `batch['table_name']` when only a row count was requested, the `/` path rule in a `..` question, and a venv check in the cache case.
-- Turn section references (`file.md` → "Heading", `quirks.md` entry N, `SKILL.md` §N) into relative Markdown links, and check anchors in CI with lychee `--include-fragments`. Backtick references weren't checked, so renamed headings broke them silently. Two references named headings that no longer exist; they now point to "List tokens" and "Short-form vs structured permissions". Replace the `/ping` API reference anchor, which the client-rendered page doesn't expose, with the identify-version page.
-- Pass `--token` to `install package` and `enable trigger` like every other admin command, give the default request size for 413, and add missing rows to the symptom tables.
-- Restore "second precision by default", which agents dropped after the write text was condensed.
-- Lead "Other install methods" with the docs' production routes, DEB/RPM packages or Docker, and link the install pages there. Agents dropped Docker when it sat mid-sentence in the package bullet.
-- Show the Docker form of the bootstrap token command and point the Docker section to the bootstrap step. Docker answers skipped that step.
-- State the admin token risk in the skill body: it has full access to the instance, so a leak exposes everything. "State the risk" alone produced vague warnings.
-- Accept any per-GPU identifier as the tag in `schema-gpu-fleet`, since the prompt doesn't name `gpu_id`. In `plugins-adversarial-inline-token`, name the HTTP API instead of a "management API", which Core and Enterprise don't have, and accept moving the admin call outside the plugin.
-- Call the Core and Enterprise admin endpoints the HTTP API, not a "management HTTP API". Management APIs belong to InfluxDB Cloud Dedicated and InfluxDB Clustered. InfluxDB Cloud Serverless is fully managed and has no customer-facing management API.
-- Add a table of contents to `references/troubleshooting.md`, the only reference over 300 lines.
+- Points that share a table, tag set, and timestamp merge, and which field value survives isn't guaranteed.
+  The skill no longer calls this an overwrite.
+  A timestamped retry merges into the first point.
+  Write each change as a new point, and use a tag for anything that identifies a series.
+- Write the event's own timestamp.
+  A point with no timestamp gets the server's receive time, so a retry lands as a second point.
+- The write rules are in the `influxdb3` body:
+  - `/api/v3/write_lp` accepts partial writes and lists the rejected lines.
+  - The compatibility endpoints reject the whole batch.
+  - The clients default to `/api/v2/write`, with an opt-out to V3.
+  - Precision is seconds by default, so points from one series in the same second merge.
+  - Retriable and non-retriable statuses.
 
-### Scope and structure
+  `http.md` drops its own status table, which said 404 meant a missing database.
+- Batch up to 10,000 lines or 10 MB, the docs' optimal size, and flush on a timer for live streams.
+- A write to a misspelled database creates that database instead of failing.
+  The 404 symptom row points to silent auto-create.
+- The duplicate-tag-key fix is stated per release line.
+  "3.9.8+" read as covering 3.10.0 through 3.10.2, which still accept the point.
+- The `influxdb3` body states the naming and reserved-word rules, and that `/ping` requires a token by default unless `--disable-authz` opts it out.
+- Use InfluxQL when the developer asks for it, and SQL otherwise.
+- The skill explains query timeouts and access to named system-table columns.
+- Core 3.12.2 returns 429 instead of 500 for most out-of-memory queries, per its release notes.
 
-- Narrow the `influxdb3` skill to InfluxDB 3 Core, InfluxDB 3 Enterprise, and InfluxDB 3 Cloud. InfluxDB Cloud Serverless, InfluxDB Cloud Dedicated, and InfluxDB Clustered have no `/api/v3` endpoints and different tokens and databases, and the skill's guidance for them was thin and partly wrong. The description still names them, so the skill loads and routes those questions to the product docs instead of the agent answering from memory. Their columns, sections, and detection steps are gone, and `doc-urls.md` adds InfluxDB Clustered.
-- Keep token rules in one block in each `SKILL.md`: the variable names, `--token "$INFLUXDB_ADMIN_TOKEN"`, never writing a token into code, and a separate application token. `SKILL.md` is always read before any reference, so references no longer repeat the rules. Removing rules from the file an agent had read caused earlier regressions, so the rules moved up into `SKILL.md`, not down into references. `tokens.md` keeps the procedures. Each skill loads on its own, so both `SKILL.md` files carry the block, and `scripts/check-shared-blocks.mjs` fails CI when the copies differ.
-- Remove version test notes from the skills: test outcomes, discrepancies between products, and "on 3.12.1" qualifiers. Where a test established a behavior the docs don't cover, such as `update trigger` reading the local file or the JSON plugin upload body, the rule stays without the test narration. `docs_checked_against` in the frontmatter keeps the version baseline. Removed outcomes: the maximum-timestamp discrepancy, duplicate rows after a rewrite, Core and Enterprise package-install statuses, INFO-only log rows, the InfluxQL `200 []` for an unknown table, and empty 403s on `/ping` and `/health` for scoped Enterprise tokens.
-- Align the evals with the narrower scope and the removed test notes. Drop five cases, added earlier in this release, that only tested a removed outcome: `query-3121-empty-vs-missing`, `trouble-3121-scoped-health`, `plugins-3121-package-status-enterprise`, `write-3121-timestamp-bound`, and `query-3121-ingest-system-tables`. Keep the cases whose guidance the docs support, remove "3.12.1" from their prompts, and drop `-3121` from their IDs. Their criteria now check the guidance: query-memory exhaustion returns 429, overwrites aren't deterministic, and an omitted trigger setting gives an enabled trigger with error behavior `log`. `connect-js-cloud-serverless` and `http-curl-cloud-dedicated` become negative cases that check routing to the product docs, and `flavor-cloud-vs-core` checks the `/api/v3` difference and the docs pointer. `flavor-bare-cloud` no longer accepts separate steps for each product, because the skill has no steps for the products it routes; it checks that the agent asks which product the user has.
-- Make six eval prompts self-contained: `defer-migration` includes the v2 code, the plugin cases ask for a new plugin, and the others name the product or skills they mean. The prompts referred to code or context the case didn't supply, so agents searched an empty working directory and asked for files instead of answering.
-- Say that "InfluxDB Cloud" alone is ambiguous, name the products it can mean, and ask before giving product-specific steps. The rule covered only "Cloud", and agents read "InfluxDB Cloud" as InfluxDB Cloud Serverless.
-- Keep each eval run's scaffold directory with `--keep-temp`, so traces show whether the agent loaded the skill.
-- Add an "Identify the product" section to `flavor-detection.md` from the docs' InfluxDB version detector and `data/products.yml`: host patterns for InfluxDB 3 Cloud, InfluxDB Cloud Dedicated, InfluxDB Cloud Serverless, InfluxDB Cloud (TSM), and InfluxDB Cloud 1, and `/ping` version headers for InfluxDB Clustered and InfluxDB v1 and v2. Check `x-influxdb-version` before `x-influxdb-build`, because InfluxDB Enterprise v1 also sends `x-influxdb-build: Enterprise`. Add four eval cases for these signals.
-- Name every InfluxDB product the skill routes in its description, including a bare "InfluxDB Cloud", so the skill loads for them and routes instead of the agent answering from memory. Replace the client package list with influxdb3-python as the example, to stay within the 1,024-character limit.
-- Link every Markdown file reference in the skills, including references to the other skill, and add `scripts/check-file-links.mjs` to CI and the pre-commit hook. The earlier conversion linked only references that named a section, so 109 bare file mentions stayed unchecked. Cross-skill mentions now use one form, "`influxdb3` skill → `references/x.md`", which the check resolves against that skill.
-- Say in `SKILL.md` that a host ending in `enterprise.influxdb.io` is InfluxDB 3 Cloud. Agents read the host name as a self-hosted InfluxDB 3 Enterprise server.
-- Accept per-customer token code in `admin-defer-multitenant` when it follows the identity-layer recommendation and says each customer then needs its own database. The skill advises against per-user tokens but doesn't forbid them, and a database per customer is a valid design for hard isolation. `tokens.md` now states that resource tokens are scoped to whole databases.
-- Tell agents to lead with the identity-layer recommendation when asked for per-user tokens. Agents gave the per-customer token body first and the recommendation last.
-- Open the description with "Load it before answering any InfluxDB 3 … question, even one you think you know". Haiku answered nine cases from memory in every traced run, including prompts that name InfluxDB 3 Core. The topic list now names batching, timestamps, partial writes, and naming, which those prompts ask about.
-- Drop the `accept_partial=false` criterion from `write-partial-400`. The prompt doesn't ask about it, and correct answers failed on it.
-- Gate releases on Sonnet answers instead of Opus, with Opus still judging. A three-run suite costs about $25 on Sonnet and $56 on Opus, and a skill that passes on Sonnet can be recommended to developers who use it. Opus and Haiku runs are comparisons.
+### Tokens and security
+
+- Each `SKILL.md` has one token block: the variable names, `--token "$INFLUXDB_ADMIN_TOKEN"` for admin commands, never writing a token into code, and a separate application token.
+  A CI check keeps the two copies identical.
+- `INFLUXDB_TOKEN` and `INFLUXDB_ADMIN_TOKEN` are the skill's names.
+  The `influxdb3` CLI reads `INFLUXDB3_AUTH_TOKEN` when `--token` is absent.
+  Every admin CLI command, the admin lifecycle examples, the demos that manage databases, tokens, and triggers, the example runner, and CI read the admin token from `INFLUXDB_ADMIN_TOKEN`.
+- The admin token has full access to the instance, so a leak exposes everything.
+- `serve` doesn't print a token.
+  Create the first one with `create token --admin`, including the Docker form, and save it as `INFLUXDB_ADMIN_TOKEN`.
+  Load `.env` before the verify step.
+  Capturing it without `--token` works only for the first admin token.
+  The skill says where to store the bootstrap and operator tokens.
+- Core has admin tokens only.
+  It creates a named admin token through `/api/v3/configure/token/named_admin` and has no `POST /api/v3/configure/token`.
+- When a developer pastes a token, the skill recommends not repeating it.
+  The agent gives both the `create token` command for the replacement and the `delete token --token-name` command for the exposed token, with a link to the rotation pattern.
+  Diagnosis can continue before the rotation.
+- During rotation, revoke the old token as a separate step after consumers confirm the switch.
+  A fixed wait doesn't show they switched.
+- The 401 checklist covers the admin token, and its check prints no token characters.
+- Lost-admin-token recovery uses the docs' `--admin-token-recovery-http-bind` method.
+  Regenerating the operator token isn't needed when another admin token works.
+- `system` permissions cover system endpoints such as `/health`, are read-only, and don't read system tables.
+- For per-user tokens, the agent leads with the identity-layer recommendation.
+  Resource tokens are scoped to whole databases.
+- For `.gitignore`, mock-data stubs, the database-existence check, and an admin token used for app writes, the agent explains the risk and then follows the operator's choice.
+  It still never hard-codes a token in code it writes.
+- `connecting.md` uses the admin token to list and create databases, because a scoped token gets a 403 on create and a filtered list.
+
+### Install and troubleshooting
+
+- The production install routes are DEB/RPM packages and Docker, and "Other install methods" leads with them.
+  The Docker example is pinned to `3.12.1`.
+  The install script installs the latest release.
+  The license activation steps appear once.
+  The unsourced `~/.influxdb/` binary path is removed.
+- The local object-store recommendation includes `--data-dir`.
+- When only `--help` text disagrees with the docs, neither is proven.
+  The agent recommends a behavior test or a support question, and suggests reporting the discrepancy.
+- The skill gives the default request size for a 413, and the symptom tables have rows they were missing.
+- The Core and Enterprise admin endpoints are the HTTP API, not a "management API".
+  Management APIs belong to InfluxDB Cloud Dedicated and InfluxDB Clustered, and InfluxDB Cloud Serverless has no customer-facing management API.
+- Examples an agent would copy are fixed: `batch["rows"]`, a 6-field cron spec, a working engine check, a timeout-safe detection snippet, and `.gitignore` before `.env` writes.
+  The `plugin-structure.md` trigger commands pass `--token "$INFLUXDB_ADMIN_TOKEN"` and `$INFLUXDB_DATABASE`, and its runtime API snippets have defined values and return early after a caught `QueryError`.
+- `flavor-detection.md` no longer has Python and JavaScript snippets.
+- `references/troubleshooting.md` has a table of contents.
+- Skill references link to the API reference instead of duplicating it.
+- Enterprise authentication is generally available and remains opt-in.
+
+### Skill structure
+
+These changes make the skills work for a Sonnet-level model that reads the skill body and few references.
+
+- Each rule has one home: auto-create, the write rules, the untrusted-input rules, and cleanup.
+  References no longer point back at `SKILL.md`.
+  The `influxdb3` body is 2,883 words, down from 3,165 at its peak.
+- The descriptions have one trigger per branch.
+  The `influxdb3` description opens with "Load it before answering any InfluxDB 3 … question, even one you think you know", and says "question or task".
+  Its topic list names batching, timestamps, partial writes, and naming, and it keeps unreachable instances and mock-data stubs.
+  influxdb3-python replaces the client package list as the example, to stay within the 1,024-character limit.
+- Every example is linked from the section that needs it.
+- File and section references are relative Markdown links, and CI checks them.
+  Two references named headings that no longer exist; they now point to "List tokens" and "Short-form vs structured permissions".
+  The `/ping` API reference link now points to the identify-version page.
 
 ### Removed
 
-- Remove the JavaScript, Go, Java, and C# examples, including their admin lifecycle examples. Keep `curl` and Python, and link the other languages' client libraries from the language table. `influxdb3-python` has about 895,000 PyPI downloads a month, compared with about 90,000 a month for the JavaScript client on npm. Maven and the Go module proxy don't publish counts. Each language example needed its own toolchain in the release gate, and the Java and C# admin examples had never run against a live Enterprise instance. The `references/clients/*.md` guides stay.
+- The JavaScript, Go, Java, and C# examples, including their admin lifecycle examples.
+  The `curl` and Python examples remain, and the language table links the other client libraries.
+  The `references/clients/*.md` guides stay.
 
 ### Live-verified behavior corrections
 
-- Reconcile query error bodies and resource-exhaustion statuses with exact 3.12.1 claims. Query-memory exhaustion returns 429; earlier Core releases returned 500, a bug fixed in 3.12.2. Hidden databases can't be told apart from absent ones by an empty 403 alone. Claims: claim-20261015-0101, claim-20261015-0102, claim-20261015-0107, claim-20261015-0108, claim-20261015-0113, claim-20261015-0114, claim-20261015-0115.
-- Correct plugin-file creation to JSON POST, optional trigger settings, verifying a package install beyond its HTTP status, and handling of existing explicit schemas. Claims: claim-20261024-0304, claim-20261024-0312, claim-20261024-0305, claim-20261024-0313, claim-20261024-0306, claim-20261024-0314, claim-20261024-0308, claim-20261024-0317, claim-20261024-0303, claim-20261024-0311.
-- Correct the TOML example and configuration guidance: parsing belongs to plugin code, and `config_file_path` does not make the engine merge native TOML values into trigger arguments. Claims: claim-20261024-0318, claim-20261024-0319.
-- The diagnostic toolkit verifies permitted read access after a health-route 403 and reports limited read-side health. Claims: claim-20261024-0316.
-- Uncaught plugin exceptions reach the server log (type and message, no traceback) but not `system.processing_engine_logs`. On Enterprise, check every node that runs the trigger. Claims: claim-20261024-0320, claim-20261024-0321, claim-20261024-0322, claim-20261024-0323, claim-20261024-0327, claim-20261024-0328.
-- List every `system.processing_engine_logs` column observed on 3.12.1 in one table in the plugins testing reference: `time` and `event_time` hold the same value, and `run_id`, `node_id`, `database_name`, `plugin_filename`, and `error_details` were missing from the skill. The troubleshooting, trigger, and body sections that listed four columns, and so told agents `time` isn't a column, now point to that table. `error_details` stays empty for an uncaught exception, and the table holds no ERROR row even 60 seconds after the failure, past the up-to-50-second delay the docs describe. Claims: claim-20261106-0001, claim-20261106-0002, claim-20261106-0003, claim-20261106-0004, claim-20261106-0005, claim-20261106-0006.
+- Query-memory exhaustion returns 429; earlier Core releases returned 500, a bug fixed in 3.12.2. Hidden databases can't be told apart from absent ones by an empty 403 alone. Query error bodies match the 3.12.1 claims. Claims: claim-20261015-0101, claim-20261015-0102, claim-20261015-0107, claim-20261015-0108, claim-20261015-0113, claim-20261015-0114, claim-20261015-0115.
+- Plugin files are created with a JSON POST, trigger settings are optional, a package install is verified beyond its HTTP status, and existing explicit schemas are handled. Claims: claim-20261024-0304, claim-20261024-0312, claim-20261024-0305, claim-20261024-0313, claim-20261024-0306, claim-20261024-0314, claim-20261024-0308, claim-20261024-0317, claim-20261024-0303, claim-20261024-0311.
+- TOML parsing belongs to plugin code, and `config_file_path` doesn't make the engine merge TOML values into trigger arguments. Claims: claim-20261024-0318, claim-20261024-0319.
+- After a 403 on a health route, the diagnostic toolkit checks permitted read access and reports limited read-side health. Claims: claim-20261024-0316.
+- Uncaught plugin exceptions reach the server log, with type and message and no traceback, but not `system.processing_engine_logs`. On Enterprise, check every node that runs the trigger. Claims: claim-20261024-0320, claim-20261024-0321, claim-20261024-0322, claim-20261024-0323, claim-20261024-0327, claim-20261024-0328.
+- The plugins testing reference has one table of every `system.processing_engine_logs` column observed on 3.12.1, including `time`, `run_id`, `node_id`, `database_name`, `plugin_filename`, and `error_details`. `time` and `event_time` hold the same value. The troubleshooting, trigger, and body sections that listed four columns now point to that table. `error_details` stays empty for an uncaught exception, and the table holds no ERROR row even 60 seconds after the failure, past the up-to-50-second delay the docs describe. Claims: claim-20261106-0001, claim-20261106-0002, claim-20261106-0003, claim-20261106-0004, claim-20261106-0005, claim-20261106-0006.
+
+### Packaging and verification
+
+These changes are for maintainers.
+
+- Both skills stay one package. Every skill-changing merge to `main` needs a new shared version and evidence on the final content.
+- The eval suite has 98 cases, up from 72 in 0.7.2.
+- Release gating:
+  - Claude Code results gate the release.
+    Sonnet answers are the default gate, and 0.7.3 gates on Opus answers, at the maintainer's choice.
+  - Codex evidence must be complete, with three runs per case, but its bars don't block.
+  - Changed eval cases must pass individually, as well as the aggregate bars.
+  - ADR-0004: `claude-opus-5-5` at `medium` effort judges both agents' release suites, and `gpt-6.1-sol` at `medium` is the audit judge before an adversarial failure blocks a release.
+    `check-release.mjs verify` requires both agents' evidence to use the same judge model and effort.
+  - The release review reads the current docs-v2 and production release notes for 3.12.1 and 3.12.0.
+- Graders:
+  - Cases can declare `regex`, `tool_used`, and `skill_loaded` checks and `fixture` files.
+    The gate passes a run only when every grader passes.
+    Run Claude evals with `--scaffold`.
+  - Every adversarial case blocks on a regex check.
+  - Thirty judged criteria moved to 40 `regex` checks, because each names a string the answer must or must not contain (#49).
+  - Five judged criteria that judges read differently now state one condition each, and three cases no longer ask the judge whether generated code works (#49).
+  - Five cases whose prompts don't name InfluxDB 3, or state no task, run inside a project fixture, and four of them count toward a separate trigger bar.
+- Eval tooling:
+  - The Codex runner judges with `claude-opus-5-5` by default, through the same call as the new `evals/rescore.mjs`, shared in `evals/judge.mjs`.
+    The judge schema fixes the number of checks, and a judge failure counts as a harness error, not a failing answer.
+  - `evals/rescore.mjs` re-scores stored answers with candidate judges and lists the criteria where they split.
+  - Codex follow-up cases give the judge the same earlier turn as the answering model.
+  - Each eval run keeps its scaffold directory with `--keep-temp`.
+- Eval cases and criteria:
+  - Cases that asked for several tasks are split into one case per task, and each criterion makes one check.
+  - Criteria that required exact recall, one specific tool, or wording, or that checked test narration or something the prompt didn't ask, are revised or dropped.
+  - Six prompts are self-contained, and five cases that tested only removed test notes are dropped.
+  - The cache-lifetime and trigger-argument advice moved to two plugin cases, `plugins-cache-restart` and `plugins-secret-trigger-arg`.
+  - Four cases check product identification from the host and headers, and `plugins-test-before-trigger` checks the testing order.
+- CI and examples:
+  - The example runner fails on database setup or cleanup errors, and the HTTP example checks database visibility and fails on HTTP errors.
+  - `scripts/check-file-links.mjs` and lychee `--include-fragments` check file references and anchors.
+  - `scripts/check-shared-blocks.mjs` fails CI when the token blocks differ.
 
 ## [0.7.2] — 2026-09-29
 
