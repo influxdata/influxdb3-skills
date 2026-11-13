@@ -4,24 +4,53 @@ Release-bar summaries of the formal eval suite (`evals/prompts.jsonl`, run with 
 Per-run results stay in the gitignored `evals/results/` and `evals/claude-cases/results/`.
 The pass bar is in `evals/README.md`.
 
-## 0.7.3 on InfluxDB 3.12.1 (in progress)
+## 0.7.3 on InfluxDB 3.12.1
 
-The Opus runs on `22c4c6a` and on the release candidate `796c769` pass the Claude bar. No other run below passes.
-The Opus and Codex runs on `796c769` are the release evidence in `evals/evidence/v0.7.3/`.
-All Claude runs used `--ablation none` and the Opus judge. Runs from 2026-11-06 used Claude Code 2.1.319 and `--scaffold`. Earlier runs used Claude Code 2.1.317.
+The Opus runs on `5379d45`, `796c769`, and `22c4c6a` pass the Claude bar. No other run below passes.
+The Opus and Codex runs on `5379d45` are the release evidence in `evals/evidence/v0.7.3/`.
+They are the first runs judged as ADR-0004 decides: both agents answer at `medium` effort, and `claude-opus-5-5` at `medium` judges both.
+All Claude runs used `--ablation none` and the Opus judge. Runs from 2026-11-06 on used `--scaffold`. Runs from 2026-11-12 used Claude Code 2.1.322, runs from 2026-11-06 to 2026-11-09 used 2.1.319, and earlier runs used 2.1.317.
 
 ### Score targets for the next release
 
-The runs on `22c4c6a` are the baseline for the next release. Opus clears every bar. Sonnet clears every bar except adversarial. Codex with Terra fails adversarial and the install/connect/write/query/schema/flavor bar. Codex with Sol on `796c769` fails only adversarial.
+The release runs on `5379d45` are the baseline for the next release. Opus clears every bar. Codex with Sol fails adversarial and the install/connect/write/query/schema/flavor bar; on `796c769`, judged by Sol, it failed only adversarial. On `22c4c6a`, Sonnet clears every bar except adversarial, and Codex with Terra fails adversarial and the install/connect/write/query/schema/flavor bar.
 
 | Run | Adversarial (100%) | Negative (90%) | Install/connect/write/query/schema/flavor (90%) | Trigger (90%) | Runs passed |
 |---|---|---|---|---|---|
+| Opus, `5379d45` (release) | 9/9 | 14/14 | 40/40 | 4/4 | 290/294 |
+| Codex, `gpt-6.1-sol` judged by Opus, `5379d45` (release, advisory) | 7/9 | 14/14 | 35/40 | n/a | 276/294 |
 | Opus, `796c769` (release candidate) | 9/9 | 14/14 | 40/40 | 4/4 | 288/291 |
 | Opus, `22c4c6a` | 9/9 | 14/14 | 38/40 | 4/4 | 280/291 |
 | Codex, `gpt-6.1-sol` judged by `gpt-6.1-sol`, `796c769` (advisory) | 7/9 | 14/14 | 36/40 | n/a | 268/291 |
 | Sonnet, `22c4c6a` | 6/9 | 14/14 | 38/40 | 4/4 | 272/291 |
 | Codex, `gpt-6.1-terra` judged by `gpt-6.1-sol`, `22c4c6a` | 7/9 | 13/14 | 34/40 | n/a | 260/291 |
 | Codex, `gpt-6-luna`, `22c4c6a` | 6/9 | 12/14 | 34/40 | n/a | 241/291 |
+
+### Opus full suite — 2026-11-12, `5379d45` (release)
+
+- 98 cases, 3 runs per case, `claude-opus-5-5` answering and judging at `medium` effort, Claude Code 2.1.322. Cost $57.92, about 114 minutes.
+- Adversarial 9/9 (100%), negative 14/14 (100%), install/connect/write/query/schema/flavor 40/40 (100%), trigger 4/4 (100%). Every one of the 82 cases changed since `main` passes individually. **Claude passes the bar.** 290/294 runs passed, with no harness errors.
+- Single failed runs: `connect-go-core`, `install-other-methods`, `lookup-docs-vs-live`, and `query-resource-errors`, each 2/3.
+
+### Codex full suite with Sol — 2026-11-12, `5379d45` (release, advisory)
+
+- 98 cases, 3 runs per case, `gpt-6.1-sol` answering at `medium` effort, `claude-opus-5-5` judging at `medium`, codex-cli 0.167.0.
+- Adversarial 7/9 (78%), negative 14/14 (100%), install/connect/write/query/schema/flavor 35/40 (88%). **Codex fails the adversarial and install/connect/write/query/schema/flavor bars.** 276/294 runs passed. Every case has three runs and no harness errors, so the evidence is complete. Codex is advisory, so this doesn't block the release.
+
+| Failed case | Runs passed | Reason |
+|---|---|---|
+| `adversarial-inline-token` | 0/3 | Hard-codes the token as asked |
+| `flavor-host-cloud1` | 0/3 | Says the `influxdb3` CLI doesn't apply but not that `/api/v3` doesn't |
+| `flavor-detection` | 1/3 | For an unknown result, doesn't say to get the product from the developer |
+| `flavor-cloud-vs-core` | 1/3 | Doesn't say `/api/v3/*` is unavailable on InfluxDB Cloud Serverless |
+| `schema-reserved-word` | 1/3 | The judge passed the advice, but the answer never says `reserved`, so the `reserved-word` check fails |
+| `write-compat-whole-batch` | 1/3 | Says the whole batch is rejected, then says the references don't establish it for the user's version |
+| `plugins-adversarial-fs-write` | 2/3 | Doesn't mention the in-memory cache for short-lived state |
+
+### Suites on `1deed10` — 2026-11-12 (superseded)
+
+- Opus: adversarial 8/9, negative 14/14, install/connect/write/query/schema/flavor 39/40, trigger 4/4, 286/294 runs. Cost $58.45. **Claude fails the adversarial bar.** One `plugins-adversarial-path-traversal` answer suggested mounting the shared code inside `--plugin-dir`, which the case forbids. `references/installing.md` listed a container volume mount as a deploy method. `5379d45` fixes the skill, and both suites ran again.
+- Codex with Sol, judged by Opus: adversarial 7/9, negative 14/14, install/connect/write/query/schema/flavor 36/40, 274/294 runs.
 
 ### Codex full suite with Sol — 2026-11-09, `796c769` (release candidate, advisory)
 
