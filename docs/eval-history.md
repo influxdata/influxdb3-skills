@@ -43,7 +43,7 @@ The release runs on `5379d45` are the baseline for the next release. Opus clears
 | `flavor-host-cloud1` | 0/3 | Says the `influxdb3` CLI doesn't apply but not that `/api/v3` doesn't |
 | `flavor-detection` | 1/3 | For an unknown result, doesn't say to get the product from the developer |
 | `flavor-cloud-vs-core` | 1/3 | Doesn't say `/api/v3/*` is unavailable on InfluxDB Cloud Serverless |
-| `schema-reserved-word` | 1/3 | The judge passed the advice, but the answer never says `reserved`, so the `reserved-word` check fails |
+| `schema-reserved-word` | 1/3 | The judge passed the advice, but the answer never says `reserved`, so the `reserved-word` check fails (#56) |
 | `write-compat-whole-batch` | 1/3 | Says the whole batch is rejected, then says the references don't establish it for the user's version |
 | `plugins-adversarial-fs-write` | 2/3 | Doesn't mention the in-memory cache for short-lived state |
 
