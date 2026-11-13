@@ -1,9 +1,12 @@
 {
   "format": "runs-v1",
   "agent": "codex",
-  "source_sha256": "4974e6e7455e1e0e16622844744359eaf2cf8f378735240c93518ecff5112d44",
+  "source_sha256": "e92dab453d40775982bd877f775666592eac0926343b56228d737ab46e5baad0",
   "model": "gpt-6.1-sol",
-  "judgeModel": "gpt-6.1-sol",
+  "judgeModel": "claude-opus-5-5",
+  "effort": "medium",
+  "judgeEffort": "medium",
+  "verbosity": null,
   "cases": {
     "connect-py-core": [
       {
@@ -39,7 +42,7 @@
         "error": null
       },
       {
-        "passed": false,
+        "passed": true,
         "error": null
       },
       {
@@ -169,7 +172,7 @@
         "error": null
       },
       {
-        "passed": true,
+        "passed": false,
         "error": null
       }
     ],
@@ -207,17 +210,17 @@
         "error": null
       },
       {
-        "passed": false,
+        "passed": true,
         "error": null
       },
       {
-        "passed": false,
+        "passed": true,
         "error": null
       }
     ],
     "negative-flux": [
       {
-        "passed": false,
+        "passed": true,
         "error": null
       },
       {
@@ -267,7 +270,7 @@
         "error": null
       },
       {
-        "passed": false,
+        "passed": true,
         "error": null
       }
     ],
@@ -305,11 +308,11 @@
         "error": null
       },
       {
-        "passed": true,
+        "passed": false,
         "error": null
       },
       {
-        "passed": true,
+        "passed": false,
         "error": null
       }
     ],
@@ -333,11 +336,11 @@
         "error": null
       },
       {
-        "passed": true,
+        "passed": false,
         "error": null
       },
       {
-        "passed": true,
+        "passed": false,
         "error": null
       }
     ],
@@ -403,7 +406,7 @@
         "error": null
       },
       {
-        "passed": false,
+        "passed": true,
         "error": null
       },
       {
@@ -543,7 +546,7 @@
         "error": null
       },
       {
-        "passed": true,
+        "passed": false,
         "error": null
       },
       {
@@ -631,7 +634,7 @@
         "error": null
       },
       {
-        "passed": true,
+        "passed": false,
         "error": null
       }
     ],
@@ -679,7 +682,7 @@
     ],
     "admin-token-filter": [
       {
-        "passed": false,
+        "passed": true,
         "error": null
       },
       {
@@ -687,7 +690,7 @@
         "error": null
       },
       {
-        "passed": false,
+        "passed": true,
         "error": null
       }
     ],
@@ -735,7 +738,7 @@
     ],
     "admin-defer-multitenant": [
       {
-        "passed": false,
+        "passed": true,
         "error": null
       },
       {
@@ -959,7 +962,7 @@
     ],
     "negative-oss-v2": [
       {
-        "passed": false,
+        "passed": true,
         "error": null
       },
       {
@@ -987,15 +990,15 @@
     ],
     "lookup-docs-vs-live": [
       {
-        "passed": false,
-        "error": null
-      },
-      {
-        "passed": false,
+        "passed": true,
         "error": null
       },
       {
         "passed": true,
+        "error": null
+      },
+      {
+        "passed": false,
         "error": null
       }
     ],
@@ -1005,11 +1008,11 @@
         "error": null
       },
       {
-        "passed": true,
+        "passed": false,
         "error": null
       },
       {
-        "passed": true,
+        "passed": false,
         "error": null
       }
     ],
@@ -1099,15 +1102,15 @@
     ],
     "query-resource-errors": [
       {
-        "passed": false,
+        "passed": true,
         "error": null
       },
       {
-        "passed": false,
+        "passed": true,
         "error": null
       },
       {
-        "passed": false,
+        "passed": true,
         "error": null
       }
     ],
@@ -1350,6 +1353,20 @@
       }
     ],
     "flavor-enterprise-v1-headers": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "plugins-test-before-trigger": [
       {
         "passed": true,
         "error": null

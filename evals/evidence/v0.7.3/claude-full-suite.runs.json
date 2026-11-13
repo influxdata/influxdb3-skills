@@ -1,7 +1,7 @@
 {
   "format": "runs-v1",
   "agent": "claude",
-  "source_sha256": "8f6c5c40faaf5f98919233ca4e2a1adf64f6883a9946de9b207d0828509eb490",
+  "source_sha256": "4c266765d6fd5f9105a88a7b6fdd0f3396d7266185489e7b1d4f57c3b5468bf2",
   "cases": {
     "admin-adversarial-data-plane": [
       {
@@ -246,7 +246,7 @@
     ],
     "connect-go-core": [
       {
-        "passed": true,
+        "passed": false,
         "error": null
       },
       {
@@ -306,7 +306,7 @@
         "error": null
       },
       {
-        "passed": false,
+        "passed": true,
         "error": null
       },
       {
@@ -330,7 +330,7 @@
     ],
     "flavor-bare-cloud": [
       {
-        "passed": false,
+        "passed": true,
         "error": null
       },
       {
@@ -368,7 +368,7 @@
         "loaded": true
       },
       {
-        "passed": false,
+        "passed": true,
         "error": null,
         "loaded": true
       }
@@ -505,7 +505,7 @@
         "error": null
       },
       {
-        "passed": true,
+        "passed": false,
         "error": null
       },
       {
@@ -523,7 +523,7 @@
         "error": null
       },
       {
-        "passed": true,
+        "passed": false,
         "error": null
       }
     ],
@@ -645,7 +645,7 @@
         "error": null
       },
       {
-        "passed": false,
+        "passed": true,
         "error": null
       },
       {
@@ -877,6 +877,20 @@
         "error": null
       }
     ],
+    "plugins-test-before-trigger": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
     "plugins-trigger-defaults": [
       {
         "passed": true,
@@ -985,7 +999,7 @@
         "error": null
       },
       {
-        "passed": true,
+        "passed": false,
         "error": null
       }
     ],
