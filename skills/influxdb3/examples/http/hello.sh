@@ -22,6 +22,14 @@ fi
 : "${INFLUXDB_TOKEN:?INFLUXDB_TOKEN is required}"
 : "${INFLUXDB_DATABASE:?INFLUXDB_DATABASE is required}"
 
+# Requires curl and jq. Verify the provisioned database before any write.
+if ! curl --fail-with-body -sS "$INFLUXDB_HOST/api/v3/configure/database?format=json" \
+  -H "Authorization: Bearer $INFLUXDB_TOKEN" | \
+  jq -e --arg db "$INFLUXDB_DATABASE" 'any(.[]; .["iox::database"] == $db)' >/dev/null; then
+  echo 'Target database is not visible; check provisioning and permissions before writing.' >&2
+  exit 1
+fi
+
 echo "==> Writing 10 points to $INFLUXDB_DATABASE on $INFLUXDB_HOST"
 
 now=$(date +%s)
@@ -31,14 +39,14 @@ for i in $(seq 1 10); do
   body+="sensor,host=server01,region=us-west temperature=$((70 + RANDOM % 5)).0,humidity=$((40 + RANDOM % 10)).0 $ts"$'\n'
 done
 
-curl -sS -X POST \
+curl --fail-with-body -sS -X POST \
   "$INFLUXDB_HOST/api/v3/write_lp?db=$INFLUXDB_DATABASE&precision=second" \
   -H "Authorization: Bearer $INFLUXDB_TOKEN" \
   --data-binary "$body"
 
 echo "==> Querying last 10 rows back"
 
-curl -sS -X POST "$INFLUXDB_HOST/api/v3/query_sql" \
+curl --fail-with-body -sS -X POST "$INFLUXDB_HOST/api/v3/query_sql" \
   -H "Authorization: Bearer $INFLUXDB_TOKEN" \
   -H "Content-Type: application/json" \
   -d "{\"db\": \"$INFLUXDB_DATABASE\", \"q\": \"SELECT * FROM sensor ORDER BY time DESC LIMIT 10\"}"

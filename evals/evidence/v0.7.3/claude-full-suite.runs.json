@@ -1,0 +1,1391 @@
+{
+  "format": "runs-v1",
+  "agent": "claude",
+  "source_sha256": "4c266765d6fd5f9105a88a7b6fdd0f3396d7266185489e7b1d4f57c3b5468bf2",
+  "cases": {
+    "admin-adversarial-data-plane": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "admin-adversarial-inline": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "admin-db-create": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "admin-db-drop": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "admin-db-write-token": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "admin-defer-airgapped": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "admin-defer-multitenant": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "admin-retention": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "admin-retention-update": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "admin-token-filter": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "admin-token-list": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "admin-token-rotate": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "adversarial-inline-token": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "adversarial-mock-data": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "adversarial-skip-gitignore": [
+      {
+        "passed": true,
+        "error": null,
+        "loaded": true
+      },
+      {
+        "passed": true,
+        "error": null,
+        "loaded": true
+      },
+      {
+        "passed": true,
+        "error": null,
+        "loaded": true
+      }
+    ],
+    "cli-write-output-parse": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "connect-enterprise": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "connect-go-core": [
+      {
+        "passed": false,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "connect-js-cloud-serverless": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "connect-multi-db": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "connect-no-mcp": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "connect-py-core": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "defer-migration": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "flavor-bare-cloud": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "flavor-cloud-vs-core": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "flavor-detection": [
+      {
+        "passed": true,
+        "error": null,
+        "loaded": true
+      },
+      {
+        "passed": true,
+        "error": null,
+        "loaded": true
+      },
+      {
+        "passed": true,
+        "error": null,
+        "loaded": true
+      }
+    ],
+    "flavor-enterprise-v1-headers": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "flavor-host-cloud1": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "flavor-host-cloud3": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "flavor-host-tsm": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "http-curl-cloud-dedicated": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "install-core-docker": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "install-core-token": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "install-enterprise-license": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "install-object-store-required": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "install-other-methods": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": false,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "lookup-docs-vs-live": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": false,
+        "error": null
+      }
+    ],
+    "negative-cloud-tsm": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "negative-flux": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "negative-influxql-fresh": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "negative-oss-v2": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "out-of-scope-perf": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "ping-auth-default": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "plugins-adversarial-fs-write": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "plugins-adversarial-inline-token": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "plugins-adversarial-path-traversal": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "plugins-async-retry-limit": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "plugins-cache-restart": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "plugins-defer-airgapped": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "plugins-defer-cluster": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "plugins-disable-package-install": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "plugins-error-behavior-case": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "plugins-explicit-toml": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "plugins-http-query-endpoint": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "plugins-http-upload": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "plugins-install-pandas": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "plugins-logs-time-column": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "plugins-multifile": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "plugins-package-status": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "plugins-repeat-safety": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "plugins-scheduled-with-cache": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "plugins-secret-trigger-arg": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "plugins-test-before-trigger": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "plugins-trigger-defaults": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "plugins-wal-from-scratch": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "query-aggregation-sql": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "query-ingest-routing": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "query-pagination": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "query-parameterize-java": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "query-py-followup": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "query-resource-errors": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": false,
+        "error": null
+      }
+    ],
+    "query-time-bucket-wrong": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "schema-existing-explicit": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "schema-gpu-fleet": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "schema-naming": [
+      {
+        "passed": true,
+        "error": null,
+        "loaded": true
+      },
+      {
+        "passed": true,
+        "error": null,
+        "loaded": true
+      },
+      {
+        "passed": true,
+        "error": null,
+        "loaded": true
+      }
+    ],
+    "schema-reserved-word": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "schema-tag-bool": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "schema-types": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "trouble-defer-cluster-plugin": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "trouble-defer-performance": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "trouble-hidden-database": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "trouble-jwt-401": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "trouble-pasted-token": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "trouble-pasted-token-revoke": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "trouble-plugin-no-fire": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "trouble-silent-auto-create": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "trouble-token-rotate-aftermath": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "trouble-uncaught-plugin-exception": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "trouble-v2-write-403": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "write-batch-csharp": [
+      {
+        "passed": true,
+        "error": null,
+        "loaded": true
+      },
+      {
+        "passed": true,
+        "error": null,
+        "loaded": true
+      },
+      {
+        "passed": true,
+        "error": null,
+        "loaded": true
+      }
+    ],
+    "write-batch-python": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "write-compat-whole-batch": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "write-core-rewrites": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "write-duplicate-tag-key": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "write-error-handling": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "write-partial-400": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "write-precision": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "write-precision-precision": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ]
+  }
+}

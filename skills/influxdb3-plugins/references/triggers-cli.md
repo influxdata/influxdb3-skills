@@ -1,8 +1,8 @@
 # Trigger Lifecycle CLI Reference
 
-The `influxdb3` CLI is the primary way to create, update, list (via system tables), enable/disable, and delete triggers. Every command also has an HTTP equivalent under `/api/v3/configure/processing_engine_trigger` for programmatic use.
+The `influxdb3` CLI is the primary way to create, update, list (via system tables), enable/disable, and delete triggers. For HTTP equivalents, fetch the API reference.
 
-All commands accept `--token <admin-token>` (or `INFLUXDB3_AUTH_TOKEN` env var) and `-H/--host <url>` (or `INFLUXDB3_HOST_URL` env var). Trigger creation, update, and deletion require an **admin token**.
+All commands accept `--token` and `-H/--host <url>` (or `INFLUXDB3_HOST_URL` env var). Trigger creation, update, and deletion require an **admin token**. Pass it as `--token "$INFLUXDB_ADMIN_TOKEN"`.
 
 ## `influxdb3 create trigger`
 
@@ -15,12 +15,12 @@ Create a new trigger that connects a plugin to a database event. Positional argu
 | `--trigger-spec <spec>` | yes | When to fire: `table:<name>`, `all_tables`, `every:<duration>`, `cron:<expr>` (6-field with seconds), or `request:<path>`. |
 | `--path <path>` | yes | Plugin filename (relative to `--plugin-dir`), absolute path with `--upload`, or `gh:` prefix for upstream plugins. |
 | `--upload` | no | Upload the local file/dir to the server. Required when `--path` is absolute. |
-| `--trigger-arguments k=v,k2=v2` | no | Comma-separated key=value pairs passed to the plugin as `args`. All values arrive as strings. **For typed values from a TOML file**, pass `config_file_path=<filename.toml>` — see `references/plugin-structure.md` → "Plugin configuration via TOML". |
+| `--trigger-arguments k=v,k2=v2` | no | Comma-separated key=value pairs passed to the plugin as `args`. All values arrive as strings. Parse structured configuration explicitly in plugin code; see [`references/plugin-structure.md` → "Plugin configuration via TOML"](plugin-structure.md#plugin-configuration-via-toml). |
 | `--run-asynchronous` | no | Allow multiple instances of this trigger to run concurrently. Default is synchronous. |
 | `--error-behavior <log\|retry\|disable>` | no | What happens when the plugin raises. Default `log`. |
 | `--disabled` | no | Create the trigger in disabled state. |
 | `--node-spec <spec>` | no | Cluster placement (default `all`). This skill doesn't cover multi-node placement. |
-| `--token <admin-token>` | yes | Admin token (or `INFLUXDB3_AUTH_TOKEN` env). |
+| `--token <admin-token>` | yes | Admin token. |
 
 Example:
 
@@ -32,21 +32,21 @@ influxdb3 create trigger \
   --upload \
   --trigger-arguments threshold=90,unit=fahrenheit \
   --error-behavior log \
-  --token "$INFLUXDB_TOKEN" \
+  --token "$INFLUXDB_ADMIN_TOKEN" \
   sensor_processor
 ```
 
-> **Trigger spec quirk:** the CLI's own `--help` text mistakenly says HTTP triggers use `path:<PATH>`. The parser actually only accepts the prefixes `table:`, `all_tables:`, `cron:`, `every:`, or `request:`. **Use `request:<path>`** for HTTP plugins; `path:` is rejected.
+> **Trigger spec quirk:** the CLI's own `--help` text mistakenly says HTTP triggers use `path:<PATH>`. The parser actually only accepts the prefixes `table:`, `all_tables`, `cron:`, `every:`, or `request:`. **Use `request:<path>`** for HTTP plugins; `path:` is rejected.
 
 ## `influxdb3 update trigger`
 
-Replace the plugin code for an existing trigger. Trigger configuration (spec, arguments, error-behavior) is preserved.
+Replace the plugin code for an existing trigger. Trigger configuration (spec, arguments, error-behavior) is preserved. The CLI reads the local file named by `--path`; `update trigger` does not accept `--upload`.
 
 | Flag | Required | Description |
 |---|---|---|
 | `--database <name>` | yes | The trigger's database. |
 | `--trigger-name <name>` | yes | Name of the trigger to update. |
-| `--path <path>` | yes | New plugin code, same forms as `create trigger --path`. |
+| `--path <path>` | yes | Local path to the updated plugin code. |
 | `--token <admin-token>` | yes | Admin token. |
 
 ```bash
@@ -54,7 +54,7 @@ influxdb3 update trigger \
   --database my_database \
   --trigger-name sensor_processor \
   --path "/absolute/local/process_sensors.py" \
-  --token "$INFLUXDB_TOKEN"
+  --token "$INFLUXDB_ADMIN_TOKEN"
 ```
 
 ## Listing triggers
@@ -62,17 +62,19 @@ influxdb3 update trigger \
 There is **no `influxdb3 show triggers`** subcommand. List triggers via SQL on the `_internal` database. The relevant system tables are flavor- and version-dependent; check available tables on your installed version:
 
 ```bash
-influxdb3 query -d _internal --token "$INFLUXDB_TOKEN" "SHOW TABLES"
+influxdb3 query -d _internal --token "$INFLUXDB_ADMIN_TOKEN" "SHOW TABLES"
 ```
 
-Look for tables matching `trigger`, `plugin`, or `engine`. Two known-good ones:
+Look for tables matching `trigger`, `plugin`, or `engine`:
 
-- `system.plugin_files` — installed plugin file metadata (`plugin_name`, `file_name`, `file_path`, `size_bytes`, `last_modified`).
-- `system.processing_engine_logs` — runtime log output from every trigger (`event_time`, `trigger_name`, `log_level`, `log_text`). Queryable from any database context.
+- `system.processing_engine_triggers` — one row per trigger (`trigger_name`, `plugin_filename`, `trigger_specification`, `disabled`, `error_behavior`).
+- `system.processing_engine_trigger_arguments` — trigger arguments.
+- `system.plugin_files` — installed plugin file metadata (`plugin_name`, `file_name`, `file_path`, `size_bytes`, `last_modified`). `plugin_name` is the name of a trigger that uses the plugin.
+- `system.processing_engine_logs` — runtime log output from every trigger (columns in [`testing.md`](testing.md#reading-plugin-logs)). Query the trigger's database for one trigger's logs, or `_internal` for every trigger.
 
 ```bash
 # List installed plugin files
-influxdb3 query -d _internal --token "$INFLUXDB_TOKEN" \
+influxdb3 query -d _internal --token "$INFLUXDB_ADMIN_TOKEN" \
   "SELECT plugin_name, file_name FROM system.plugin_files ORDER BY plugin_name"
 
 # Recent log activity per trigger
@@ -89,42 +91,48 @@ Toggle a trigger off without deleting it (useful when debugging a misbehaving pl
 ```bash
 influxdb3 disable trigger \
   --database my_database \
-  --token "$INFLUXDB_TOKEN" \
+  --token "$INFLUXDB_ADMIN_TOKEN" \
   sensor_processor
 
 influxdb3 enable trigger \
   --database my_database \
-  --token "$INFLUXDB_TOKEN" \
+  --token "$INFLUXDB_ADMIN_TOKEN" \
   sensor_processor
 ```
 
 ## `influxdb3 delete trigger`
 
-Permanently delete a trigger. Positional argument is the trigger name; `--force` skips the interactive confirmation prompt (required for scripted use).
+Permanently delete a trigger. Pass the trigger name as a positional argument. The `--force` option permits deletion when the trigger is active.
 
 ```bash
 influxdb3 delete trigger \
   --database my_database \
-  --token "$INFLUXDB_TOKEN" \
+  --token "$INFLUXDB_ADMIN_TOKEN" \
   --force \
   sensor_processor
 ```
 
 > **Don't pass `--trigger-name`** — that flag doesn't exist on `delete trigger`. Use the positional argument instead.
 
-This does not delete the plugin file from `--plugin-dir`. To remove the file, use the HTTP plugin-files API or remove it server-side.
+This does not delete the plugin file from `--plugin-dir`.
+Remove the unused file server-side through deployment tooling after deleting the trigger; don't invent an HTTP delete operation.
 
 ## HTTP API equivalents
 
 | Action | Method + endpoint |
 |---|---|
 | Create trigger | `POST /api/v3/configure/processing_engine_trigger` |
-| Upload plugin file | `PUT /api/v3/plugins/files?path=<relative>` |
+| Create plugin file | `POST /api/v3/plugins/files` with JSON filename and source text |
 | Install Python package | `POST /api/v3/configure/plugin_environment/install_packages` |
 | Custom HTTP-trigger endpoint | `GET` or `POST /api/v3/engine/<request_path>` |
 
-All admin-required operations need `Authorization: Bearer <admin-token>`. See `references/installing.md` for full request shapes.
+All admin-required operations need `Authorization: Bearer <admin-token>`.
+Trigger creation accepts a body without `trigger_settings` and `disabled`.
+The trigger is then enabled, with error behavior `log`.
+In the HTTP body, `trigger_settings.error_behavior` takes the same lowercase values as the CLI flag: `log`, `retry`, and `disable`.
+For other settings and allowed values, fetch the API reference or ask the InfluxDB Documentation MCP server.
+Use [`references/installing.md`](installing.md) for the upload example and the [API reference](https://docs.influxdata.com/influxdb3/enterprise/api/v3/) for complete contracts.
 
 ## Where to fetch more
 
-`references/doc-urls.md` → CLI reference for `influxdb3 create trigger` and the HTTP API reference.
+[`references/doc-urls.md`](doc-urls.md) → CLI reference for `influxdb3 create trigger` and the HTTP API reference.

@@ -9,9 +9,9 @@ summarizing each batch. Demonstrates:
 - LineBuilder usage with tags + int64 field (LineBuilder is a runtime-injected
   global — no import required)
 - influxdb3_local.write_sync(line, no_sync=True) for writing the derived row
-  back. write_sync is the preferred API; write(line) is legacy. no_sync=True
-  returns as soon as the row is buffered (high-throughput); flip to no_sync=False
-  if you need to wait for WAL sync.
+  back. write_sync raises if the server rejects the write; write(line) queues
+  it until the plugin returns. no_sync=True skips waiting for WAL sync; flip to
+  no_sync=False if you need to wait for it.
 """
 
 

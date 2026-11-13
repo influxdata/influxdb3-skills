@@ -1,6 +1,6 @@
 # influxdb3-skills
 
-Agent skills that help AI coding agents write correct InfluxDB 3 code, manage databases and tokens, build Processing Engine plugins, and troubleshoot problems in InfluxDB 3 Core and InfluxDB 3 Enterprise.
+Agent skills that help AI coding agents write correct InfluxDB 3 code, manage databases and tokens, build Processing Engine plugins, and troubleshoot problems in InfluxDB 3 Core, InfluxDB 3 Enterprise, and InfluxDB 3 Cloud.
 
 ## Install
 
@@ -83,7 +83,7 @@ Each skill loads automatically when its topics come up in a conversation with yo
 The skills don't require an MCP server.
 If the InfluxDB Documentation MCP server is connected, the skills use it to look up the docs.
 The server is hosted, so you don't run it or need an API key.
-It only asks for an OAuth login, which it uses for rate limiting.
+It asks only for an OAuth login, which it uses for rate limiting.
 To connect your agent to it, see [the MCP server setup page](https://docs.influxdata.com/platform/mcp/server/).
 
 Generated code covers Python, JavaScript and TypeScript, Go, Java, C#, and raw HTTP.
@@ -95,30 +95,43 @@ Generated code covers Python, JavaScript and TypeScript, Go, Java, C#, and raw H
 - **Connect and authenticate:** reads the host, token, and database from environment variables, never inlines a token, and checks that `.gitignore` covers `.env`.
 - **Detect Core or Enterprise:** probes `/ping` and reads the `x-influxdb-build` and `x-influxdb-version` response headers.
   If the result is ambiguous, the agent asks you.
+- **Identify other InfluxDB products:** reads the host name and the `/ping` version headers.
+  A host that ends in `enterprise.influxdb.io` is InfluxDB 3 Cloud, not a self-hosted Enterprise server.
+  If you say only "InfluxDB Cloud" and neither signal matches, the agent asks which product you mean.
+  For a product the skill doesn't cover, the agent links to that product's docs instead of answering from memory.
 - **Write data:** line protocol, batching, retriable and non-retriable errors, and which write endpoints accept partial writes.
-- **Query data:** InfluxDB 3 SQL by default, parameterized user input, pagination, and time-bucket queries.
+- **Query data:** InfluxDB 3 SQL by default, InfluxQL when you ask for it, parameterized user input, pagination, and time-bucket queries.
 - **Design schemas:** tags or fields, naming conventions, and stable column types.
 - **Provision databases:** create, list, update the retention period, and delete, with the CLI or the HTTP API.
 - **Manage tokens:** admin tokens and scoped resource tokens (`db:<name>:read,write`), listing with `system.tokens`, and safe rotation.
   Rotation creates the new token, swaps the secret, and then revokes the old token, never in another order.
-- **Automate admin work:** complete lifecycle examples in Python, JavaScript and TypeScript, Go, Java, C#, and raw HTTP.
+- **Automate admin work:** complete lifecycle examples in Python and raw HTTP (`curl`).
 - **Troubleshoot:** a symptom-keyed guide for auth failures, writes misrouted by silent database auto-creation, write and query failures, admin failures, and plugin runtime issues.
   If you paste a token, the agent doesn't repeat any part of it.
 - **Run a diagnostic:** a Python script that produces a one-page health report.
   It checks `/ping`, detects the product, lists databases, and writes and queries a throwaway database.
   Run it when something seems wrong, before you paste an error into your agent.
-- **Fix common mistakes:** five broken-and-fixed example pairs for silent auto-creation, an admin token used on the data plane, `table_batches` attribute access, `system.tokens.permissions` parsing, and `HEAD` requests to `/ping`.
+- **Fix common mistakes:** four examples, each with broken code and its fix:
+  - With the default settings, a write to a misspelled database name creates a new database.
+    Queries against the intended database return no rows.
+  - Application code writes with the admin token, which has full access to every database, instead of a token scoped to its database.
+  - A script treats `system.tokens.permissions` as a list.
+    The value is a string.
+  - A health check sends `HEAD /ping` and gets a 404, because `/ping` accepts only `GET`.
 
 ### `influxdb3-plugins`: Processing Engine plugins
 
 - **Develop plugins:** the `influxdb3_local` runtime API, `LineBuilder`, the cache, and the three entry points (`process_writes`, `process_scheduled_call`, and `process_request`).
   `table_batches` items are dicts, not class instances.
-- **Install plugins:** `--upload`, `PUT /api/v3/plugins/files`, and the `gh:` prefix for the official plugin repo.
-- **Test plugins:** `influxdb3 test wal_plugin` and `influxdb3 test schedule_plugin` for offline runs, and a live loop with `influxdb3 update trigger` and `system.processing_engine_logs`.
+- **Install plugins:** `--upload`, `POST /api/v3/plugins/files` with a JSON body, and the `gh:` prefix for the official plugin repo.
+- **Test plugins:** `influxdb3 test wal_plugin` and `influxdb3 test schedule_plugin` for offline runs before you create the trigger, and a live loop with `influxdb3 update trigger` and `system.processing_engine_logs`.
 - **Manage plugin dependencies:** `influxdb3 install package` installs into the server's embedded virtual environment.
   The skill doesn't suggest `python -m venv` against the system Python.
 - **Keep state across runs:** trigger-local and global cache namespaces with TTLs.
-- **Diagnose plugin problems:** triggers that don't fire, dependency `ImportError`s, `table_batches` mistakes, and cache lifecycle issues.
+- **Diagnose plugin problems:** triggers that don't fire, uncaught exceptions, dependency `ImportError`s, and cache lifecycle issues.
+  A broken-and-fixed example pair shows `table_batches` attribute access.
+- **Keep plugins safe:** plugin files stay inside `--plugin-dir`.
+  A key passed as a trigger argument is readable through the system tables, so the agent recommends a key for that plugin alone.
 
 Both skills cover all three trigger types on single-node deployments.
 
@@ -131,16 +144,23 @@ For these topics, the skills point to the official docs instead of guessing:
 - **App-pattern templates:** IoT pipelines, dashboards, alerts, and downsampling.
 - **Multi-node plugin deployments:** cluster placement and multi-node patterns.
 - **Air-gapped setup:** offline mirrors, custom plugin repos, and offline package installs.
-- **Product-specific admin for InfluxDB Cloud Serverless, InfluxDB Cloud Dedicated, and InfluxDB Clustered:**
-  these products use different APIs to manage tokens and databases.
+- **InfluxDB Cloud Serverless, InfluxDB Cloud Dedicated, and InfluxDB Clustered:**
+  these products have no `/api/v3` endpoints and use different tokens and databases.
 - **InfluxDB Cloud (TSM), InfluxDB Cloud 1, InfluxDB OSS v1, and InfluxDB OSS v2.**
+
+Before 0.7.3, the `influxdb3` skill also covered InfluxDB Cloud Serverless, InfluxDB Cloud Dedicated, and InfluxDB Clustered.
+That guidance was thin and partly wrong.
+0.7.3 removed it, to make the skill shorter and its answers for the products it covers more reliable.
+The skill still names those products in its description, so it loads for them.
+It then identifies the product from the host name or the `/ping` version headers and links to that product's docs.
 
 ## Check the tested versions
 
 Each `SKILL.md` records under `metadata:` the date and InfluxDB 3 versions its docs were checked against,
-and the date and versions it was last live-verified against.
+and the date it was last live-verified (`live_verified`).
 The `influxdb3` skill also records the client library versions.
-If those look stale, the skill might be drifting from the product. Open an issue in this repository.
+If those look stale, the skill might be drifting from the product.
+Open an issue in this repository.
 
 Release history is in [`CHANGELOG.md`](CHANGELOG.md).
 
@@ -161,7 +181,8 @@ To install your working copy instead of the published version, clone the repo:
 git clone https://github.com/influxdata/influxdb3-skills.git ~/Projects/influxdb3-skills
 ```
 
-In Claude Code, remove the published marketplace first, because both use the name `influxdata-influxdb3`:
+The published marketplace and your local one both use the name `influxdata-influxdb3`.
+In Claude Code, remove the published marketplace first:
 
 ```text
 /plugin uninstall influxdb3-skills@influxdata-influxdb3

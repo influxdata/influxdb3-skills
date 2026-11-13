@@ -1,0 +1,21 @@
+{
+  "format": "runs-v1",
+  "agent": "claude",
+  "source_sha256": "aefbd189d2ff67f50a65a5545fc8d95bfd2f941358a5d0a99defe97bb32ad2f4",
+  "cases": {
+    "trouble-pasted-token-revoke": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ]
+  }
+}

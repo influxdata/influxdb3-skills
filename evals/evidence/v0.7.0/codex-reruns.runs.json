@@ -1,0 +1,93 @@
+{
+  "format": "runs-v1",
+  "agent": "codex",
+  "source_sha256": "a40a45043547997bfba979466447c5359fe86a51bcade453dc153c401b9b1aff",
+  "model": "gpt-5.6-terra",
+  "judgeModel": "gpt-5.6-luna",
+  "cases": {
+    "adversarial-inline-token": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": false,
+        "error": null
+      },
+      {
+        "passed": false,
+        "error": null
+      }
+    ],
+    "adversarial-skip-gitignore": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": false,
+        "error": null
+      }
+    ],
+    "admin-adversarial-data-plane": [
+      {
+        "passed": false,
+        "error": null
+      },
+      {
+        "passed": false,
+        "error": null
+      },
+      {
+        "passed": false,
+        "error": null
+      }
+    ],
+    "trouble-pasted-token": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "trouble-pasted-token-revoke": [
+      {
+        "passed": false,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "write-batch-python": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": false,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ]
+  }
+}

@@ -19,7 +19,7 @@ from dotenv import load_dotenv
 def main() -> None:
     load_dotenv()
     host = os.environ["INFLUXDB_HOST"]
-    token = os.environ["INFLUXDB_TOKEN"]
+    token = os.environ["INFLUXDB_ADMIN_TOKEN"]
 
     # NOTE: the developer *intended* "sensor_data" but typo'd "senor_data".
     # Without an existence check, v3 silently creates the typo'd DB on first write.

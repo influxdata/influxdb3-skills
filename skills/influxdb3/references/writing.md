@@ -1,6 +1,6 @@
-# Writing Data to InfluxDB 3
+# Writing data to InfluxDB 3
 
-## Line protocol — one paragraph
+## Line protocol
 
 Line protocol is a plain-text format: one line per point. Format:
 
@@ -14,19 +14,17 @@ Example:
 sensor,host=server01,region=us-west temperature=72.4,humidity=45.1 1714400000
 ```
 
-Spaces separate the three sections. Commas separate tags within section 1 and fields within section 2. Timestamp is optional; the server stamps "now" if omitted (use this only for live writes — backfills must include explicit timestamps).
+Spaces separate the three sections. Commas separate tags within section 1 and fields within section 2. The timestamp is optional. Without it, the server assigns the time it received the point, not the time the event happened.
 
 Quoting: string field values are wrapped in double quotes (`status="ok"`), tag values are not. Escape commas, equals, and spaces in tag/field keys and tag values with `\`; escape double quotes and backslashes inside string field values with `\`.
 
-**Constructing line protocol from untrusted values is injection-prone — a newline is a record separator.** If you hand-build line protocol by interpolating a tag or field value that contains a literal newline (`\n`) or carriage return (`\r`), everything after it is parsed as a *second point* — a value like `"ok\nmalicious,host=x value=1"` forges an extra record. Line protocol has no escape for `\n`/`\r`, so a value that may contain them cannot be safely written raw. Prefer an official client's builder (Python `Point`, or `LineBuilder` in the plugins runtime), which escapes the structural characters it can; for values that might contain `\n`/`\r`, **reject or strip them before writing** rather than relying on escaping. This matters most for whole-batch writes, where per-line partial acceptance means a `400` on a later line doesn't undo an already-parsed forged point.
-
-Full spec: see `references/doc-urls.md` → "Line protocol".
+Full spec: see [`references/doc-urls.md` → "Line protocol"](doc-urls.md).
 
 ## Batching rule
 
-**Batch ≥ 1,000 points or flush every 1 second**, whichever comes first. The official clients have batching helpers — use them. Avoid one-write-per-point loops; they hammer the server and run out of HTTP connections fast.
+**Batch up to 10,000 lines or 10 MB per request**, whichever comes first; the docs name this as the optimal batch size. For live streams, also flush on a timer (for example, every second) so points don't wait for a full batch. Avoid one-write-per-point loops; they add a request per point and can exhaust HTTP connections.
 
-For real-time streams, prefer the client's built-in batch-and-flush helper. For bulk loads, build a list of N points (start with 1,000–10,000) and write the list in one call.
+For real-time streams in Python, use the client's batching mode ([`references/clients/python.md` → "Automatic batching"](clients/python.md#automatic-batching)). For other clients, build fixed-size batches unless the client's docs describe a batching helper. For bulk loads, build lists of up to 10,000 points and write each list in one call.
 
 ## Error handling
 
@@ -36,7 +34,7 @@ For real-time streams, prefer the client's built-in batch-and-flush helper. For 
 | 400 | Line protocol parse error or schema-type conflict | **No** — fix the rejected lines and resend (see below for which lines) |
 | 401 | Auth failed | **No** — fix the token |
 | 403 | Token is valid but lacks write permission for the database | **No** — use a token with `write` on that database |
-| 404 | Database not found | **No** — create the DB or fix the env var |
+| 404 | Resource not found | **No** — check the endpoint and database name. With default settings, a write to a misspelled database creates it instead of returning 404; see [`references/troubleshooting.md` → "Silent auto-create misroute"](troubleshooting.md#silent-auto-create-misroute) |
 | 413 | Payload too large | **No** — reduce batch size |
 | 429 | Rate limited | **Yes** — exponential backoff with jitter |
 | 5xx | Server side | **Yes** — backoff with jitter |
@@ -47,23 +45,16 @@ Handle both codes as "fix the token."
 
 ### A 400 can mean a partial write
 
-`/api/v3/write_lp` accepts partial writes by default (`accept_partial=true`).
-InfluxDB writes the valid lines, rejects the invalid ones, and returns 400.
-The response body lists each rejected line with its line number.
-After a partial write, the valid lines are already stored.
-Resend only the corrected rejected lines, not the whole batch.
+| Endpoint | One invalid line in a batch |
+|---|---|
+| `/api/v3/write_lp` (default `accept_partial=true`) | 400; valid lines stored; the body's `data` array lists each rejected line with its `line_number` |
+| `/api/v3/write_lp?accept_partial=false` | 400; nothing stored |
+| `/api/v2/write`, `/write` | 400; nothing stored |
 
-With `accept_partial=false`, one invalid line rejects the whole batch.
-
-The `/api/v2/write` and `/write` compatibility endpoints behave differently.
-On Core and Enterprise 3.11.5, one invalid line in the batch returns 400, and none of the lines are written.
-Fix the invalid line and resend the whole batch.
 The v1 compatibility route is `/write`, not `/api/v1/write`.
+The 400 message text differs between the docs and some releases.
 
 ### Official clients write through `/api/v2/write` by default
-
-The official InfluxDB 3 clients send writes to the V2 API endpoint (`/api/v2/write`) by default, starting in these releases.
-So by default, one invalid line rejects the whole batch, and `accept_partial` has no effect.
 
 | Client | V2 default starting in | Write through `/api/v3/write_lp` instead |
 |---|---|---|
@@ -75,17 +66,13 @@ So by default, one invalid line rejects the whole batch, and `accept_partial` ha
 
 The Python and JavaScript clients also read the `INFLUX_WRITE_USE_V2_API` environment variable.
 `no_sync` (`noSync`, `NoSync`) requires the V3 endpoint in every client.
-For InfluxDB 3 Core and Enterprise, opt into the V3 endpoint when you need partial writes or `no_sync`.
-Keep the default for InfluxDB Cloud Serverless, InfluxDB Cloud Dedicated, and InfluxDB Clustered.
 Check the client's README for the exact option syntax in the version the user runs.
-
-Match on the status code and the `data` array, not on the error message text.
-The message text differs between the docs and some releases.
 
 ### Duplicate tag keys
 
 A point that repeats a tag key, such as `m,t=a,t=a f=1i`, returns 400.
-Core and Enterprise reject it in 3.9.8+, 3.10.3+, and 3.11.0+.
+Core and Enterprise reject it in 3.9.8 and later 3.9.x releases, 3.10.3 and later 3.10.x releases, and 3.11.0 and later.
+3.10.0 through 3.10.2 still accept it.
 Earlier releases accepted the point, and the node then crash-looped on WAL replay.
 If the user runs an earlier version, validate tag keys client-side before writing.
 
@@ -95,7 +82,7 @@ If the user runs an earlier version, validate tag keys client-side before writin
 Scripts that parse the output for `success` break.
 Add `--quiet` (`-q`) to suppress all output, and don't parse the report.
 
-For symptom-by-symptom diagnosis, see `references/troubleshooting.md` → "Write failures".
+For symptom-by-symptom diagnosis, see [`references/troubleshooting.md` → "Write failures"](troubleshooting.md#write-failures).
 
 ## Type stickiness
 
@@ -103,17 +90,21 @@ Once a field is a float, you cannot write a string to that same field name later
 
 Tags are always strings; mixing types into a tag silently coerces to string.
 
-## Backfilling vs. live writes
+In an existing Enterprise explicit-schema database, undeclared tables and columns are rejected rather than inferred from writes.
+Check the schema before retrying a schema-related 400.
+Route declaration or schema-mode administration to the [Enterprise database docs](https://docs.influxdata.com/influxdb3/enterprise/admin/databases/) instead of creating declarations in the application's write path or disabling enforcement.
 
-- **Live writes:** omit the timestamp; the server stamps "now". Cheaper.
-- **Backfills:** always include explicit timestamps. Use second precision (`?precision=second`) by default unless you genuinely need sub-second resolution — it makes line protocol smaller. Storage precision is the same either way.
+## Maximum timestamp
+
+The [3.12.1 notes](https://docs.influxdata.com/influxdb3/enterprise/release-notes/#v3121) document rejection of timestamps after `2262-04-11T23:39:59.999999999Z`.
+Validate timestamps in the application before you write them.
 
 ## When to use raw HTTP vs the client
 
-The official clients give you batching, retries, and friendlier error messages for free. Use raw HTTP only when:
+The official clients build and escape line protocol and support parameterized queries. Use raw HTTP only when:
 
 - You're in a language without a first-class client.
 - You need to integrate with an existing HTTP request pipeline.
 - You're benchmarking the wire path.
 
-See `references/clients/http.md`.
+See [`references/clients/http.md`](clients/http.md).
