@@ -40,13 +40,7 @@ The root `plugin.json` follows the [Agent Plugins](https://agent-plugins.org) fo
 so clients that support Agent Plugins can install the repository as a plugin.
 
 To install the skills into any agent that reads Agent Skills,
-use the [`skills` CLI](https://github.com/vercel-labs/skills):
-
-```sh
-npx skills add influxdata/influxdb3-skills
-```
-
-You can also copy the directories under `skills/` to the location where your agent reads skills.
+copy the directories under `skills/` to the location where your agent reads skills.
 
 If you don't have InfluxDB 3 running yet, ask your agent.
 The skill walks you through the install.
@@ -68,12 +62,12 @@ These prompts don't need a database:
 - "I'm using InfluxDB 3. Help me design a schema for tracking temperature across 10,000 sensors."
 - "Write a Python script that queries the last hour of data from InfluxDB 3."
 - "I'm getting a 401 from InfluxDB 3. Walk me through diagnosing it."
-- "What's the difference between InfluxDB 3 Core and Enterprise for my client code?"
+- "What's the difference between InfluxDB 3 Core and InfluxDB 3 Enterprise for my client code?"
 - "Write an InfluxDB 3 Processing Engine plugin that logs the row count whenever data hits my `sensors` table."
 
 To run the generated code, set up a local instance first:
 
-1. "I don't have InfluxDB 3 yet. Help me get a Core instance running."
+1. "I don't have InfluxDB 3 yet. Help me get an InfluxDB 3 Core instance running."
 2. "Write and run a Python script that connects to my InfluxDB 3 Core, creates a database, and writes 10 sample points."
 
 ## What the skills do
@@ -93,7 +87,7 @@ Generated code covers Python, JavaScript and TypeScript, Go, Java, C#, and raw H
 - **Get InfluxDB 3 running:** installs InfluxDB 3 Core and InfluxDB 3 Enterprise with the official script or Docker, creates the operator token, and checks the server with `/ping`.
   This helps if you don't have a server yet.
 - **Connect and authenticate:** reads the host, token, and database from environment variables, never inlines a token, and checks that `.gitignore` covers `.env`.
-- **Detect Core or Enterprise:** probes `/ping` and reads the `x-influxdb-build` and `x-influxdb-version` response headers.
+- **Detect InfluxDB 3 Core or InfluxDB 3 Enterprise:** probes `/ping` and reads the `x-influxdb-build` and `x-influxdb-version` response headers.
   If the result is ambiguous, the agent asks you.
 - **Write data:** line protocol, batching, retriable and non-retriable errors, and which write endpoints accept partial writes.
 - **Query data:** InfluxDB 3 SQL by default, parameterized user input, pagination, and time-bucket queries.
