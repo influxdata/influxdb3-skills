@@ -33,12 +33,12 @@ For real-time streams, prefer the client's built-in batch-and-flush helper. For 
 | Status | Meaning | Retriable? |
 |---|---|---|
 | 200 / 204 | Success | n/a |
-| 400 | Line protocol parse error or schema-type conflict | **No** — fix the rejected lines and resend (see below for which lines) |
+| 400 | Line protocol parse error, schema-type conflict, or (Enterprise explicit schema mode) an undeclared table or column | **No** — fix the rejected lines, or declare the table or column, and resend (see below for which lines) |
 | 401 | Auth failed | **No** — fix the token |
 | 403 | Token is valid but lacks write permission for the database | **No** — use a token with `write` on that database |
 | 404 | Database not found | **No** — create the DB or fix the env var |
 | 413 | Payload too large | **No** — reduce batch size |
-| 429 | Rate limited | **Yes** — exponential backoff with jitter |
+| 429 | Too many requests: rate limited, or (Core and Enterprise 3.12+) the server's WAL buffer is full | **Yes** — exponential backoff with jitter |
 | 5xx | Server side | **Yes** — backoff with jitter |
 | No response (connection reset or refused) | The node is stopped or unreachable | **Yes** — back off, or send to another node |
 
@@ -79,6 +79,14 @@ For InfluxDB 3 Core and Enterprise, opt into the V3 endpoint when you need parti
 Keep the default for InfluxDB Cloud Serverless, InfluxDB Cloud Dedicated, and InfluxDB Clustered.
 Check the client's README for the exact option syntax in the version the user runs.
 
+### 429 from Core and Enterprise (3.12+)
+
+Starting in 3.12, Core and Enterprise enforce the WAL write buffer limit.
+When the buffer is full, a write returns `429` with the message `wal buffer is full; writes are temporarily rejected, retry shortly`, and `/api/v2/write` returns it as JSON with `code: "too many requests"`.
+Nothing in the rejected request is written.
+Retry the same batch after a short delay, with exponential backoff and jitter, and cap the number of retries.
+Before 3.12, self-hosted Core and Enterprise didn't return 429 for writes, so write code that treated 429 as fatal needs this retry.
+
 Match on the status code and the `data` array, not on the error message text.
 The message text differs between the docs and some releases.
 
@@ -97,6 +105,32 @@ Add `--quiet` (`-q`) to suppress all output, and don't parse the report.
 
 For symptom-by-symptom diagnosis, see `references/troubleshooting.md` → "Write failures".
 
+### Databases with explicit schema mode (Enterprise 3.12+)
+
+An InfluxDB 3 Enterprise database created with `--schema-mode explicit` (or `"schema_mode": "explicit"` in the API) doesn't create tables or columns on write.
+Declare each table and its columns first, then write:
+
+```bash
+# Declare the table (admin token)
+influxdb3 create table --database sensor_data --tags device,site \
+  --fields temp:float64,humidity:float64 --token "$INFLUXDB_ADMIN_TOKEN" sensor
+
+# Add columns later (add-only)
+influxdb3 update table --database sensor_data --fields pressure:float64 \
+  --token "$INFLUXDB_ADMIN_TOKEN" sensor
+```
+
+The HTTP equivalents are `POST /api/v3/configure/table` to declare a table and `PATCH /api/v3/configure/table` to add columns, with a body like `{"db":"sensor_data","table":"sensor","tags":["device"],"fields":[{"name":"temp","type":"float64"}]}`.
+
+- A line that names an undeclared table or column returns `400`: `table '<table>' is not defined in database '<db>', which uses explicit schemas` or `column '<column>' (...) is not defined in table '<table>' ...`. Don't retry it unchanged. Declare the column (an admin task), or fix the line.
+- The usual partial-write rules apply. On `/api/v3/write_lp` with the default `accept_partial=true`, the other lines in the batch are stored.
+- Schema evolution is add-only. Declaring an existing column with the same type does nothing; a different type returns 400.
+- The mode is fixed when the database is created. Check it with `SELECT database_name, schema_mode FROM system.databases`, queried against the `_internal` database.
+- InfluxDB 3 Core rejects `--schema-mode explicit` with `400` (`explicit schema mode is only available in InfluxDB 3 Enterprise`). Core databases always create tables and columns on write.
+- In an Enterprise cluster, a column declared through one node can be rejected by another node for about one catalog sync interval (`--catalog-sync-interval`, default `1s`). Retry that rejection after a short delay, or write through the node that took the declaration.
+
+Application code that writes to an explicit database needs a write token only. Declaring tables and columns needs an admin token, so do it in setup or migration code, not in the write path.
+
 ## Type stickiness
 
 Once a field is a float, you cannot write a string to that same field name later — the schema infers types per-field on first write. To recover, either pick a different field name (`temperature_f` instead of `temperature`) or drop and recreate the table.
@@ -107,6 +141,7 @@ Tags are always strings; mixing types into a tag silently coerces to string.
 
 - **Live writes:** omit the timestamp; the server stamps "now". Cheaper.
 - **Backfills:** always include explicit timestamps. Use second precision (`?precision=second`) by default unless you genuinely need sub-second resolution — it makes line protocol smaller. Storage precision is the same either way.
+- **Timestamp bounds (Enterprise 3.12+, upgraded storage engine):** an operator can set `--write-timestamp-max-past` and `--write-timestamp-max-future` to reject lines whose explicit timestamp is too far from the request time. Both are off unless set. If backfilled lines are rejected, ask the operator whether these are set.
 
 ## When to use raw HTTP vs the client
 

@@ -5,6 +5,7 @@ set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
 scripts/check-paths.sh
+scripts/check-known-issues.py
 
 if command -v gitleaks >/dev/null; then
   gitleaks git --staged --redact --no-banner -c .gitleaks.toml

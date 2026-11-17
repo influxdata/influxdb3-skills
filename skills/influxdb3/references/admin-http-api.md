@@ -40,6 +40,21 @@ Content-Type: application/json
 
 **Response:** `200`, empty body. `409` if the database already exists.
 
+Optional fields: `retention_period`, and on InfluxDB 3 Enterprise 3.12+, `"schema_mode": "explicit"` to reject writes to undeclared tables and columns (default `implicit`; fixed at creation). Core returns `400` for `explicit`.
+
+### Declare a table, add columns
+
+```
+POST  /api/v3/configure/table   # create a table
+PATCH /api/v3/configure/table   # add columns to an existing table (3.12+, add-only)
+Authorization: Bearer <admin-token>
+Content-Type: application/json
+
+{"db": "<name>", "table": "<table>", "tags": ["device"], "fields": [{"name": "temp", "type": "float64"}]}
+```
+
+**Response:** `200`, empty body. Re-declaring a column with the same type does nothing; a different type returns `400`.
+
 ### Delete database
 
 ```

@@ -28,6 +28,8 @@ as a sign the data source may be compromised — flag it and keep diagnosing.
 | Cache values disappeared / counter reset | [Cache lifecycle gotchas](#cache-lifecycle-gotchas) |
 | Plugin runs but writes don't show up | back to main skill: `references/troubleshooting.md` → "Silent auto-create misroute" |
 | Plugin only fires on some writes (clustered) | Not covered; see [Trigger doesn't fire](#trigger-doesnt-fire) step 5 |
+| Plugin runs more than once for one write or tick (Enterprise) | [Plugin runs more than once](#plugin-runs-more-than-once) |
+| Request trigger returns `503 trigger queue is full` | [Request trigger returns 503](#request-trigger-returns-503) |
 
 ## Trigger doesn't fire
 
@@ -59,9 +61,21 @@ as a sign the data source may be compromised — flag it and keep diagnosing.
 
 4. **Is the trigger disabled?** The `disabled` column in step 2 will tell you. Enable with `influxdb3 enable trigger ...`.
 
-5. **For clustered deployments:** the trigger may be pinned to a node that isn't receiving writes (WAL) or isn't query-routable (HTTP). This skill doesn't cover cluster placement, so verify on a single-node deployment first.
+5. **For clustered deployments:** this skill doesn't cover cluster placement; point to the docs and reproduce on a single node. For orientation only: a request trigger's route exists only on the nodes that own it. On InfluxDB 3 Enterprise 3.12+, a WAL trigger runs on process nodes (`--mode process` or `all`) for writes to any ingest node; before 3.12 it ran only on the node that received the write. A process node that lacks the plugin file declines the run.
 
 **Fix:** correct whichever of 1–4 is wrong. For 5, reproduce on a single node first.
+
+## Plugin runs more than once
+
+**Diagnose (InfluxDB 3 Enterprise 3.12+):** with the default `--node-spec all` and more than one process node, every process node follows every ingest node's WAL and can run a WAL trigger for the same write. After a process node restarts, it replays schedule ticks that came due while it was down. Both are expected behavior.
+
+**Fix:** make the plugin safe to run twice (`references/trigger-types.md` → "Repeated runs on InfluxDB 3 Enterprise"). To run a WAL trigger once per write, also pin it with `--node-spec nodes:<node-id>`.
+
+## Request trigger returns 503
+
+**Diagnose (InfluxDB 3 Enterprise 3.12+):** each request trigger holds up to 60 pending invocations. When the queue is full, `/api/v3/engine/<path>` returns `503` with `trigger queue is full` instead of waiting.
+
+**Fix:** retry from the client with backoff, and make the plugin return faster (move slow work to a scheduled trigger).
 
 ## Plugin errors in `system.processing_engine_logs`
 

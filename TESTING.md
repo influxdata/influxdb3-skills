@@ -8,7 +8,8 @@ CI runs the validation checks on every pull request. The evals and runnable exam
 | Change | Run |
 |---|---|
 | Any skill text | [Validate the skills](#validate-the-skills), [check links](#check-links), and the [evals](#run-the-evals) for the cases your change affects |
-| A version or `metadata:` field | [Check versions](#check-versions) |
+| A version or `metadata:` field | [Check versions](#check-versions) and [check known issues](#check-known-issues) |
+| A workaround for a product bug in a specific release | [Check known issues](#check-known-issues) |
 | Example code | [Run the examples](#run-the-examples) |
 | A workflow in `.github/workflows/` | [Lint workflows](#lint-workflows) |
 | `evals/gate.mjs` | [Unit tests](#unit-tests) |
@@ -31,6 +32,39 @@ The plugin manifests and each `SKILL.md` must carry the same version:
 ```sh
 scripts/check-versions.sh
 ```
+
+## Check known issues
+
+A workaround for a product bug in one release is a known issue.
+It stays in context, next to the guidance it changes, wrapped in a marker:
+
+```markdown
+<!-- known-issue: core-package-install-200 -->InfluxDB 3 Core 3.12 also returns 200 for a failed install.<!-- /known-issue -->
+```
+
+Name the product and release in the caveat text, such as "Core 3.12".
+Don't write "currently" or "still", because a caveat can outlive the bug.
+In a table, put the marker inside the first cell. A marker at the start of a row ends the table there.
+
+Each marker ID needs an entry in `known-issues.toml` at the repository root.
+The entry records the release the issue was verified on and its evidence.
+Agents don't load this file.
+
+```sh
+scripts/check-known-issues.py
+```
+
+The check fails in these cases:
+
+- A marker has no entry, or an entry has no marker.
+- A skill's `docs_checked_against` version is newer than the entry's `verified_on`.
+  Rerun the evidence probe against the new release.
+  If the bug remains, update `verified_on`.
+  If it's fixed, set `fixed_in`, or remove the caveats and the entry.
+- A skill's `docs_checked_against` version has reached the entry's `fixed_in`.
+  Remove the caveats and the entry.
+
+Because `docs_checked_against` changes with each release update, every known issue is rechecked when the skills move to a new release.
 
 ## Check for home directories and secrets
 

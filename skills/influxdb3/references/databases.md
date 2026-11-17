@@ -54,6 +54,27 @@ influxdb3 create database <name> --retention-period 30d --token "$INFLUXDB_TOKEN
 
 > The CLI also reads `INFLUXDB3_AUTH_TOKEN` from env. Examples in this skill use `--token "$INFLUXDB_TOKEN"` explicitly so the same `INFLUXDB_TOKEN` env var works for both CLI and application code without renaming.
 
+### Create with explicit schema mode (Enterprise 3.12+)
+
+```bash
+# Reject writes to undeclared tables and columns
+influxdb3 create database <name> --schema-mode explicit --token "$INFLUXDB_TOKEN"
+```
+
+`--schema-mode` is `implicit` (default: writes create tables and columns) or `explicit` (declare them first).
+It's fixed when the database is created. InfluxDB 3 Core rejects `explicit` with a 400 error.
+In an explicit database, declare tables and columns before the first write:
+
+```bash
+influxdb3 create table --database <name> --tags device --fields temp:float64 \
+  --token "$INFLUXDB_TOKEN" <table>
+# Add columns later (add-only; Core and Enterprise 3.12+)
+influxdb3 update table --database <name> --tags site --fields humidity:float64 \
+  --token "$INFLUXDB_TOKEN" <table>
+```
+
+Write behavior and errors: `references/writing.md` → "Databases with explicit schema mode".
+
 ### List
 
 ```bash

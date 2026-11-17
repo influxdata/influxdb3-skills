@@ -34,6 +34,15 @@ jobs:
           persist-credentials: false
       - run: scripts/check-versions.sh
 
+  known-issues:
+    name: Known issues are current
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: scripts/check-known-issues.py
+
   paths:
     name: No home directories
     runs-on: ubuntu-latest
