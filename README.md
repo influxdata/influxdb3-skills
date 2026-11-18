@@ -1,6 +1,10 @@
 # influxdb3-skills
 
-Agent skills that help AI coding agents write correct InfluxDB 3 code, manage databases and tokens, build Processing Engine plugins, and troubleshoot problems in InfluxDB 3 Core, InfluxDB 3 Enterprise, and InfluxDB 3 Cloud.
+Agent skills that help AI coding agents work with [InfluxDB 3 Core](https://docs.influxdata.com/influxdb3/core/), [InfluxDB 3 Enterprise](https://docs.influxdata.com/influxdb3/enterprise/), and [InfluxDB 3 Cloud](https://docs.influxdata.com/influxdb3/cloud/).
+The skills cover application code, database and token management, Processing Engine plugins, and troubleshooting, with coverage that varies by product.
+
+For InfluxDB 3 Cloud, the `influxdb3` skill uses Enterprise guidance for writes, queries, and tokens only where the InfluxDB 3 Cloud docs confirm it.
+The self-hosted installation and Processing Engine plugin guidance below applies to InfluxDB 3 Core and InfluxDB 3 Enterprise.
 
 ## Install
 
@@ -42,8 +46,8 @@ so clients that support Agent Plugins can install the repository as a plugin.
 To install the skills into any agent that reads Agent Skills,
 copy the directories under `skills/` to the location where your agent reads skills.
 
-If you don't have InfluxDB 3 running yet, ask your agent.
-The skill walks you through the install.
+If you need a self-hosted database, ask your agent to help install InfluxDB 3 Core or InfluxDB 3 Enterprise.
+For a hosted database, follow the [InfluxDB 3 Cloud getting started guide](https://docs.influxdata.com/influxdb3/cloud/get-started/).
 
 ## Try it
 
@@ -65,7 +69,9 @@ These prompts don't need a database:
 - "What's the difference between InfluxDB 3 Core and InfluxDB 3 Enterprise for my client code?"
 - "Write an InfluxDB 3 Processing Engine plugin that logs the row count whenever data hits my `sensors` table."
 
-To run the generated code, set up a local instance first:
+To run generated application code, use an existing InfluxDB 3 Core, InfluxDB 3 Enterprise, or InfluxDB 3 Cloud database.
+For InfluxDB 3 Cloud setup and connection details, follow the [getting started guide](https://docs.influxdata.com/influxdb3/cloud/get-started/).
+To try a self-hosted InfluxDB 3 Core instance, use these prompts:
 
 1. "I don't have InfluxDB 3 yet. Help me get an InfluxDB 3 Core instance running."
 2. "Write and run a Python script that connects to my InfluxDB 3 Core, creates a database, and writes 10 sample points."
