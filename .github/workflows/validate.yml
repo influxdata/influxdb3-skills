@@ -9,6 +9,20 @@ permissions:
   contents: read
 
 jobs:
+  gate-tests:
+    name: Release gate behavior
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          package-manager-cache: false
+      - run: node --test evals/gate.test.mjs evals/check-release.test.mjs evals/build-claude-cases.test.mjs evals/run-codex-evals.test.mjs evals/rescore.test.mjs evals/judge.test.mjs scripts/check-claim-policy.test.mjs scripts/check-shared-blocks.test.mjs scripts/check-file-links.test.mjs
+      - run: python3 evals/run-plugin-examples.test.py
+
   skills:
     name: Agent Skills spec
     runs-on: ubuntu-latest
@@ -33,6 +47,45 @@ jobs:
         with:
           persist-credentials: false
       - run: scripts/check-versions.sh
+
+  claim-policy:
+    name: Claim IDs and ledger paths
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          package-manager-cache: false
+      - run: node scripts/check-claim-policy.mjs
+
+  shared-blocks:
+    name: Shared skill blocks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          package-manager-cache: false
+      - run: node scripts/check-shared-blocks.mjs
+
+  file-links:
+    name: Linked file references
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          package-manager-cache: false
+      - run: node scripts/check-file-links.mjs
 
   paths:
     name: No home directories
@@ -73,5 +126,5 @@ jobs:
           persist-credentials: false
       - uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
         with:
-          args: --no-progress --max-retries 3 --exclude-loopback 'skills/**/*.md' README.md
+          args: --no-progress --max-retries 3 --exclude-loopback --include-fragments 'skills/**/*.md' README.md
           fail: true

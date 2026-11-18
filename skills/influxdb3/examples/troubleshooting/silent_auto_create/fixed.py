@@ -58,7 +58,7 @@ def write_lp(host: str, token: str, db: str, line: str) -> int:
 def main() -> int:
     load_dotenv()
     host = os.environ["INFLUXDB_HOST"]
-    token = os.environ["INFLUXDB_TOKEN"]
+    token = os.environ["INFLUXDB_ADMIN_TOKEN"]
 
     # For demo purposes use a throwaway DB so we don't pollute a customer's "sensor_data".
     intended_db = f"admin_test_sensor_data_{int(time.time())}"

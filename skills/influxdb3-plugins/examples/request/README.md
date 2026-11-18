@@ -5,10 +5,10 @@
 ## Wire it up
 
 ```bash
-# Assumes INFLUXDB_HOST, INFLUXDB_TOKEN (admin), INFLUXDB_DATABASE are set.
+# Assumes INFLUXDB_HOST, INFLUXDB_ADMIN_TOKEN, INFLUXDB_TOKEN, INFLUXDB_DATABASE are set.
 influxdb3 create trigger \
   --database "$INFLUXDB_DATABASE" \
-  --token "$INFLUXDB_TOKEN" \
+  --token "$INFLUXDB_ADMIN_TOKEN" \
   --trigger-spec "request:echo" \
   --path "$(pwd)/process_request_hello.py" \
   --upload \
@@ -54,7 +54,7 @@ Expected: lines like `echo plugin called with body length 24`.
 ```bash
 influxdb3 delete trigger \
   --database "$INFLUXDB_DATABASE" \
-  --token "$INFLUXDB_TOKEN" \
+  --token "$INFLUXDB_ADMIN_TOKEN" \
   --force \
   request_hello
 ```

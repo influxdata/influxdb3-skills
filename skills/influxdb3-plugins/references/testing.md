@@ -19,14 +19,21 @@ Two subcommands (HTTP request plugins are tested via real triggers):
 influxdb3 test wal_plugin [OPTIONS] --database <DATABASE> <FILENAME>
 ```
 
-The `<FILENAME>` is the plugin's filename **as it lives on the server** under `<plugin-dir>/<filename>` — the test command does NOT have `--upload`. The plugin file must already be in the server's plugin-dir (or uploaded via `PUT /api/v3/plugins/files`). For local development, deploy first via a real `influxdb3 create trigger ... --upload`, or use the HTTP API to upload the file alone.
+The `<FILENAME>` is the plugin's path relative to the server's plugin directory. The test command has no `--upload`, so put the file on the server first, without a trigger:
+
+- **Over HTTP:** `POST /api/v3/plugins/files` with JSON `plugin_name` and `content` creates the file. See [`installing.md`](installing.md) for the request. A `plugin_name` such as `dev/my_plugin.py` creates a subfolder.
+- **On the server:** copy the file into the plugin directory, for example through a container volume.
+
+Then run the offline test. Create the trigger only after the test passes.
+Don't create a trigger just to get the file onto the server: the trigger runs the untested code on live writes or on its schedule.
+There is no HTTP delete for plugin files. Remove a file you staged only for testing from the plugin directory on the server.
 
 Common flags:
 
 | Flag | Purpose |
 |---|---|
 | `-d`, `--database <name>` | Required. Target database. |
-| `--token <auth>` | Admin token (or via `INFLUXDB3_AUTH_TOKEN` env). |
+| `--token <auth>` | Admin token. |
 | `--lp <input_lp>` | Synthetic line protocol fed to `process_writes`. |
 | `--file <input_file>` | Alternative to `--lp` — read LP from a file already on the server at `<plugin-dir>/<name>_test/<input-file>`. |
 | `--input-arguments <k=v,k2=v2>` | Passed to the plugin as `args`. |
@@ -38,7 +45,7 @@ Example:
 ```bash
 influxdb3 test wal_plugin \
   --database "$INFLUXDB_DATABASE" \
-  --token "$INFLUXDB_TOKEN" \
+  --token "$INFLUXDB_ADMIN_TOKEN" \
   --lp 'sensor,host=server01,region=us-west temperature=72.4 1714400000000000000' \
   my_plugin.py
 ```
@@ -58,14 +65,14 @@ influxdb3 test schedule_plugin --help
 There is no offline test command for HTTP plugins. The fastest workflow:
 
 1. Create the real trigger with `--error-behavior log`.
-2. `curl http://localhost:8181/api/v3/engine/<path>` to exercise it.
+2. `curl "$INFLUXDB_HOST/api/v3/engine/<path>" -H "Authorization: Bearer $INFLUXDB_TOKEN"` to exercise it.
 3. `SELECT event_time, log_level, log_text FROM system.processing_engine_logs WHERE trigger_name='<name>' ORDER BY event_time DESC LIMIT 50` to see output.
 4. `influxdb3 update trigger ... --path` to push code changes; trigger config is preserved.
 5. Repeat steps 2–4.
 
 ## Live trigger iteration loop
 
-> If the iteration is happening because something is broken — the trigger isn't firing, the plugin is throwing errors, dependencies aren't loading — the symptom-keyed diagnostic is in `references/troubleshooting.md`. Use this section for the *how* of iterating; use `troubleshooting.md` for the *what does this symptom mean*.
+> If the iteration is happening because something is broken — the trigger isn't firing, the plugin is throwing errors, dependencies aren't loading — the symptom-keyed diagnostic is in [`references/troubleshooting.md`](troubleshooting.md). Use this section for the *how* of iterating; use [`troubleshooting.md`](troubleshooting.md) for the *what does this symptom mean*.
 
 Once `influxdb3 test` (or, for HTTP plugins, the live trigger) validates your plugin works, deploy or refine using `update trigger`:
 
@@ -73,7 +80,7 @@ Once `influxdb3 test` (or, for HTTP plugins, the live trigger) validates your pl
 # Initial create — uploads the file
 influxdb3 create trigger \
   --database "$INFLUXDB_DATABASE" \
-  --token "$INFLUXDB_TOKEN" \
+  --token "$INFLUXDB_ADMIN_TOKEN" \
   --trigger-spec "table:sensors" \
   --path "/absolute/path/my_plugin.py" \
   --upload \
@@ -83,16 +90,17 @@ influxdb3 create trigger \
 # Iterate: edit the local plugin file, then push without re-creating the trigger
 influxdb3 update trigger \
   --database "$INFLUXDB_DATABASE" \
-  --token "$INFLUXDB_TOKEN" \
+  --token "$INFLUXDB_ADMIN_TOKEN" \
   --trigger-name my_trigger \
   --path "/absolute/path/my_plugin.py"
 ```
 
-`update trigger` preserves the trigger spec, arguments, and error-behavior — only the plugin code is replaced.
+`update trigger` reads the local file specified by `--path` without `--upload`. The command preserves the trigger spec, arguments, and error-behavior while replacing the plugin code.
 
 ## Reading plugin logs
 
-The `system.processing_engine_logs` table holds plugin output for every trigger in the database.
+The `system.processing_engine_logs` table holds plugin output.
+Run the query against the trigger's database for that trigger's logs, or against `_internal` for logs from every trigger on the server.
 
 ```bash
 influxdb3 query \
@@ -109,6 +117,13 @@ Columns:
 | `trigger_name` | string | Name of the trigger that produced the log. |
 | `log_level` | string | `INFO` / `WARN` / `ERROR` (uppercase). |
 | `log_text` | string | The space-joined args passed to `info`/`warn`/`error`. The runtime also emits framing lines like `starting execution of wal plugin.` and `finished execution in N ms`. |
+| `run_id` | string | Shared by every line from one plugin invocation (observed on 3.12.1). |
+| `node_id` | string | Node that ran the invocation; on a cluster, a WAL trigger can run on several nodes (observed on 3.12.1). |
+| `database_name` | string | Database the trigger belongs to (observed on 3.12.1). |
+| `plugin_filename` | string | Plugin file the trigger runs (observed on 3.12.1). |
+| `error_details` | string | Empty on 3.12.1, including for an uncaught exception. The exception appears only in the server log and, for a request trigger, the HTTP 500 body ([troubleshooting](troubleshooting.md#plugin-errors-in-systemprocessing_engine_logs)). |
+
+`plugin_name`, `level`, and `message` aren't columns; a query that names them fails with `Schema error: No field named plugin_name`.
 
 Common queries:
 
@@ -130,9 +145,9 @@ Set on `influxdb3 create trigger` (or `trigger_settings.error_behavior` via the 
 
 | Flag | Effect |
 |---|---|
-| `--error-behavior log` *(default)* | Errors are logged to `system.processing_engine_logs` and stdout; the trigger keeps running. **Pick this for development.** |
+| `--error-behavior log` *(default)* | Errors are logged to `system.processing_engine_logs` and stdout; the trigger keeps running. |
 | `--error-behavior retry` | The plugin is re-invoked on error. Useful for transient external dependencies (a flaky API, a brief network blip). For an asynchronous trigger (`--run-asynchronous`), a failed invocation retries a limited number of times and is then discarded (3.11.0+); earlier releases retry without limit. Check the release notes for the user's version for the exact limit. |
-| `--error-behavior disable` | The trigger auto-disables on the first error. Pick this for "fail loud" critical paths where silent log failures are unacceptable. |
+| `--error-behavior disable` | The trigger auto-disables on the first error, so a failure stops processing until someone re-enables it. |
 
 ## Inspecting cache state
 
@@ -150,7 +165,7 @@ def process_request(influxdb3_local, query_parameters, request_headers, request_
     return {"key": key, "value": val, "global": use_global}
 ```
 
-Wire it up at `request:cache_inspect`, then `curl "http://localhost:8181/api/v3/engine/cache_inspect?key=counter"` to read.
+Wire it up at `request:cache_inspect`, then `curl "$INFLUXDB_HOST/api/v3/engine/cache_inspect?key=counter" -H "Authorization: Bearer $INFLUXDB_TOKEN"` to read.
 
 ### Pattern B: log cache reads from the plugin under test
 
@@ -158,4 +173,4 @@ In the plugin you're developing, add `influxdb3_local.info(f"cache[counter] = {v
 
 ## Where to fetch more
 
-`references/doc-urls.md` → CLI reference for `influxdb3 test`.
+[`references/doc-urls.md`](doc-urls.md) → CLI reference for `influxdb3 test`.

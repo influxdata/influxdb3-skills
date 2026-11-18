@@ -9,8 +9,8 @@ Demonstrates:
 - influxdb3_local.query() usage
 - LineBuilder usage with int64 field (LineBuilder is a runtime-injected
   global — no import required)
-- writing back via influxdb3_local.write_sync(line, no_sync=True) — the preferred
-  API. write(line) is legacy. no_sync is required (no default).
+- writing back via influxdb3_local.write_sync(line, no_sync=True), which raises
+  if the server rejects the write. no_sync is required (no default).
 """
 
 

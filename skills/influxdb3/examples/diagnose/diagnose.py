@@ -137,14 +137,18 @@ def main() -> int:
     except Exception as exc:
         print(f"    FAIL: connection error: {exc}")
         return 1
-    if sc != 200:
+    if sc not in (200, 403):
         print(f"    FAIL: status {sc}")
         if sc == 401:
             print("    → token rejected. Confirm INFLUXDB_TOKEN value and host match.")
         return 1
+    limited_probe = sc == 403
+    if limited_probe:
+        print("    status: 403 (health-route access denied; checking permitted database access)")
     flavor = headers.get("x-influxdb-build", "<missing>")
     version = headers.get("x-influxdb-version", "<missing>")
-    print(f"    status: 200")
+    if not limited_probe:
+        print("    status: 200")
     print(f"    flavor: {flavor}")
     print(f"    version: {version}")
     print()
@@ -159,6 +163,20 @@ def main() -> int:
     sample = dbs[:5]
     print(f"    first 5: {sample}")
     print()
+
+    if limited_probe:
+        database = os.environ.get("INFLUXDB_DATABASE") or (dbs[0] if dbs else None)
+        if not database:
+            print("    LIMITED: no visible database; query access is unverified, not proof the server is down")
+            return 1
+        rows = query_sql(host, token, database, "SHOW TABLES")
+        if rows is None:
+            print("    FAIL: query access could not be verified for the selected database")
+            return 1
+        print("    permitted database query: OK")
+        print("    diagnostic limited to read-side; admin token required for full checks")
+        print("Done. (Read-side health: OK)")
+        return 0
 
     # 4. write smoke (only if admin scope; detect via attempt to create a throwaway DB)
     ts = int(time.time())

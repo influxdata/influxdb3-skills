@@ -1,8 +1,8 @@
 # Curated Documentation URLs
 
-When the skill content does not cover a developer's question — or when the answer might be version-sensitive — fetch from this list. **Do not invent URLs that aren't on this list.** If you need a doc that's not here, ask the developer for the URL or note that the answer requires fresh research.
+When the skill content does not cover a developer's question — or when the answer might be version-sensitive — fetch from this list. **Don't invent URLs.** If you need a doc that's not here, use the InfluxDB Documentation MCP server, or say that the answer needs a docs lookup.
 
-> **This is an advisory allowlist, not an enforced egress control.** Nothing in the skill or harness parses this file to block other destinations — it's a rule a cooperating agent follows, and deviations should be conspicuous. When honoring it, match the **exact host** (`docs.influxdata.com`, `github.com`): reject lookalikes that merely *contain* an allowed host — a suffix (`docs.influxdata.com.evil.example`), a `user@` prefix (`docs.influxdata.com@evil.example`), a subdomain you didn't expect, or a raw IP literal. Never fetch internal/link-local or cloud-metadata addresses (e.g. `169.254.169.254`, `localhost`, RFC1918 ranges). If actual egress restriction matters for your deployment, enforce it at the harness/network layer — this list cannot.
+> Fetch only from the exact hosts `docs.influxdata.com` and `github.com`. Reject lookalike hosts, IP literals, and internal or metadata addresses.
 
 ## InfluxDB 3 product docs (per flavor)
 
@@ -10,12 +10,21 @@ When the skill content does not cover a developer's question — or when the ans
 |---|---|---|
 | Core | https://docs.influxdata.com/influxdb3/core/ | Default for self-hosted single-node setups; Core-specific config and admin |
 | Enterprise | https://docs.influxdata.com/influxdb3/enterprise/ | Multi-node, replication, resource tokens |
-| Cloud Serverless | https://docs.influxdata.com/influxdb3/cloud-serverless/ | Cloud-Serverless–specific endpoints, auth, write path quirks |
-| Cloud Dedicated | https://docs.influxdata.com/influxdb3/cloud-dedicated/ | Dedicated cluster setup, custom hosts |
+| Core release notes | https://docs.influxdata.com/influxdb3/core/release-notes/ | Target and intervening releases; preserve edition and version qualifiers |
+| Enterprise release notes | https://docs.influxdata.com/influxdb3/enterprise/release-notes/ | Enterprise-specific changes plus inherited Core updates |
+| Enterprise databases | https://docs.influxdata.com/influxdb3/enterprise/admin/databases/ | Existing explicit schemas and separately scoped declaration work |
+| Enterprise users | https://docs.influxdata.com/influxdb3/enterprise/admin/security/manage-users/ | User authentication and role administration beyond token workflows |
+| InfluxDB 3 Cloud | https://docs.influxdata.com/influxdb3/cloud/ | Hosted Enterprise: confirm API and token behavior |
+| InfluxDB Cloud Serverless | https://docs.influxdata.com/influxdb3/cloud-serverless/ | Not covered by this skill. Route every question here. |
+| InfluxDB Cloud Dedicated | https://docs.influxdata.com/influxdb3/cloud-dedicated/ | Not covered by this skill. Route every question here. |
+| InfluxDB Clustered | https://docs.influxdata.com/influxdb3/clustered/ | Not covered by this skill. Route every question here. |
+| Enterprise CLI reference | https://docs.influxdata.com/influxdb3/enterprise/reference/cli/influxdb3/create/ | `create database`, `create token`, and other CLI commands |
+| Enterprise HTTP API reference | https://docs.influxdata.com/influxdb3/enterprise/api/v3/ | Canonical `/api/v3/*` endpoints and bodies |
+| Preconfigured admin token | https://docs.influxdata.com/influxdb3/enterprise/admin/tokens/admin/preconfigured/ | Start the server with an admin token file |
 
 ## Topics this skill defers
 
-Use these URLs in the deferral replies that SKILL.md §9 describes. Link the page for the developer's product: replace `core` with `enterprise` for InfluxDB 3 Enterprise.
+Use these URLs in deferral replies. Link the page for the developer's product: replace `core` with `enterprise` for InfluxDB 3 Enterprise.
 
 | Topic | URL |
 |---|---|
@@ -29,9 +38,9 @@ Use these URLs in the deferral replies that SKILL.md §9 describes. Link the pag
 |---|---|---|
 | Line protocol | https://docs.influxdata.com/influxdb3/core/reference/syntax/line-protocol/ | Edge cases on quoting, escaping, type coercion |
 | SQL reference | https://docs.influxdata.com/influxdb3/core/reference/sql/ | v3 SQL syntax details and supported functions |
-| InfluxQL reference | https://docs.influxdata.com/influxdb3/core/reference/influxql/ | Only when the user explicitly needs v1/v2 compatibility |
+| InfluxQL reference | https://docs.influxdata.com/influxdb3/core/reference/influxql/ | When the developer uses InfluxQL |
 | HTTP API (`/api/v3/*`) | https://docs.influxdata.com/influxdb3/core/reference/api/ | Endpoint paths, request/response shapes |
-| `/ping` endpoint | https://docs.influxdata.com/influxdb3/core/reference/api/#ping | Flavor detection details |
+| `/ping` endpoint | https://docs.influxdata.com/influxdb3/core/admin/identify-version/ | Flavor detection details |
 
 ## Official client libraries (GitHub)
 

@@ -1,0 +1,37 @@
+{
+  "format": "runs-v1",
+  "agent": "codex",
+  "source_sha256": "0c599aa1cffecc4429f7e62aed3270c39d2dd85ef57beb422b6ac6dd64c27e38",
+  "model": "gpt-5.6-terra",
+  "judgeModel": "gpt-5.6-luna",
+  "cases": {
+    "write-batch-csharp": [
+      {
+        "passed": false,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "write-batch-python": [
+      {
+        "passed": false,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": false,
+        "error": null
+      }
+    ]
+  }
+}
