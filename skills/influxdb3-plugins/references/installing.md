@@ -1,4 +1,4 @@
-> **Looking for the InfluxDB 3 *server* install?** This file covers Processing Engine plugin install / deploy on a server that's already running. For installing the server itself, see `skills/influxdb3/references/installing.md`.
+> **Looking for the InfluxDB 3 *server* install?** This file covers Processing Engine plugin install / deploy on a server that's already running. For installing the server itself, see [`skills/influxdb3/references/installing.md`](../../influxdb3/references/installing.md).
 
 # Installing & Deploying Plugins
 
@@ -15,11 +15,10 @@ The engine activates when the server is started with `--plugin-dir` (or `INFLUXD
 Verify the engine is enabled:
 
 ```bash
-curl -sS "$INFLUXDB_HOST/api/v3/configure/database?format=json" \
-  -H "Authorization: Bearer $INFLUXDB_TOKEN" | jq '.[].iox::database'
+influxdb3 show plugins --token "$INFLUXDB_ADMIN_TOKEN"
 ```
 
-If the engine is on, `_internal` will be in the database list. (`_internal` always exists; the indicator is that `system.plugin_files` and `system.processing_engine_logs` work — see `references/testing.md`.)
+If the engine is on, this succeeds and `system.plugin_files` is queryable (see [`references/testing.md`](testing.md)).
 
 ## Three install paths
 
@@ -45,18 +44,23 @@ influxdb3 create trigger \
   alert_trigger
 ```
 
-Equivalent HTTP API for raw file upload (without creating a trigger):
+To create a plugin file over HTTP without creating a trigger, send JSON containing the filename and source text.
+Raw octet-stream PUT is not the upload contract.
 
 ```bash
-curl -X PUT "$INFLUXDB_HOST/api/v3/plugins/files?path=my_plugin.py" \
-  --header "Authorization: Bearer $INFLUXDB_TOKEN" \
-  --header "Content-Type: application/octet-stream" \
-  --data-binary "@/absolute/local/path/my_plugin.py"
+jq -n --arg name my_plugin.py --rawfile source /absolute/local/path/my_plugin.py \
+  '{plugin_name: $name, content: $source}' | \
+  curl --fail-with-body -X POST "$INFLUXDB_HOST/api/v3/plugins/files" \
+    --header "Authorization: Bearer $INFLUXDB_ADMIN_TOKEN" \
+    --header "Content-Type: application/json" \
+    --data-binary @-
 ```
+
+Use the [API reference](https://docs.influxdata.com/influxdb3/enterprise/api/v3/) for the complete create/update contracts.
 
 ### 2. Server-side placement (preferred for production)
 
-Copy the plugin file or directory into the server's `--plugin-dir` via your deploy tooling (rsync, container volume mount, file sync). Then create the trigger with the relative path:
+Copy the plugin file or directory into the server's `--plugin-dir` via your deploy tooling (rsync, file sync, a container image or a volume for the plugin directory itself). Copy a shared file in; don't mount its directory inside `--plugin-dir`, because the file stays where it lives and anyone who can write there changes the code the plugin runs. Then create the trigger with the relative path:
 
 ```bash
 influxdb3 create trigger \
@@ -91,11 +95,11 @@ influxdb3 serve \
 
 Then `--path "gh:myorg/custom_plugin.py"` resolves against that custom URL.
 
-> **Trust boundary: `gh:` and `--plugin-repo` fetch code that then runs unsandboxed.** The server retrieves the referenced file over the network and executes it with full server privileges (see `references/plugin-code-safety.md`) — there is **no signature, checksum, or version pin**, so whoever controls the repo (or `--plugin-repo` URL, or a MITM on a non-HTTPS fetch) controls what runs. Pin to a repo you trust, use HTTPS, and **read third-party plugin code before deploying it**. Whoever can set `--plugin-repo` at server start chooses the code source for every later `gh:` reference.
+> **Trust boundary: `gh:` and `--plugin-repo` fetch code that then runs unsandboxed.** The server retrieves the referenced file over the network and executes it with full server privileges (see [`references/plugin-code-safety.md`](plugin-code-safety.md)) — there is **no signature, checksum, or version pin**, so whoever controls the repo (or `--plugin-repo` URL, or a MITM on a non-HTTPS fetch) controls what runs. Pin to a repo you trust, use HTTPS, and **read third-party plugin code before deploying it**. Whoever can set `--plugin-repo` at server start chooses the code source for every later `gh:` reference.
 
 ## Updating a plugin in place
 
-Use `influxdb3 update trigger` with `--path` pointing at the new code. Trigger configuration (spec, arguments, error-behavior) is preserved.
+Use `influxdb3 update trigger` with `--path` pointing at the local file containing the new code. The CLI reads and sends that file without `--upload`, and the update command rejects that flag. Trigger configuration (spec, arguments, error-behavior) is preserved.
 
 ```bash
 influxdb3 update trigger \
@@ -109,8 +113,8 @@ influxdb3 update trigger \
 CLI:
 
 ```bash
-influxdb3 show plugins --token "$INFLUXDB_TOKEN"
-influxdb3 show plugins --format json --token "$INFLUXDB_TOKEN"
+influxdb3 show plugins --token "$INFLUXDB_ADMIN_TOKEN"
+influxdb3 show plugins --format json --token "$INFLUXDB_ADMIN_TOKEN"
 ```
 
 SQL (against the `_internal` database):
@@ -119,33 +123,34 @@ SQL (against the `_internal` database):
 influxdb3 query \
   -d _internal \
   "SELECT plugin_name, file_name, size_bytes, last_modified FROM system.plugin_files ORDER BY plugin_name" \
-  --token "$INFLUXDB_TOKEN"
+  --token "$INFLUXDB_ADMIN_TOKEN"
 ```
 
 Schema columns: `plugin_name` (str), `file_name` (str), `file_path` (str), `size_bytes` (int64), `last_modified` (int64 milliseconds since epoch).
 
 ## Security
 
-Plugin upload, update, and trigger creation **require an admin token**. Use a database-scoped token for the application code that *talks to* InfluxDB; use the admin token only for plugin lifecycle operations.
+Plugin upload, update, and trigger creation **require an admin token**. For application code that *talks to* InfluxDB, use a database-scoped token on Enterprise or a separate named admin token on Core; use the admin token only for plugin lifecycle operations.
 
 The server enforces:
-- **Path traversal protection** — without `--upload`, `--path` is relative to `--plugin-dir`, and the server rejects paths that contain `..` or start with `/`. With `--upload`, `--path` names a local file or directory; the CLI uploads it and the server chooses where it lands inside `--plugin-dir`.
+- **Path traversal protection** — for `create trigger` without `--upload`, `--path` is relative to `--plugin-dir`, and the server rejects paths that contain `..` or start with `/`. With `--upload`, `--path` names a local file or directory; the CLI uploads it and the server chooses where it lands inside `--plugin-dir`. For `update trigger`, `--path` identifies local code to send.
 - **Symlink escape protection** — symlinks that resolve outside `--plugin-dir` are rejected.
 - **Admin-only deploys** — non-admin tokens cannot upload, update, or create triggers.
 
-**Never inline a token in generated commands or scripts.** Tokens come from `INFLUXDB_TOKEN` env or `args` passed to the plugin (per `references/connecting.md` in the `influxdb3` skill).
+**Never inline a token in generated commands or scripts.** Admin commands read `INFLUXDB_ADMIN_TOKEN`, and application code reads `INFLUXDB_TOKEN` (`influxdb3` skill → [`references/connecting.md`](../../influxdb3/references/connecting.md)).
+Trigger arguments are stored in the catalog and readable in `system.processing_engine_trigger_arguments`, so anyone who can query system tables can read a secret passed as a trigger argument.
 
 **What the server does *not* protect against** (admin-token-gated, but code-execution-equivalent once reached — an admin token on InfluxDB is effectively arbitrary code in the server process):
 - **`gh:` / `--plugin-repo`** fetch and run remote code with no integrity check (above).
-- **`influxdb3 install package`** installs from public PyPI with no typosquat protection, and extra arguments reach `pip` verbatim (e.g. a redirected `--index-url`) — see `references/dependencies.md`.
-- **A deployed plugin is unsandboxed** — `references/plugin-code-safety.md`.
+- **`influxdb3 install package`** installs from public PyPI with no typosquat protection, and extra arguments reach `pip` verbatim (e.g. a redirected `--index-url`) — see [`references/dependencies.md`](dependencies.md).
+- **A deployed plugin is unsandboxed** — [`references/plugin-code-safety.md`](plugin-code-safety.md).
 
 **Plugin hardening flags** (3.10.0+):
-- `--plugin-dir-only` — disables `gh:` fetches and `--upload`, restricting plugins to files already placed in `--plugin-dir` (server-side placement, path 2). This is the single most effective lockdown for plugin sourcing. **Enterprise only** — not available on Core, where the admin token is the entire boundary for plugin sourcing.
+- `--plugin-dir-only` — disables `gh:` fetches and `--upload`, restricting plugins to files already placed in `--plugin-dir` (server-side placement, path 2). **Enterprise only** — not available on Core, where the admin token is the entire boundary for plugin sourcing.
 - `--restrict-plugin-triggers-to` — limits which trigger types may be created (`[possible values: wal, schedule, request]`). **Available on both Core and Enterprise.**
 
-For deployments where a compromised or hostile plugin is in scope, the control that holds even against fully-unsandboxed plugin code is **network egress restriction on the server host** — enforce it at the harness/network layer.
+For deployments where a compromised or hostile plugin is in scope, the control that holds even against fully-unsandboxed plugin code is **restricting outbound network access from the server host**.
 
 ## Where to fetch more
 
-`references/doc-urls.md` → "Processing engine and Python plugins" → setup, upload, security sections.
+[`references/doc-urls.md` → "Processing engine and Python plugins"](doc-urls.md) → setup, upload, security sections.

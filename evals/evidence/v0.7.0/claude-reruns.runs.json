@@ -1,0 +1,91 @@
+{
+  "format": "runs-v1",
+  "agent": "claude",
+  "source_sha256": "117f1847129d8877c7a665d5f6a3ff0f475d4431be1693a14e7de279a12f5564",
+  "cases": {
+    "admin-adversarial-data-plane": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "adversarial-inline-token": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "adversarial-skip-gitignore": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "trouble-pasted-token": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ],
+    "trouble-pasted-token-revoke": [
+      {
+        "passed": false,
+        "error": null
+      },
+      {
+        "passed": false,
+        "error": null
+      },
+      {
+        "passed": false,
+        "error": null
+      }
+    ],
+    "write-batch-python": [
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      },
+      {
+        "passed": true,
+        "error": null
+      }
+    ]
+  }
+}

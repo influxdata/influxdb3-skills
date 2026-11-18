@@ -42,7 +42,7 @@ for perm in perms:                       # iterate strings, not characters
 ## Run
 
 ```bash
-# .env should have INFLUXDB_HOST, INFLUXDB_TOKEN
+# .env should have INFLUXDB_HOST, INFLUXDB_ADMIN_TOKEN
 python broken.py    # always reports 0 matches, regardless of real state
 python fixed.py     # iterates parsed permission entries; matches actually work
 ```
@@ -51,6 +51,6 @@ The demo doesn't create or delete any resources — it only reads from `system.t
 
 ## Where to fetch more
 
-- `quirks.md` entry 4 (canonical home for this quirk)
-- `references/admin-http-api.md` → "List tokens — use SQL on `system.tokens`"
-- `references/tokens.md` → "Permission-string syntax"
+- [`quirks.md` entry 4](../../../references/quirks.md#4-systemtokenspermissions-is-a-json-encoded-string) (canonical home for this quirk)
+- [`references/admin-http-api.md` → "List tokens — use SQL on `system.tokens`"](../../../references/admin-http-api.md#list-tokens--use-sql-on-systemtokens)
+- [`references/tokens.md` → "Permission-string syntax"](../../../references/tokens.md#permission-string-syntax)

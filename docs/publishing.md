@@ -3,10 +3,15 @@
 ## When to release
 
 The release notes for InfluxDB 3 Core and Enterprise are the cue to review the skills.
+Read the target release sections on current docs-v2 `master` and the production documentation site.
+PR descriptions and a stale local checkout do not establish what the published release notes say.
 Use the published InfluxDB 3 release notes, or pre-release notes when they're available before publication.
 Scope each update by what changed, not by the database version: a patch release can change behavior.
 
 All skills share the plugin version ([ADR-0001](decisions/0001-single-package-versioning.md)).
+Every skill-changing merge to `main` is a package release with a new shared version and matching immutable evidence ([ADR-0003](decisions/0003-main-is-a-production-consumption-boundary.md)).
+Include release preparation in that PR; a later tag cannot supply verification missing at merge time.
+Internal commits and process-only repository changes do not each require a version bump.
 
 - **Patch:** corrections that don't change skill boundaries or expected agent behavior.
 - **Minor:** changes to boundaries, routing, or triggers, or a new capability.
@@ -18,11 +23,17 @@ All skills share the plugin version ([ADR-0001](decisions/0001-single-package-ve
 - Use release notes to find changes, not as the only source for stable guidance.
 - When a discrepancy is confirmed, fix the docs, the skill, and the InfluxDB 3 MCP server, not only the skill.
 - Record each changed product claim in the claims ledger with edition, version, source, and evidence state (Documented, Live-verified, Derived, Unknown).
+- Runtime text (`skills/**`) states the fact with its edition and version, and never carries a claim ID or ledger path. Maintainer records (`CHANGELOG.md`, `docs/`, eval evidence, PRs) cite claim IDs. `scripts/check-claim-policy.mjs` enforces the first rule in CI, and `evals/check-release.mjs verify` requires every Live-verified changelog bullet in the release section to cite a claim ID.
 - Don't write support ranges such as `>=3.8`. Record the exact versions checked, and note the version where behavior changed.
 
 ## Update for an InfluxDB release
 
-1. Read the release notes and list the changes that touch the skills. Also compare `docs_checked_against` with the new version, so earlier gaps surface.
+1. Read the target release notes on current docs-v2 `master` and the production Core and Enterprise release-note pages.
+   Compare `docs_checked_against` with the target version and review intervening releases so earlier gaps surface.
+   Record the source commit, production URLs and access date, and release sections reviewed.
+   For each cue that touches existing guidance, record the needed correction, confirm that the guidance already handles it, or explain why it belongs to separate work.
+   If source and production differ, record the discrepancy.
+   Release notes supply additional cues; they do not replace the API spec or required live evidence.
 2. For each change, read the reference and how-to pages in docs-v2 (`content/`), including their version annotations.
 3. Match each change against the claims ledger: confirmed, refuted, unknown, or stale.
 4. Probe a live server only where the docs are silent or conflict, and record the result as a claim.
@@ -52,7 +63,7 @@ All skills share the plugin version ([ADR-0001](decisions/0001-single-package-ve
 3. **Re-run runnable examples** against a live InfluxDB 3 Core or Enterprise instance:
 
    ```bash
-   for d in skills/influxdb3/examples/{python,javascript,go,java,csharp,http}; do
+   for d in skills/influxdb3/examples/{python,http}; do
      echo "==> $d"
      # See README or hello.* in this folder for run instructions
    done
@@ -60,12 +71,28 @@ All skills share the plugin version ([ADR-0001](decisions/0001-single-package-ve
 
 4. **Re-run the smoke tests** (see `evals/smoke-prompts.md`).
 
-5. **Re-run the formal eval suite** on the final skill text (see `evals/README.md`), 3 runs per case, on Claude Code and Codex. Run `scripts/check-paths.sh --fix` on the result files, then commit them and `manifest.json` to `evals/evidence/v0.X.Y/`. `node evals/gate.mjs` must pass for Claude Code:
+5. **Re-run the formal eval suite** on the final skill text (see `evals/README.md`), 3 runs per case, on Claude Code and Codex. Store each full result file in the internal eval archive. Reduce each one with `node evals/slim-evidence.mjs <claude|codex> <full-result.json> evals/evidence/v0.X.Y/<name>.runs.json`, then commit the runs files and `manifest.json` to `evals/evidence/v0.X.Y/`. `node evals/gate.mjs` must pass for Claude Code. Codex is advisory until it meets the bars: its evidence must be complete, with three runs per case, and its report goes in `docs/eval-history.md`, but its bars and required cases don't block the release. The Claude bars are:
    - Adversarial pass rate < 100% blocks the release.
    - Negative, or install, connect, write, query, schema, and flavor combined, below 90% blocks the release.
-   - Codex results are recorded but don't block.
+
+   Changed-behavior cases also pass individually under the same three-run rules, including plugin, admin, and troubleshooting cases outside the aggregate bars.
 
    A code owner of `evals/evidence/` approves the release PR, and the release-gate workflow checks the evidence.
+   The workflow runs for every skill or prompt change, as well as release-labeled PRs, tags, and manual dispatches.
+   Its manifest requires:
+
+   - `release`: the shared package version with a `v` prefix.
+   - Full `skills_tree` and `prompts_blob` hashes matching the committed final contents.
+   - `required_cases`: unique IDs of changed-behavior eval cases. Every added or modified prompt must be included. Review coverage of unchanged prompts whose supported behavior changed too.
+   - `required_cases_reason` if the list is empty, explaining why the skill edit changes no behavior.
+   - Nonempty `claude` and `codex` result lists. Codex results are advisory but must be complete. Each entry records `file` (a `.runs.json` file), `source_sha256` (the full result file's sha256, which the runs file also records), matching full hashes, `runs: 3`, `model`, `judge`, `effort`, `judge_effort`, and `cli_version`. Codex entries also record `verbosity` (`null` for the model default). For Claude Code, `effort` and `judge_effort` are both the `CLAUDE_CODE_EFFORT_LEVEL` the run used. All entries for one agent use the same models and settings, both agents use the same `judge` and `judge_effort` ([ADR-0004](decisions/0004-one-eval-judge.md)), and Codex result files must record the same models, effort, and verbosity.
+   - `review_record`: a tracked, nonempty review file, such as `docs/releases/3.12.1.md`.
+
+   Every case must have at least three actual samples in each agent's merged results, regardless of the entry's declared run count.
+   `slim-evidence.mjs` refuses a full result file whose Codex samples lack distinct positive `run` numbers within each case, or whose Claude samples lack distinct `startedAt` session timestamps.
+   Copying the same sample does not count as a new run.
+   An unknown required case, missing evidence, a stale hash, or rewriting an existing release's evidence blocks verification. The one allowed change replaces a released full result file with the runs file recomputed from it.
+   Run `node evals/check-release.mjs verify --base <target-commit>` on the committed candidate.
 
 6. **Update `CHANGELOG.md`.** Separate packaging changes, documentation-grounded changes, and live-verified behavior changes.
 
@@ -135,7 +162,7 @@ When releasing a version that includes `influxdb3` skill admin changes:
 
    Both lists must be empty before the release lifecycle re-runs. If anything's left over, manually `influxdb3 delete database <name>` and `influxdb3 delete token --token-name <name>` to clean up.
 
-3. **Re-run the six admin lifecycle examples** against the live instance: `examples/admin-http`, `examples/admin-python`, `examples/admin-javascript`, `examples/admin-go`, `examples/admin-java`, `examples/admin-csharp`. Each must reach "Done. Lifecycle completed cleanly."
+3. **Re-run the two admin lifecycle examples** against the live instance: `examples/admin-http` and `examples/admin-python`. Each must reach "Done. Lifecycle completed cleanly."
 
 4. **Post-release orphan check** (mandatory): same as step 2; both lists must again be empty. Failures here block the tag.
 

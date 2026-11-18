@@ -2,9 +2,9 @@
 
 ## SQL is the default
 
-InfluxDB 3's primary query language is SQL (Apache DataFusion under the hood). When in doubt, generate SQL. Reach for InfluxQL **only** when the developer is on v1/v2 compatibility for legacy reasons — flag it as a smell otherwise.
+InfluxDB 3 supports SQL (Apache DataFusion under the hood) and InfluxQL. Use the language the developer asks for. When they don't say, generate SQL.
 
-Flux is **not** supported in v3 — if a developer brings Flux code, route them to the migration roadmap (deferred to v1.2).
+InfluxDB 3 doesn't run Flux. Migration from Flux is out of scope; link the migration docs in [`references/doc-urls.md`](doc-urls.md).
 
 ## Time idioms
 
@@ -36,12 +36,12 @@ Never string-concatenate user input into a query — this is a **SQL injection**
 
 | Language | Example reference |
 |---|---|
-| Python | `references/clients/python.md` → "Parameterized SQL query" |
-| JavaScript | `references/clients/javascript.md` → "Parameterized SQL query" |
-| Go | `references/clients/go.md` → "Parameterized SQL query" |
-| Java | `references/clients/java.md` → "Parameterized SQL query" |
-| C# | `references/clients/csharp.md` → "Parameterized SQL query" |
-| Raw HTTP | `references/clients/http.md` → "Parameterizing user input" |
+| Python | [`references/clients/python.md` → "Parameterized SQL query"](clients/python.md#parameterized-sql-query) |
+| JavaScript | [`references/clients/javascript.md` → "Parameterized SQL query"](clients/javascript.md#parameterized-sql-query) |
+| Go | [`references/clients/go.md` → "Parameterized SQL query"](clients/go.md#parameterized-sql-query) |
+| Java | [`references/clients/java.md` → "Parameterized SQL query"](clients/java.md#parameterized-sql-query) |
+| C# | [`references/clients/csharp.md` → "Parameterized SQL query"](clients/csharp.md#parameterized-sql-query) |
+| Raw HTTP | [`references/clients/http.md` → "Parameterizing user input"](clients/http.md#parameterizing-user-input) |
 
 ## Pagination
 
@@ -66,12 +66,32 @@ LIMIT 1000 OFFSET 5000
 
 ## Avoid unbounded `SELECT *`
 
-`SELECT * FROM sensor` against a large measurement will return everything — slow and expensive. Always include a `WHERE time >= ...` filter or a `LIMIT`. The skill should add one even if the developer didn't, and call it out.
+`SELECT * FROM sensor` against a large measurement will return everything — slow and expensive. Include a `WHERE time >= ...` filter or a `LIMIT`. If the developer's query has neither, add one and say that you added it.
 
-## InfluxQL — only when forced
+## InfluxQL
 
-If the developer asks for InfluxQL on a fresh project, push back: "v3 SQL is the recommended query language. InfluxQL is supported for v1/v2 compatibility but lacks some v3 features. Are you sure?" If they confirm, use the `/api/v3/query_influxql` endpoint or the client's InfluxQL mode.
+When the developer asks for InfluxQL, use the `/api/v3/query_influxql` endpoint or the client's InfluxQL mode.
+
+## Query failures
+
+Check the HTTP status before decoding a result as JSON.
+A requested result format does not determine the error body's format.
+
+| Response | What to do |
+|---|---|
+| SQL unknown table returns 400 with a plain-text planning error | Check the table and database; fix the query rather than retrying it. |
+| Admin query against an unknown database returns 404 | Check the database name and provision it through the setup workflow if needed. |
+| Scoped Enterprise query returns 403 with an empty body | A denied database and a nonexistent database get the same response. Check access and visible databases; don't infer existence from the response. |
+| Query-memory exhaustion before the first row returns 429. Earlier Core releases returned 500; the [3.12.2 notes](https://docs.influxdata.com/influxdb3/core/release-notes/) say Core now returns 429 except for some cases, such as running out of memory while deduplicating | The response has no `Retry-After` header. Use bounded exponential backoff with jitter for transient resource failures. If repeated, report the resource error and route performance work to the tuning docs. |
+| Enterprise data query returns 405 on an ingest-only node | Use an endpoint that runs query mode. Retrying the same data query on the same node does not fix routing. |
+
+Not every 500 means resource exhaustion.
+The [3.12.1 release notes](https://docs.influxdata.com/influxdb3/enterprise/release-notes/#v3121) describe returning the error status before any rows, but a stream can still end early after rows start, so detect incomplete responses.
+
+The [3.12.0 notes](https://docs.influxdata.com/influxdb3/enterprise/release-notes/#v3120) also describe a finite query-concurrency limit.
+Excess queries wait for a slot, so set a client timeout instead of assuming every overload fails immediately.
+Select system-table columns by name rather than parsing `SELECT *` positionally, because release changes can reorder columns.
 
 ## Where to fetch more
 
-`references/doc-urls.md` → "SQL reference" or "InfluxQL reference".
+[`references/doc-urls.md` → "SQL reference"](doc-urls.md) or "InfluxQL reference".

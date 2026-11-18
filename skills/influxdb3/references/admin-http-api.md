@@ -1,12 +1,12 @@
 # Admin HTTP API — Endpoint Reference
 
-This is the wire-format ground truth for InfluxDB 3 admin operations. Per-language admin examples (`examples/admin-<lang>/`) translate from this reference.
+This is a summary of the InfluxDB 3 admin endpoints. The HTTP API reference is authoritative. The admin examples (`examples/admin-http/` and `examples/admin-python/`) translate from this summary.
 
-> Cloud Serverless / Cloud Dedicated have separate management APIs — see `references/flavors.md` for the per-flavor map.
+> These endpoints exist only on InfluxDB 3 Core, InfluxDB 3 Enterprise, and InfluxDB 3 Cloud. See [`references/flavors.md`](flavors.md).
 
 ## Auth
 
-All admin endpoints require: `Authorization: Bearer <admin-token>`. The admin token comes from server bootstrap (Core/Enterprise) or, for other products, from the process that product's docs describe. **Never inline.** Read from `INFLUXDB_TOKEN` env or a secret manager.
+All admin endpoints require: `Authorization: Bearer <admin-token>`. The admin token comes from server bootstrap (Core/Enterprise) or, for other products, from the process that product's docs describe. **Never inline.** Read it from `INFLUXDB_ADMIN_TOKEN` or a secret manager.
 
 ## Database operations
 
@@ -51,13 +51,14 @@ Authorization: Bearer <admin-token>
 
 ### Update retention period
 
-Use the CLI: `influxdb3 update database --database <name> --retention-period <duration>` (e.g., `30d`, `24h`, or `none` to clear).
+`PUT /api/v3/configure/database` with `db` and `retention_period` in the body. See the HTTP API reference for the body format.
+CLI equivalent: `influxdb3 update database --database <name> --retention-period <duration>` (e.g., `30d`, `24h`, or `none` to clear).
 
 ## Token operations
 
 > **Resource (scoped) tokens are Enterprise and InfluxDB 3 Cloud only.**
-> Core has no resource tokens; see `references/tokens.md` → "InfluxDB 3 Core: admin tokens only."
-> Admin-token endpoints are identical across Core and Enterprise. Delete is identical.
+> Core has no resource tokens; see [`references/tokens.md` → "InfluxDB 3 Core: admin tokens only."](tokens.md#influxdb-3-core-admin-tokens-only)
+> Admin-token and delete endpoints are identical across Core and Enterprise.
 
 ### Create resource (scoped) token
 
@@ -111,7 +112,7 @@ Content-Type: application/json
 ```
 
 `expiry_secs` is optional; omit it for no expiry. The response (201) returns the token string once. A duplicate name returns 409.
-CLI equivalent: `influxdb3 create token --admin --name <name> --token <admin-token>`, with optional `--expiry` (for example, `10d` or `1y`).
+CLI equivalent: `influxdb3 create token --admin --name <name> --token "$INFLUXDB_ADMIN_TOKEN"`, with optional `--expiry` (for example, `10d` or `1y`).
 
 ### Create the operator token
 
@@ -148,7 +149,7 @@ Content-Type: application/json
 {"db": "_internal", "q": "SELECT * FROM system.tokens"}
 ```
 
-To filter by a specific token name, **bind the name as a parameter — never string-concatenate it into `q`.** Token names are user-chosen, so an interpolated name is a SQL-injection vector (`references/querying.md` → "Parameterize user input"):
+To filter by a specific token name, **bind the name as a parameter — never string-concatenate it into `q`.** Token names are user-chosen, so an interpolated name is a SQL-injection vector ([`references/querying.md` → "Parameterize user input"](querying.md#parameterize-user-input--always)):
 
 ```
 {"db": "_internal",
@@ -175,22 +176,20 @@ To filter by a specific token name, **bind the name as a parameter — never str
 
 The same permission has two serializations:
 
-- **Short form** (used by `system.tokens.permissions`, the CLI `--permission` flag, and the structured-form `actions` arrays expanded out): `"db:<name>:<action>"`.
+- **Short form** (used by `system.tokens.permissions` and the CLI `--permission` flag): `"db:<name>:<action>"`.
 - **Structured form** (used in the create-token HTTP body): `{"resource_type": "db", "resource_names": ["<name>"], "actions": ["read", "write"]}`.
 
 The structured form's `resource_type` enum is `"db"` or `"system"`; `actions` enum is `"read"` or `"write"`. Multiple `resource_names` and multiple `actions` per object combine.
 
 ## Per-flavor differences
 
-| Operation | Core | Enterprise | Cloud Serverless | Cloud Dedicated |
-|---|---|---|---|---|
-| Database CRUD | `/api/v3/configure/database` | Same | Product UI or management API | Product UI or management API |
-| Resource token create | Not supported (`references/tokens.md`) | `/api/v3/enterprise/configure/token` | Product UI or management API | Product UI or management API |
-| Admin token create | `/api/v3/configure/token/named_admin` | Same | Product UI or management API | Product UI or management API |
-| Delete token | `/api/v3/configure/token?token_name=<name>` | Same | Product UI or management API | Product UI or management API |
-| List tokens | SQL on `system.tokens` (`_internal`) | Same | (different — see the product docs) | (different — see the product docs) |
-
-For InfluxDB Cloud Serverless and InfluxDB Cloud Dedicated, route that product's docs through `references/doc-urls.md`.
+| Operation | Core | Enterprise |
+|---|---|---|
+| Database CRUD | `/api/v3/configure/database` | Same |
+| Resource token create | Not supported ([`references/tokens.md`](tokens.md)) | `/api/v3/enterprise/configure/token` |
+| Admin token create | `/api/v3/configure/token/named_admin` | Same |
+| Delete token | `/api/v3/configure/token?token_name=<name>` | Same |
+| List tokens | SQL on `system.tokens` (`_internal`) | Same |
 
 ## Error codes
 
@@ -198,11 +197,11 @@ For InfluxDB Cloud Serverless and InfluxDB Cloud Dedicated, route that product's
 |---|---|---|
 | 200 / 201 | Success | n/a |
 | 400 | Bad request — invalid name, malformed body, invalid permission shape | Fix the input; the body usually names the field. Watch for using short-form permission strings in the create-token body — the body needs structured form. |
-| 401 | Auth missing or invalid | Set `INFLUXDB_TOKEN` to a valid admin token. |
+| 401 | Auth missing or invalid | Use a valid admin token. |
 | 403 | Auth valid but lacks admin scope | Use the operator/admin token, not a scoped resource token. |
-| 404 | Resource (DB or token name) not found, OR endpoint not found | Confirm the name. On Core, a 404 from a resource-token endpoint is expected: Core has no resource tokens (`references/tokens.md`). |
+| 404 | Resource (DB or token name) not found, OR endpoint not found | Confirm the name. On Core, a 404 from a resource-token endpoint is expected: Core has no resource tokens ([`references/tokens.md`](tokens.md)). |
 | 409 | Already exists | Use a different name or delete first. |
 
 ## Where to fetch more
 
-`references/doc-urls.md` → InfluxDB 3 Enterprise HTTP API reference for the canonical endpoint list (which may evolve faster than this skill). For the source-of-truth on Core vs Enterprise endpoint divergence, the InfluxData Explorer (`influxdb3_ui`) `apps/backend/src/modules/influx-api/strategies/` directory.
+[`references/doc-urls.md` → "Enterprise HTTP API reference"](doc-urls.md) for the canonical endpoint list, which may change faster than this skill.

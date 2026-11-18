@@ -5,10 +5,10 @@
 ## Wire it up
 
 ```bash
-# Assumes INFLUXDB_HOST, INFLUXDB_TOKEN (admin), INFLUXDB_DATABASE are set.
+# Assumes INFLUXDB_HOST, INFLUXDB_ADMIN_TOKEN, INFLUXDB_TOKEN, INFLUXDB_DATABASE are set.
 influxdb3 create trigger \
   --database "$INFLUXDB_DATABASE" \
-  --token "$INFLUXDB_TOKEN" \
+  --token "$INFLUXDB_ADMIN_TOKEN" \
   --trigger-spec "every:30s" \
   --path "$(pwd)/counter.py" \
   --upload \
@@ -17,7 +17,7 @@ influxdb3 create trigger \
 
 ## Wait for it to fire
 
-The trigger fires automatically every 30s. Wait at least 70 seconds (so it fires twice), then:
+The trigger fires automatically every 30s. Wait about 70 seconds, then:
 
 ```bash
 influxdb3 query \
@@ -25,7 +25,7 @@ influxdb3 query \
   "SELECT event_time, log_level, log_text FROM system.processing_engine_logs WHERE trigger_name='cache_counter' ORDER BY event_time DESC LIMIT 8"
 ```
 
-Expected: messages like `counter=1 last_seen=2026-05-08T... temp_delete=ok`, then `counter=2 ...`, then `counter=3 ...` — proving the counter persists across invocations.
+Expected: messages like `counter=1 last_seen=2026-05-08T... temp_delete=ok`, then `counter=2 ...`, and so on — proving the counter persists across invocations.
 
 ```bash
 influxdb3 query \
@@ -42,7 +42,7 @@ Expected: `count` increasing on each row.
 ```bash
 influxdb3 delete trigger \
   --database "$INFLUXDB_DATABASE" \
-  --token "$INFLUXDB_TOKEN" \
+  --token "$INFLUXDB_ADMIN_TOKEN" \
   --force \
   cache_counter
 ```
