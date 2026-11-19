@@ -12,7 +12,7 @@ Every Processing Engine plugin gets the `influxdb3_local` object passed in as th
 | `query(query, args=None, database=None)` | Execute a SQL query. Returns `list[dict[str, Any]]`, one dict per row keyed by column name. `args` values must be strings; an `int` or `float` raises `TypeError`. `database` defaults to the trigger's database. Timestamps are nanosecond integers, and SQL `NULL` is `None`. Raises `QueryError` on bad SQL, execution failure, or an invalid database name (see "Exceptions"). |
 | `write_sync(line, no_sync)` | Write to the trigger's database synchronously, while the plugin runs. `no_sync` is required: `True` skips waiting for WAL synchronization, `False` waits for it. Raises if the server rejects the write. |
 | `write_sync_to_db(db_name, line, no_sync)` | Same as `write_sync`, to another database. |
-| `write(line)` | Queue a write to the trigger's database. Queued writes are flushed after the plugin returns, after any `write_sync` calls. A rejected write can't be caught in the plugin; it surfaces after the run as an `ERROR` row in `system.processing_engine_logs`. |
+| `write(line)` | Queue a write to the trigger's database. Queued writes are flushed after the plugin returns, after any `write_sync` calls. The plugin can't catch a queued write failure. For a failed queued write, check the server log on the node that ran the plugin. The error can also appear in `system.processing_engine_logs` if the Processing Engine persists the log entry. |
 | `write_to_db(db_name, line)` | Same as `write`, to another database. |
 | `cache` | Property returning the `Cache` for this trigger. |
 
